@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberGaming Lebanon: sales projection (100 transaction mock-up)</title>
+<style>
+:root{
+  --navy:#101a3f; --cyan:#1fb6e0; --cyan-d:#0a8aad;
+  --bg:#f8fafc; --card:#fff; --line:#e2e8f0; --text:#101a3f; --muted:#475569; --input:#fff;
+  --pos:#0f6e56; --neg:#a32d2d;
+  --c-buy:#1fb6e0; --c-trade:#0f6e56; --c-swap:#ba7517; --c-member:#534ab7;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#0b1020;--card:#131a33;--line:#27314f;--text:#e8ecf8;--muted:#9aa7c7;--input:#0e1530;--cyan-d:#4fd0ee;--pos:#5dcaa5;--neg:#f09595;
+        --c-buy:#4fd0ee;--c-trade:#5dcaa5;--c-swap:#ef9f27;--c-member:#afa9ec}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
+header{border-bottom:3px solid var(--cyan);padding-bottom:18px;margin-bottom:22px}
+.kicker{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan-d);font-weight:600}
+h1{margin:0 0 6px;font-size:28px;line-height:1.2}
+h2{margin:36px 0 10px;font-size:21px}
+h3{margin:0 0 8px;font-size:16px}
+p{margin:0 0 10px}.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.note{border-left:5px solid var(--cyan)}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin:14px 0}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi .v{font-size:24px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi.main{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+.assump{display:grid;gap:10px 16px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+label.f{display:block;font-size:13px;color:var(--muted)}
+label.f span.h{display:block;font-size:12px;opacity:.85}
+.in{display:flex;align-items:center;gap:6px;margin-top:3px}
+.in input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--text);font:inherit;font-variant-numeric:tabular-nums}
+.in input:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.in em{font-style:normal;color:var(--muted);font-size:13px;min-width:22px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:6px 12px}
+button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+@media (prefers-color-scheme: dark){button.on{background:var(--cyan);color:#0b1020;border-color:var(--cyan)}}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:rgba(31,182,224,.12);font-weight:600;position:sticky;top:0}
+td.r,th.r{text-align:right}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:600;border-top:2px solid var(--line)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.scroll{max-height:520px;overflow:auto}
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+svg{display:block;width:100%;height:auto}
+svg text{fill:var(--muted);font:12px system-ui,sans-serif}
+svg .ax{stroke:var(--line)}
+ul{margin:6px 0;padding-left:22px}li{margin:4px 0}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+@media print{body{background:#fff}.tools,#reset{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="kicker">CyberGaming Lebanon · projection built 19 Sep 2026</p>
+  <h1>Sales projection: a 100-transaction mock-up</h1>
+  <p class="muted">Buying, selling, trading and swapping. Change any assumption below and every number on the page updates.</p>
+</header>
+
+<div class="card note">
+  <p style="margin:0"><strong>What is and isn't included.</strong> Your own 116 games are <strong>not</strong> counted anywhere. All stock in this model is bought from customers. The 100 transactions are made-up examples with realistic Lebanese used-game prices; they show the shape of the business, they are not a forecast.</p>
+</div>
+
+<h2>1. Assumptions <button id="reset" type="button" style="margin-left:8px;font-size:13px">Reset to defaults</button></h2>
+<div class="card"><div class="assump" id="assump"></div></div>
+
+<h2>2. Results for the 100 transactions</h2>
+<div class="kpis" id="kpis"></div>
+<div class="grid2">
+  <div class="card"><h3>By stream</h3><div class="tw"><table id="streams"></table></div></div>
+  <div class="card"><h3>Profit per transaction, by stream</h3><div id="chartStream"></div></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Reading the results</h3><ul id="insights"></ul></div>
+
+<h2>3. Scaled up: 12-month projection</h2>
+<div class="card">
+  <p class="muted">Uses the profit and sales per transaction from the mix above. Set the starting volume, monthly growth and fixed monthly costs in the assumptions.</p>
+  <div class="grid2"><div id="chartMonth"></div><div class="tw scroll" style="max-height:420px"><table id="months"></table></div></div>
+</div>
+
+<h2>4. The 100 transactions</h2>
+<div class="tools" id="filters"></div>
+<div class="tw scroll"><table id="rows"></table></div>
+
+<h2>5. How each stream is calculated</h2>
+<div class="card">
+  <ul>
+    <li><span class="dot" style="background:var(--c-buy)"></span><strong>Buy and sell (30):</strong> a customer sells us a game and we resell it. We pay the buy-back price (cash or credit, reduced by the condition factor). Profit = resale price − what we paid − shrinkage + delivery fee − courier cost − pickup cost, counted only for the share that resells in the month.</li>
+    <li><span class="dot" style="background:var(--c-trade)"></span><strong>Trade-in (25):</strong> the customer gives a game and takes a game of similar value. We give credit for theirs and they pay the gap in cash. Profit shown is the margin on the item we sell now; the traded-in game is stock that earns more when it resells (shown as "pipeline").</li>
+    <li><span class="dot" style="background:var(--c-swap)"></span><strong>Swap (15):</strong> two customers exchange games through us. We earn the flat swap fee from each side and pay for pickups and deliveries.</li>
+    <li><span class="dot" style="background:var(--c-member)"></span><strong>Member sales (30):</strong> a member lists an item. The buyer pays the seller's price plus our commission (rounded up to $0.50) plus the delivery fee. We pay for collecting from the seller and delivering to the buyer.</li>
+  </ul>
+</div>
+
+<footer>Prices, mix and rates are illustrations using the platform's current default settings. Not financial advice or a guarantee of results. Fixed monthly costs default to an assumed $150 (hosting, packaging, phone) and are editable.</footer>
+</div>
+
+<script>
+const DATA = [{"type":"trade","day":1,"platform":"PS4","item":"God of War","price":20,"n":1},{"type":"buy","day":2,"platform":"Xbox","item":"Forza Horizon 5","price":29,"n":2},{"type":"buy","day":2,"platform":"Xbox","item":"Starfield","price":29,"n":3},{"type":"member","day":2,"platform":"Switch","item":"Fire Emblem: Three Houses","price":35,"n":4},{"type":"member","day":3,"platform":"PS4","item":"Grand Theft Auto V","price":17,"n":5},{"type":"member","day":3,"platform":"PS4","item":"DualShock 4 controller","price":25,"n":6},{"type":"member","day":3,"platform":"PS4","item":"Red Dead Redemption 2","price":21,"n":7},{"type":"member","day":3,"platform":"PS4","item":"The Last of Us Remastered","price":8,"n":8},{"type":"buy","day":4,"platform":"PS5","item":"Cyberpunk 2077","price":50,"n":9},{"type":"trade","day":4,"platform":"PS4","item":"God of War","price":19,"n":10},{"type":"trade","day":4,"platform":"PS4","item":"The Last of Us Remastered","price":10,"n":11},{"type":"buy","day":5,"platform":"PS4","item":"Assassin's Creed Odyssey","price":22,"n":12},{"type":"trade","day":5,"platform":"Switch","item":"Fire Emblem: Three Houses","price":23,"n":13},{"type":"trade","day":6,"platform":"PS4","item":"Grand Theft Auto V","price":24,"n":14},{"type":"trade","day":6,"platform":"PS4","item":"Marvel's Spider-Man","price":16,"n":15},{"type":"swap","day":6,"platform":"PS5 / PS4","item":"Horizon Forbidden West  ⇄  Ghost of Tsushima","price":29,"n":16},{"type":"member","day":6,"platform":"PS5","item":"DualSense controller","price":42,"n":17},{"type":"buy","day":7,"platform":"PS4","item":"Batman: Arkham Knight","price":25,"n":18},{"type":"buy","day":7,"platform":"PS5","item":"Cyberpunk 2077","price":26,"n":19},{"type":"buy","day":7,"platform":"PS4","item":"Grand Theft Auto V","price":11,"n":20},{"type":"trade","day":7,"platform":"Switch","item":"Fire Emblem: Three Houses","price":42,"n":21},{"type":"swap","day":7,"platform":"PS5 / PS4","item":"God of War Ragnarök  ⇄  Ghost of Tsushima","price":22,"n":22},{"type":"buy","day":8,"platform":"PS4","item":"Far Cry 5","price":23,"n":23},{"type":"trade","day":8,"platform":"PS4","item":"The Last of Us Remastered","price":25,"n":24},{"type":"swap","day":9,"platform":"PS4 / Switch","item":"Resident Evil 2  ⇄  Mario Kart 8 Deluxe","price":28,"n":25},{"type":"buy","day":10,"platform":"PS4","item":"Marvel's Spider-Man","price":19,"n":26},{"type":"buy","day":10,"platform":"Xbox","item":"Halo Infinite","price":9,"n":27},{"type":"buy","day":11,"platform":"Switch","item":"Splatoon 3","price":30,"n":28},{"type":"trade","day":11,"platform":"PS4","item":"Bloodborne","price":10,"n":29},{"type":"swap","day":11,"platform":"PS4 / Switch","item":"Resident Evil 2  ⇄  Super Mario Odyssey","price":34,"n":30},{"type":"member","day":11,"platform":"PS5","item":"Spider-Man: Miles Morales","price":38,"n":31},{"type":"buy","day":12,"platform":"PS4","item":"Red Dead Redemption 2","price":14,"n":32},{"type":"buy","day":12,"platform":"PS4","item":"Red Dead Redemption 2","price":9,"n":33},{"type":"trade","day":12,"platform":"Xbox","item":"FIFA 23","price":22,"n":34},{"type":"trade","day":12,"platform":"PS4","item":"Bloodborne","price":14,"n":35},{"type":"trade","day":12,"platform":"PS4","item":"The Last of Us Remastered","price":21,"n":36},{"type":"swap","day":12,"platform":"PS4","item":"NBA 2K22  ⇄  Uncharted 4","price":15,"n":37},{"type":"member","day":12,"platform":"PS4","item":"The Last of Us Remastered","price":18,"n":38},{"type":"member","day":12,"platform":"PS5","item":"Resident Evil Village","price":35,"n":39},{"type":"buy","day":13,"platform":"Xbox","item":"Red Dead Redemption 2","price":8,"n":40},{"type":"buy","day":13,"platform":"PS4","item":"Assassin's Creed Odyssey","price":23,"n":41},{"type":"trade","day":13,"platform":"PS5","item":"Call of Duty: MW3","price":29,"n":42},{"type":"trade","day":13,"platform":"PS4","item":"Persona 5","price":9,"n":43},{"type":"member","day":13,"platform":"PS4","item":"Horizon Zero Dawn","price":18,"n":44},{"type":"member","day":13,"platform":"PS4","item":"Bloodborne","price":23,"n":45},{"type":"member","day":13,"platform":"PS4","item":"Gaming headset","price":24,"n":46},{"type":"buy","day":14,"platform":"PS4","item":"Assassin's Creed Odyssey","price":19,"n":47},{"type":"trade","day":14,"platform":"PS4","item":"Horizon Zero Dawn","price":13,"n":48},{"type":"swap","day":14,"platform":"PS4 / Switch","item":"Persona 5  ⇄  Super Mario Odyssey","price":20,"n":49},{"type":"member","day":14,"platform":"Switch","item":"Extra Joy-Con pair","price":51,"n":50},{"type":"member","day":14,"platform":"PS4","item":"Batman: Arkham Knight","price":16,"n":51},{"type":"buy","day":15,"platform":"PS5","item":"Elden Ring","price":53,"n":52},{"type":"buy","day":15,"platform":"PS5","item":"Spider-Man: Miles Morales","price":32,"n":53},{"type":"trade","day":15,"platform":"PS4","item":"Ghost of Tsushima","price":22,"n":54},{"type":"trade","day":15,"platform":"PS5","item":"Ratchet & Clank: Rift Apart","price":51,"n":55},{"type":"member","day":15,"platform":"Switch","item":"Splatoon 3","price":28,"n":56},{"type":"swap","day":16,"platform":"PS5 / PS4","item":"Call of Duty: MW3  ⇄  Uncharted 4","price":37,"n":57},{"type":"swap","day":16,"platform":"PS4 / PS5","item":"The Witcher 3  ⇄  Gran Turismo 7","price":36,"n":58},{"type":"buy","day":17,"platform":"PS4","item":"Call of Duty: Modern Warfare","price":19,"n":59},{"type":"buy","day":18,"platform":"PS5","item":"Gran Turismo 7","price":49,"n":60},{"type":"trade","day":18,"platform":"Xbox","item":"Gears 5","price":19,"n":61},{"type":"trade","day":18,"platform":"PS5","item":"Horizon Forbidden West","price":40,"n":62},{"type":"swap","day":18,"platform":"Switch / Xbox","item":"Metroid Dread  ⇄  Forza Horizon 5","price":30,"n":63},{"type":"swap","day":18,"platform":"PS4 / PS5","item":"Red Dead Redemption 2  ⇄  Horizon Forbidden West","price":35,"n":64},{"type":"member","day":20,"platform":"PS4","item":"DualShock 4 controller","price":22,"n":65},{"type":"trade","day":21,"platform":"PS5","item":"God of War Ragnarök","price":28,"n":66},{"type":"swap","day":21,"platform":"PS4","item":"Grand Theft Auto V  ⇄  The Witcher 3","price":17,"n":67},{"type":"member","day":21,"platform":"PS4","item":"Persona 5","price":17,"n":68},{"type":"trade","day":22,"platform":"PS4","item":"FIFA 23","price":15,"n":69},{"type":"swap","day":22,"platform":"PS5 / Xbox","item":"Gran Turismo 7  ⇄  Red Dead Redemption 2","price":24,"n":70},{"type":"member","day":22,"platform":"Switch","item":"Animal Crossing: New Horizons","price":45,"n":71},{"type":"member","day":22,"platform":"PS4","item":"Resident Evil 2","price":13,"n":72},{"type":"buy","day":23,"platform":"PS5","item":"Hogwarts Legacy","price":54,"n":73},{"type":"trade","day":23,"platform":"PS4","item":"Horizon Zero Dawn","price":17,"n":74},{"type":"trade","day":23,"platform":"PS4","item":"Resident Evil 2","price":11,"n":75},{"type":"member","day":23,"platform":"Switch","item":"Metroid Dread","price":39,"n":76},{"type":"member","day":23,"platform":"Xbox","item":"Xbox wireless controller","price":34,"n":77},{"type":"buy","day":24,"platform":"PS4","item":"Resident Evil 2","price":25,"n":78},{"type":"swap","day":24,"platform":"Switch","item":"Luigi's Mansion 3  ⇄  Splatoon 3","price":26,"n":79},{"type":"buy","day":25,"platform":"PS4","item":"Days Gone","price":11,"n":80},{"type":"buy","day":25,"platform":"Xbox","item":"Red Dead Redemption 2","price":12,"n":81},{"type":"member","day":26,"platform":"Switch","item":"Switch Pro Controller","price":41,"n":82},{"type":"member","day":26,"platform":"Switch","item":"Extra Joy-Con pair","price":59,"n":83},{"type":"buy","day":27,"platform":"PS4","item":"Resident Evil 2","price":19,"n":84},{"type":"buy","day":27,"platform":"PS4","item":"Persona 5","price":18,"n":85},{"type":"trade","day":27,"platform":"PS4","item":"Marvel's Spider-Man","price":15,"n":86},{"type":"swap","day":27,"platform":"PS4","item":"Resident Evil 2  ⇄  Grand Theft Auto V","price":22,"n":87},{"type":"member","day":27,"platform":"PS5","item":"Demon's Souls","price":49,"n":88},{"type":"member","day":27,"platform":"PS4","item":"Marvel's Spider-Man","price":20,"n":89},{"type":"member","day":27,"platform":"PS5","item":"Horizon Forbidden West","price":36,"n":90},{"type":"member","day":27,"platform":"Xbox","item":"FIFA 23","price":15,"n":91},{"type":"buy","day":28,"platform":"Switch","item":"Super Smash Bros. Ultimate","price":27,"n":92},{"type":"member","day":28,"platform":"PS4","item":"Uncharted 4","price":14,"n":93},{"type":"member","day":28,"platform":"PS4","item":"Grand Theft Auto V","price":10,"n":94},{"type":"buy","day":29,"platform":"PS5","item":"Hogwarts Legacy","price":36,"n":95},{"type":"buy","day":29,"platform":"PS5","item":"Horizon Forbidden West","price":48,"n":96},{"type":"buy","day":29,"platform":"Xbox","item":"Forza Horizon 5","price":12,"n":97},{"type":"swap","day":29,"platform":"Xbox / PS5","item":"Halo Infinite  ⇄  Returnal","price":20,"n":98},{"type":"member","day":29,"platform":"PS4","item":"Resident Evil 2","price":24,"n":99},{"type":"trade","day":30,"platform":"PS5","item":"God of War Ragnarök","price":54,"n":100}];
+const DEF = {cashPct:45, creditPct:50, cond:90, cashShare:60, commission:10, swapFee:3, deliveryFee:4, courierCost:3, pickupShare:40, shrink:3, sellThrough:85, monthly:100, growth:8, fixed:150};
+const FIELDS = [
+  ['cashPct','Buy-back rate, cash','%','of resale value'],
+  ['creditPct','Buy-back rate, credit','%','of resale value'],
+  ['cond','Average condition factor','%','Good = 90%'],
+  ['cashShare','Sellers who take cash','%','the rest take credit'],
+  ['commission','Member commission','%','on the seller\'s price'],
+  ['swapFee','Swap fee per side','$',''],
+  ['deliveryFee','Delivery fee charged','$','paid by the buyer'],
+  ['courierCost','Courier cost per trip','$','what a trip costs you'],
+  ['pickupShare','Customers needing pickup','%','the rest drop off at your hub'],
+  ['shrink','Loss, returns, fraud','%','of item value'],
+  ['sellThrough','Bought items resold in the month','%',''],
+  ['monthly','Transactions in month 1','#','for the 12-month view'],
+  ['growth','Monthly growth','%',''],
+  ['fixed','Fixed monthly costs','$','hosting, packaging, phone']
+];
+const TYPES = {buy:['Buy and sell','--c-buy'], trade:['Trade-in','--c-trade'], swap:['Swap','--c-swap'], member:['Member sale','--c-member']};
+let A = Object.assign({}, DEF), filter = 'all';
+
+const ceilHalf = x => Math.ceil(Math.round(x * 100) / 50) / 2;
+const usd = (n, d = 0) => (n < -0.005 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cls = n => n < -0.005 ? 'neg' : 'pos';
+
+function calc(r, a) {
+  const P = r.price, pc = a.cond / 100, cash = a.cashPct / 100, cred = a.creditPct / 100, cs = a.cashShare / 100;
+  const pk = a.pickupShare / 100, sh = a.shrink / 100, st = a.sellThrough / 100, fee = a.deliveryFee, cc = a.courierCost;
+  const blended = P * pc * (cash * cs + cred * (1 - cs));
+  const o = {sales: 0, profit: 0, cashOut: 0, credit: 0, owed: 0, pipeline: 0, flow: ''};
+  if (r.type === 'buy') {
+    o.cashOut = P * pc * cash * cs;
+    o.credit = P * pc * cred * (1 - cs);
+    o.sales = st * (P + fee);
+    o.profit = st * (P - blended - sh * P + fee - cc) - pk * cc;
+    o.flow = 'We pay ' + usd(P * pc * cash, 2) + ' cash or ' + usd(P * pc * cred, 2) + ' credit; resell at ' + usd(P);
+  } else if (r.type === 'trade') {
+    const creditIn = P * pc * cred;
+    o.credit = creditIn;
+    o.sales = P + fee;
+    o.profit = P - blended - sh * P + fee - cc - pk * cc;
+    o.pipeline = st * (P - creditIn - sh * P + fee - cc);
+    o.flow = 'Credit ' + usd(creditIn, 2) + ' + customer pays ' + usd(P - creditIn + fee, 2);
+  } else if (r.type === 'swap') {
+    o.sales = 2 * a.swapFee;
+    o.profit = 2 * a.swapFee - 4 * pk * cc;
+    o.flow = '2 x ' + usd(a.swapFee) + ' fee';
+  } else {
+    const B = ceilHalf(P * (1 + a.commission / 100));
+    o.sales = B + fee;
+    o.owed = P;
+    o.profit = (B - P) + fee - pk * cc - cc - sh * P;
+    o.flow = 'Buyer pays ' + usd(B, 2) + ' + ' + usd(fee) + '; seller gets ' + usd(P);
+  }
+  return o;
+}
+
+function run() {
+  const res = DATA.map(r => ({r, o: calc(r, A)}));
+  const sum = (arr, k) => arr.reduce((t, x) => t + x.o[k], 0);
+  const tot = {sales: sum(res, 'sales'), profit: sum(res, 'profit'), cashOut: sum(res, 'cashOut'), credit: sum(res, 'credit'), owed: sum(res, 'owed'), pipeline: sum(res, 'pipeline')};
+  const by = {};
+  Object.keys(TYPES).forEach(t => {
+    const x = res.filter(y => y.r.type === t);
+    by[t] = {n: x.length, sales: sum(x, 'sales'), profit: sum(x, 'profit'), cashOut: sum(x, 'cashOut'), credit: sum(x, 'credit'), owed: sum(x, 'owed'), pipeline: sum(x, 'pipeline'), value: x.reduce((s, y) => s + y.r.price, 0)};
+  });
+  return {res, tot, by};
+}
+
+function kpis(m) {
+  const n = DATA.length;
+  const items = [
+    ['Customers pay us', usd(m.tot.sales), 'gross sales, fees and delivery included'],
+    ['Our profit', usd(m.tot.profit), 'before fixed costs', 'main'],
+    ['Profit per transaction', usd(m.tot.profit / n, 2), 'average of ' + n],
+    ['Cash paid to sellers', usd(m.tot.cashOut), 'buy-back cash'],
+    ['Credit issued', usd(m.tot.credit), 'money you owe in the shop'],
+    ['Owed to members', usd(m.tot.owed), 'paid after delivery'],
+    ['Pipeline profit', usd(m.tot.pipeline), 'when traded-in games resell']
+  ];
+  document.getElementById('kpis').innerHTML = items.map(i => '<div class="kpi ' + (i[3] || '') + '"><div class="v ' + (i[0] === 'Our profit' ? cls(m.tot.profit) : '') + '">' + i[1] + '</div><div class="l"><strong>' + i[0] + '</strong><br>' + i[2] + '</div></div>').join('');
+}
+
+function streams(m) {
+  let h = '<thead><tr><th>Stream</th><th class="r">Trans.</th><th class="r">Buyers pay</th><th class="r">Profit</th><th class="r">Per trans.</th></tr></thead><tbody>';
+  Object.keys(TYPES).forEach(t => {
+    const s = m.by[t];
+    h += '<tr><td><span class="dot" style="background:var(' + TYPES[t][1] + ')"></span>' + TYPES[t][0] + '</td><td class="r">' + s.n + '</td><td class="r">' + usd(s.sales) + '</td><td class="r ' + cls(s.profit) + '">' + usd(s.profit) + '</td><td class="r ' + cls(s.profit) + '">' + usd(s.profit / s.n, 2) + '</td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td>Total</td><td class="r">' + DATA.length + '</td><td class="r">' + usd(m.tot.sales) + '</td><td class="r ' + cls(m.tot.profit) + '">' + usd(m.tot.profit) + '</td><td class="r">' + usd(m.tot.profit / DATA.length, 2) + '</td></tr></tfoot>';
+  document.getElementById('streams').innerHTML = h;
+}
+
+function bars(el, labels, values, colors, fmt) {
+  const W = 480, H = 230, L = 36, B = 34, T = 14, n = values.length, gap = 10;
+  const max = Math.max(0, ...values), min = Math.min(0, ...values), span = (max - min) || 1;
+  const y = v => T + (H - T - B) * (max - v) / span;
+  const bw = (W - L - 8) / n - gap;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Bar chart">';
+  s += '<line class="ax" x1="' + L + '" x2="' + W + '" y1="' + y(0) + '" y2="' + y(0) + '"/>';
+  values.forEach((v, i) => {
+    const x = L + i * (bw + gap) + gap / 2, y0 = y(0), y1 = y(v);
+    s += '<rect x="' + x + '" y="' + Math.min(y0, y1) + '" width="' + bw + '" height="' + Math.max(1, Math.abs(y0 - y1)) + '" rx="3" fill="' + (colors[i] || 'var(--cyan)') + '"/>';
+    s += '<text x="' + (x + bw / 2) + '" y="' + (v >= 0 ? y1 - 4 : y1 + 12) + '" text-anchor="middle">' + fmt(v) + '</text>';
+    s += '<text x="' + (x + bw / 2) + '" y="' + (H - 12) + '" text-anchor="middle">' + labels[i] + '</text>';
+  });
+  document.getElementById(el).innerHTML = s + '</svg>';
+}
+
+function insights(m) {
+  const list = Object.keys(TYPES).map(t => ({t, pp: m.by[t].profit / m.by[t].n}));
+  const sorted = list.slice().sort((a, b) => b.pp - a.pp);
+  const out = [];
+  out.push('Best earner per transaction: <strong>' + TYPES[sorted[0].t][0] + '</strong> at ' + usd(sorted[0].pp, 2) + '. Weakest: <strong>' + TYPES[sorted[3].t][0] + '</strong> at ' + usd(sorted[3].pp, 2) + '.');
+  list.filter(x => x.pp < 0).forEach(x => out.push('<span class="neg"><strong>' + TYPES[x.t][0] + ' loses money</strong></span> at these settings: the fees and commission do not cover the courier trips. Raise the fee or minimum order, batch pickups, or use a drop-off point.'));
+  const swap = m.by.swap.profit / m.by.swap.n;
+  if (swap >= 0 && swap < 2) out.push('Swaps earn only ' + usd(swap, 2) + ' each after logistics. Their value is bringing people back to buy, not the fee itself.');
+  out.push('Credit issued (' + usd(m.tot.credit) + ') is stock you must be able to honour; keep it below the resale value of what you hold.');
+  out.push('Stock pipeline: traded-in games are worth about ' + usd(m.tot.pipeline) + ' more profit once they resell, which is not in the headline profit.');
+  document.getElementById('insights').innerHTML = out.map(x => '<li>' + x + '</li>').join('');
+}
+
+function months(m) {
+  const ppt = m.tot.profit / DATA.length, spt = m.tot.sales / DATA.length;
+  let cum = 0, h = '<thead><tr><th>Month</th><th class="r">Trans.</th><th class="r">Sales</th><th class="r">Profit after costs</th><th class="r">Cumulative</th></tr></thead><tbody>';
+  const vals = [], labs = [];
+  let ts = 0, tp = 0, tt = 0;
+  for (let i = 1; i <= 12; i++) {
+    const tx = Math.round(A.monthly * Math.pow(1 + A.growth / 100, i - 1));
+    const sales = tx * spt, profit = tx * ppt - A.fixed;
+    cum += profit; ts += sales; tp += profit; tt += tx;
+    vals.push(profit); labs.push('M' + i);
+    h += '<tr><td>Month ' + i + '</td><td class="r">' + tx + '</td><td class="r">' + usd(sales) + '</td><td class="r ' + cls(profit) + '">' + usd(profit) + '</td><td class="r ' + cls(cum) + '">' + usd(cum) + '</td></tr>';
+  }
+  h += '</tbody><tfoot><tr><td>Year</td><td class="r">' + tt + '</td><td class="r">' + usd(ts) + '</td><td class="r ' + cls(tp) + '">' + usd(tp) + '</td><td class="r"></td></tr></tfoot>';
+  document.getElementById('months').innerHTML = h;
+  bars('chartMonth', labs, vals, vals.map(v => v >= 0 ? 'var(--c-trade)' : 'var(--neg)'), v => Math.abs(v) >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v));
+}
+
+function table(m) {
+  document.getElementById('filters').innerHTML = [['all', 'All 100']].concat(Object.keys(TYPES).map(t => [t, TYPES[t][0] + ' (' + m.by[t].n + ')'])).map(f => '<button type="button" data-f="' + f[0] + '" class="' + (filter === f[0] ? 'on' : '') + '">' + f[1] + '</button>').join('');
+  document.querySelectorAll('#filters button').forEach(b => b.onclick = () => { filter = b.dataset.f; table(m); });
+  const rows = m.res.filter(x => filter === 'all' || x.r.type === filter);
+  let h = '<thead><tr><th>#</th><th>Day</th><th>Type</th><th>Item</th><th>Platform</th><th class="r">Value</th><th>Money flow</th><th class="r">Buyers pay</th><th class="r">Our profit</th></tr></thead><tbody>';
+  rows.forEach(x => {
+    h += '<tr><td>' + x.r.n + '</td><td>' + x.r.day + '</td><td><span class="dot" style="background:var(' + TYPES[x.r.type][1] + ')"></span>' + TYPES[x.r.type][0] + '</td><td>' + esc(x.r.item) + '</td><td>' + esc(x.r.platform) + '</td><td class="r">' + usd(x.r.price) + '</td><td>' + esc(x.o.flow) + '</td><td class="r">' + usd(x.o.sales, 2) + '</td><td class="r ' + cls(x.o.profit) + '">' + usd(x.o.profit, 2) + '</td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td colspan="7">' + rows.length + ' transactions</td><td class="r">' + usd(rows.reduce((t, x) => t + x.o.sales, 0)) + '</td><td class="r">' + usd(rows.reduce((t, x) => t + x.o.profit, 0)) + '</td></tr></tfoot>';
+  document.getElementById('rows').innerHTML = h;
+}
+
+function render() {
+  const m = run();
+  kpis(m); streams(m);
+  bars('chartStream', Object.keys(TYPES).map(t => TYPES[t][0].split(' ')[0]), Object.keys(TYPES).map(t => m.by[t].profit / m.by[t].n), Object.keys(TYPES).map(t => 'var(' + TYPES[t][1] + ')'), v => usd(v, 2));
+  insights(m); months(m); table(m);
+  window.__m = m;
+}
+
+function build() {
+  document.getElementById('assump').innerHTML = FIELDS.map(f => '<label class="f">' + f[1] + '<span class="h">' + f[3] + '</span><span class="in"><input type="number" step="any" min="0" data-k="' + f[0] + '" value="' + A[f[0]] + '"><em>' + f[2] + '</em></span></label>').join('');
+  document.querySelectorAll('#assump input').forEach(i => i.oninput = () => { const v = parseFloat(i.value); A[i.dataset.k] = isNaN(v) ? 0 : v; render(); });
+}
+document.getElementById('reset').onclick = () => { A = Object.assign({}, DEF); build(); render(); };
+build(); render();
+</script>
+</body>
+</html>

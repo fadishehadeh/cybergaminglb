@@ -1,43 +1,63 @@
-name: Deploy to cPanel
+name: Deploy marketplace to cPanel
 
+# Deploys the PHP marketplace in marketplace/. Code only: the server's .env, uploads/ and logs are never touched.
 on:
   push:
     branches:
       - main
-      - claude/clever-einstein-0wytmq
+    paths:
+      - 'marketplace/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: marketplace
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up PHP 8.1
+        uses: shivammathur/setup-php@v2
         with:
-          node-version: 20
-          cache: npm
+          php-version: '8.1'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Lint PHP
+        run: |
+          find app routes config database public/index.php -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+          echo "PHP syntax OK"
 
-      - name: Build static export
-        run: npm run build
+      - name: Build archives
+        run: |
+          tar czf /tmp/cg-app.tgz --exclude='storage/logs/*' --exclude='.env' app config database routes
+          tar czf /tmp/cg-public.tgz -C public --exclude='./uploads' .
 
-      - name: Deploy to cPanel via rsync
+      - name: Deploy over SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
         run: |
+          PORT="${DEPLOY_PORT:-21098}"
           mkdir -p ~/.ssh
           echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${DEPLOY_PORT:-21098}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${DEPLOY_PORT:-21098} -o StrictHostKeyChecking=accept-new" \
-            out/ \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:~/cybergaminglb.com/"
+          ssh-keyscan -p "$PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          scp -i ~/.ssh/deploy_key -P "$PORT" /tmp/cg-app.tgz /tmp/cg-public.tgz "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
+          ssh -i ~/.ssh/deploy_key -p "$PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" '
+            set -e
+            mkdir -p ~/cybergaminglb-app/storage/logs ~/cybergaminglb.com/uploads/products
+            cd ~/cybergaminglb-app && rm -rf app routes config && tar xzf /tmp/cg-app.tgz
+            cd ~/cybergaminglb.com && rm -rf assets && tar xzf /tmp/cg-public.tgz
+            rm -f /tmp/cg-app.tgz /tmp/cg-public.tgz
+            cd ~/cybergaminglb-app && php database/migrate.php
+            curl -sk -o /dev/null -w "live check: HTTP %{http_code}\n" https://cybergaminglb.com/
+          '

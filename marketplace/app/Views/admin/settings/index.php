@@ -1,0 +1,217 @@
+<?php
+use App\Modules\Admin\Forms;
+
+$pageTitle = 'Settings';
+$nav = 'settings';
+$v = static fn (string $k) => Forms::val($k, $values[$k] ?? '');
+$waIsPlaceholder = preg_replace('/\D+/', '', $values['whatsapp_number']) === '961';
+?>
+<div class="page-head">
+    <div>
+        <h1>Settings</h1>
+        <p class="muted">Money rules and shop details. Changes apply straight away.</p>
+    </div>
+</div>
+
+<?php $digitalOn = digital_enabled(); ?>
+<section class="card digital-card <?= $digitalOn ? 'is-on' : 'is-off' ?>" id="digital">
+    <div class="card-head">
+        <h2>Digital goods &mdash; gift cards &amp; Steam gifts</h2>
+        <span class="digital-state <?= $digitalOn ? 'on' : 'off' ?>" role="status">Digital: <?= $digitalOn ? 'ON' : 'OFF' ?></span>
+    </div>
+    <div class="card-body">
+        <p><strong>OFF:</strong> gift cards and Steam gifts are hidden everywhere on the website (shop, search, home, sitemap, direct links).
+            <strong>ON:</strong> they appear.</p>
+        <p class="muted">Digital items are house stock, paid in advance by OMT/Whish. The code is sent on WhatsApp only after you confirm the payment. You always see them here in the admin, whatever the switch says.</p>
+
+        <div class="digital-stats">
+            <div><strong><?= (int) $digital['total'] ?></strong><span>digital products</span></div>
+            <div><strong><?= (int) $digital['active'] ?></strong><span>active</span></div>
+            <div><strong><?= (int) $digital['drafts'] ?></strong><span>hidden / pending drafts</span></div>
+        </div>
+
+        <div class="actions">
+            <?php if ($digitalOn): ?>
+                <form method="post" action="<?= e(url('/admin/settings/digital')) ?>" class="inline-form">
+                    <?= csrf_field() ?><input type="hidden" name="digital_enabled" value="0">
+                    <button class="btn btn-danger btn-lg" type="submit">Turn digital goods OFF</button>
+                </form>
+            <?php else: ?>
+                <form method="post" action="<?= e(url('/admin/settings/digital')) ?>" class="inline-form"
+                      data-confirm="<?= e('Turn digital goods ON? ' . $digital['live'] . ' active digital product' . ($digital['live'] === 1 ? '' : 's') . ' will appear on the website (shop, search, home and sitemap). Make sure prices and stock are right, and that you can process prepaid orders on WhatsApp.') ?>">
+                    <?= csrf_field() ?><input type="hidden" name="digital_enabled" value="1">
+                    <button class="btn btn-primary btn-lg" type="submit">Turn digital goods ON</button>
+                </form>
+            <?php endif; ?>
+            <a class="btn" href="<?= e(url('/admin/products?kind=digital')) ?>">View digital products</a>
+        </div>
+
+        <h3 class="sub-title">Starter catalogue</h3>
+        <p class="hint">Adds about 14 gift cards and Steam gifts (PlayStation, Steam Wallet, Xbox, Nintendo eShop, PlayStation Plus) as <strong>hidden drafts</strong> with a placeholder price of face value + 5%. They stay hidden until you edit the prices and publish each one, and the switch above is ON. Pressing it again never creates duplicates.</p>
+        <form method="post" action="<?= e(url('/admin/settings/digital/starter')) ?>" class="inline-form">
+            <?= csrf_field() ?>
+            <button class="btn" type="submit">Add starter gift cards (as drafts)</button>
+        </form>
+    </div>
+</section>
+
+<form method="post" action="<?= e(url('/admin/settings')) ?>">
+    <?= csrf_field() ?>
+    <input type="hidden" name="_form" value="1">
+
+    <section class="card">
+        <div class="card-head"><h2>Commission &amp; pricing</h2></div>
+        <div class="card-body form-grid">
+            <div class="field">
+                <label for="commission_pct">Default commission (%)</label>
+                <input type="text" inputmode="decimal" id="commission_pct" name="commission_pct" value="<?= e($v('commission_pct')) ?>" required data-example="commission">
+                <small class="hint">Added on top of the seller's price. Example: a $10 seller price with <span data-ex-pct>15</span>% commission is listed at <strong data-ex-out>$12</strong> (rounded up to $0.50). Sellers can override this on their own page. Changing it re-prices every seller listing.</small>
+            </div>
+            <div class="field">
+                <label for="member_commission_pct">Member commission (%)</label>
+                <input type="text" inputmode="decimal" id="member_commission_pct" name="member_commission_pct" value="<?= e($v('member_commission_pct')) ?>" required data-example="member-commission">
+                <small class="hint">Commission on member-to-member sales (customers who list games for other members). Example: a $10 member price with <span data-ex-mpct>10</span>% commission is listed at <strong data-ex-mout>$11</strong>. A member with their own override keeps it. Changing it re-prices every member listing.</small>
+            </div>
+            <div class="field">
+                <label for="buyback_pct">Buy-back (%)</label>
+                <input type="text" inputmode="decimal" id="buyback_pct" name="buyback_pct" value="<?= e($v('buyback_pct')) ?>" required>
+                <small class="hint">What we pay a customer for a used item, as a share of its resale price. Example: a $20 game at 45% is bought for $9.</small>
+            </div>
+            <div class="field">
+                <label for="tradein_pct">Trade-in credit (%)</label>
+                <input type="text" inputmode="decimal" id="tradein_pct" name="tradein_pct" value="<?= e($v('tradein_pct')) ?>" required>
+                <small class="hint">Store credit for a trade-in, as a share of resale price. Example: a $20 game at 50% gives $10 credit.</small>
+            </div>
+            <div class="field">
+                <label for="swap_fee">Swap fee ($)</label>
+                <input type="text" inputmode="decimal" id="swap_fee" name="swap_fee" value="<?= e($v('swap_fee')) ?>" required>
+                <small class="hint">Flat fee charged for running a customer-to-customer swap through the hub.</small>
+            </div>
+        </div>
+    </section>
+
+    <section class="card" id="delivery">
+        <div class="card-head"><h2>Delivery fees</h2></div>
+        <div class="card-body form-grid">
+            <div class="field">
+                <label for="delivery_fee">Default delivery fee ($)</label>
+                <input type="text" inputmode="decimal" id="delivery_fee" name="delivery_fee" value="<?= e($v('delivery_fee')) ?>" required>
+                <small class="hint">Used when the customer's area is not one of the zones below (or the zone is switched off). Example: with a $4 default, a delivery to an unlisted area adds $4 to the order.</small>
+            </div>
+            <div class="field">
+                <label for="free_delivery_over">Free delivery over ($)</label>
+                <input type="text" inputmode="decimal" id="free_delivery_over" name="free_delivery_over" value="<?= e($v('free_delivery_over')) ?>" required data-example="free-delivery">
+                <small class="hint">Orders with an items subtotal at or above this get free delivery. <strong>0 turns it off.</strong> Example: <span data-ex-free>set to 0: every order pays its zone fee</span>.</small>
+            </div>
+        </div>
+    </section>
+    <section class="card" id="buyback-factors">
+        <div class="card-head"><h2>Buy-back condition factors</h2></div>
+        <div class="card-body">
+            <p class="hint">What we pay for a used item depends on its condition. Each factor is a <strong>percentage (0 to 100) of the standard buy-back and trade-in %</strong> above. Example: with buy-back at 45% and "Good" at 90%, a Good item is bought at 40.5% of its resale price.</p>
+            <div class="form-grid">
+                <?php foreach (\App\Modules\Admin\SettingsController::FACTORS as $key => [$label]): ?>
+                    <div class="field">
+                        <label for="<?= e($key) ?>"><?= e($label) ?> condition (%)</label>
+                        <input type="text" inputmode="decimal" id="<?= e($key) ?>" name="<?= e($key) ?>" value="<?= e($v($key)) ?>" required data-factor="<?= e($label) ?>">
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="example-box" data-buyback-example data-price="<?= e((string) $example['price']) ?>">
+                <h3>Worked example: a $<?= e((string) (int) $example['price']) ?> game (resale price)</h3>
+                <table>
+                    <thead><tr><th>Condition</th><th class="num">Factor</th><th class="num">We pay (cash)</th><th class="num">Store credit</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($example['rows'] as $row): ?>
+                        <tr class="<?= $row['label'] === 'Good' ? 'hl' : '' ?>" data-ex-row="<?= e($row['label']) ?>">
+                            <td><?= e($row['label']) ?></td>
+                            <td class="num" data-ex-factor><?= e(Forms::pct($row['factor'])) ?></td>
+                            <td class="num" data-ex-cash><?= e(money($row['cash'])) ?></td>
+                            <td class="num" data-ex-credit><?= e(money($row['credit'])) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p class="muted" data-ex-sentence>A $<?= e((string) (int) $example['price']) ?> game in Good condition: we pay <strong data-ex-good-cash><?= e(money(\App\Support\Pricing::buybackOffer($example['price'], 'Good'))) ?></strong>, or credit <strong data-ex-good-credit><?= e(money(\App\Support\Pricing::tradeCredit($example['price'], 'Good'))) ?></strong>. Amounts are rounded down to the next $0.50. The table above shows the saved settings and updates as you type.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card" id="whatsapp">
+        <div class="card-head"><h2>Shop details</h2></div>
+        <div class="card-body form-grid">
+            <div class="field">
+                <label for="whatsapp_number">WhatsApp number</label>
+                <input type="text" inputmode="numeric" id="whatsapp_number" name="whatsapp_number" value="<?= e($v('whatsapp_number')) ?>" placeholder="96170123456">
+                <small class="hint <?= $waIsPlaceholder ? 'text-warn' : '' ?>">Digits only, with country code, no + or spaces (e.g. 96170123456). Used for every "chat on WhatsApp" button.<?= $waIsPlaceholder ? ' It is still the placeholder 961.' : '' ?></small>
+            </div>
+            <div class="field">
+                <label for="contact_email">Contact email</label>
+                <input type="email" id="contact_email" name="contact_email" value="<?= e($v('contact_email')) ?>" maxlength="190">
+            </div>
+            <div class="field">
+                <label for="site_name">Site name</label>
+                <input type="text" id="site_name" name="site_name" value="<?= e($v('site_name')) ?>" maxlength="100" required>
+            </div>
+            <div class="field">
+                <label for="instagram_url">Instagram URL</label>
+                <input type="url" id="instagram_url" name="instagram_url" value="<?= e($v('instagram_url')) ?>" maxlength="255" placeholder="https://www.instagram.com/...">
+            </div>
+            <div class="field span-2">
+                <label for="tagline">Tagline</label>
+                <input type="text" id="tagline" name="tagline" value="<?= e($v('tagline')) ?>" maxlength="200">
+            </div>
+            <div class="field span-2">
+                <label for="hub_address">Hub address</label>
+                <input type="text" id="hub_address" name="hub_address" value="<?= e($v('hub_address')) ?>" maxlength="255">
+                <small class="hint">Where customers drop off and collect items for swaps and buy-backs.</small>
+            </div>
+        </div>
+    </section>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-lg">Save settings</button>
+    </div>
+</form>
+
+<section class="card" id="zones">
+    <div class="card-head"><h2>Delivery zones</h2><small class="muted">Each zone has its own fee. Customers pick their zone when they order.</small></div>
+    <div class="card-body">
+        <p class="hint">Example: with Beirut at $3, a $30 order to Beirut costs $33 in total. Deactivating a zone hides it from customers; it is never deleted. Lower sort numbers are listed first.</p>
+        <?php if (!$zones): ?>
+            <p class="empty-inline">No zones yet. Every delivery uses the default fee. Add your first zone below.</p>
+        <?php else: ?>
+            <div class="zone-head" aria-hidden="true"><span>Zone</span><span>Fee ($)</span><span>Sort</span><span>Active</span><span></span></div>
+            <?php foreach ($zones as $z): ?>
+                <form method="post" action="<?= e(url('/admin/delivery/zones/' . $z['id'])) ?>" class="zone-row<?= (int) $z['is_active'] ? '' : ' zone-off' ?>">
+                    <?= csrf_field() ?>
+                    <input type="text" name="name" value="<?= e($z['name']) ?>" maxlength="80" required aria-label="Zone name">
+                    <input type="text" inputmode="decimal" name="fee" value="<?= e($z['fee']) ?>" required aria-label="Fee for <?= e($z['name']) ?>">
+                    <input type="text" inputmode="numeric" name="sort_order" value="<?= (int) $z['sort_order'] ?>" aria-label="Sort order">
+                    <label class="check"><input type="checkbox" name="is_active" value="1" <?= (int) $z['is_active'] ? 'checked' : '' ?>> <span class="zone-active-label">Active</span></label>
+                    <button class="btn btn-sm" type="submit">Save</button>
+                </form>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
+        <h3 class="sub-title">Add a zone</h3>
+        <form method="post" action="<?= e(url('/admin/delivery/zones')) ?>" class="zone-row zone-new">
+            <?= csrf_field() ?>
+            <input type="text" name="name" value="<?= e(Forms::val('new_zone_name', '')) ?>" maxlength="80" placeholder="Zone name" required aria-label="New zone name">
+            <input type="text" inputmode="decimal" name="fee" value="<?= e(Forms::val('new_zone_fee', '')) ?>" placeholder="Fee" required aria-label="New zone fee">
+            <input type="text" inputmode="numeric" name="sort_order" value="<?= e(Forms::val('new_zone_sort', '')) ?>" placeholder="Sort" aria-label="New zone sort order">
+            <label class="check"><input type="checkbox" name="is_active" value="1" checked> <span class="zone-active-label">Active</span></label>
+            <button class="btn btn-primary btn-sm" type="submit">Add zone</button>
+        </form>
+    </div>
+</section>
+<section class="card">
+    <div class="card-head"><h2>Recalculate prices</h2></div>
+    <div class="card-body">
+        <p>Re-applies the current commission rules to every seller listing (using each seller's override if they have one). House stock is unaffected apart from $0.50 rounding. Orders already placed keep the prices they were sold at.</p>
+        <form method="post" action="<?= e(url('/admin/settings/recalculate')) ?>" data-confirm="Recalculate the buyer price of all products from the current commission settings?">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn">Recalculate all prices</button>
+        </form>
+    </div>
+</section>

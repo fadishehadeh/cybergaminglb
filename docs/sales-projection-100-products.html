@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberGaming Lebanon: projection for 100 products, with delivery costs</title>
+<style>
+:root{
+  --navy:#101a3f; --cyan:#1fb6e0; --cyan-d:#0a8aad;
+  --bg:#f8fafc; --card:#fff; --line:#e2e8f0; --text:#101a3f; --muted:#475569; --input:#fff;
+  --pos:#0f6e56; --neg:#a32d2d;
+  --c-used:#1fb6e0; --c-new:#0f6e56; --c-acc:#ba7517; --c-card:#534ab7; --c-member:#d4537e;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#0b1020;--card:#131a33;--line:#27314f;--text:#e8ecf8;--muted:#9aa7c7;--input:#0e1530;--cyan-d:#4fd0ee;--pos:#5dcaa5;--neg:#f09595;
+        --c-used:#4fd0ee;--c-new:#5dcaa5;--c-acc:#ef9f27;--c-card:#afa9ec;--c-member:#ed93b1}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 64px}
+header{border-bottom:3px solid var(--cyan);padding-bottom:18px;margin-bottom:22px}
+.kicker{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan-d);font-weight:600}
+h1{margin:0 0 6px;font-size:28px;line-height:1.2}
+h2{margin:36px 0 10px;font-size:21px}
+h3{margin:0 0 8px;font-size:16px}
+p{margin:0 0 10px}.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.note{border-left:5px solid var(--cyan)}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin:14px 0}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi .v{font-size:24px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi.main{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+.assump{display:grid;gap:10px 16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.group{grid-column:1/-1;font-weight:600;font-size:14px;margin-top:8px;color:var(--cyan-d)}
+label.f{display:block;font-size:13px;color:var(--muted)}
+label.f span.h{display:block;font-size:12px;opacity:.85}
+.in{display:flex;align-items:center;gap:6px;margin-top:3px}
+.in input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--text);font:inherit;font-variant-numeric:tabular-nums}
+.in input:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.in em{font-style:normal;color:var(--muted);font-size:13px;min-width:22px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:6px 12px}
+button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+@media (prefers-color-scheme: dark){button.on{background:var(--cyan);color:#0b1020;border-color:var(--cyan)}}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:rgba(31,182,224,.12);font-weight:600;position:sticky;top:0}
+td.r,th.r{text-align:right}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:600;border-top:2px solid var(--line)}
+tr.hl td{background:rgba(31,182,224,.10);font-weight:600}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.scroll{max-height:520px;overflow:auto}
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+svg{display:block;width:100%;height:auto}
+svg text{fill:var(--muted);font:12px system-ui,sans-serif}
+svg .ax{stroke:var(--line)}
+ul{margin:6px 0;padding-left:22px}li{margin:4px 0}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;background:rgba(31,182,224,.15)}
+.tag.rem{background:rgba(186,117,23,.18)}
+@media print{body{background:#fff}.tools,#reset{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="kicker">CyberGaming Lebanon · projection B, built 19 Sep 2026</p>
+  <h1>Projection for 100 products, with delivery costs</h1>
+  <p class="muted">100 items sold across used games, new games, accessories, gift cards and member sales, using the new delivery rules (own courier in Beirut and surroundings, third-party courier outside).</p>
+</header>
+
+<div class="card note">
+  <p style="margin:0"><strong>What is and isn't included.</strong> Your own 116 games are <strong>not</strong> counted. Used games and member items come from customers; new games, accessories and gift cards are bought from suppliers. Every delivery costs the courier price you set, and buyers pay the delivery fee for their area. All items are made-up examples with realistic Lebanese prices; this shows the shape of the business, it is not a forecast. Change any assumption and everything updates.</p>
+</div>
+
+<h2>1. Assumptions <button id="reset" type="button" style="margin-left:8px;font-size:13px">Reset to defaults</button></h2>
+<div class="card"><div class="assump" id="assump"></div></div>
+
+<h2>2. Results for the 100 products</h2>
+<div class="kpis" id="kpis"></div>
+<div class="grid2">
+  <div class="card"><h3>By product type</h3><div class="tw"><table id="cats"></table></div></div>
+  <div class="card"><h3>Profit per product, by type</h3><div id="chartCat"></div></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Reading the results</h3><ul id="insights"></ul></div>
+
+<h2>3. What delivery does to your profit</h2>
+<div class="grid2">
+  <div class="card"><h3>Courier cost per trip</h3><p class="muted">Total profit for the 100 products if a local courier trip costs...</p><div class="tw"><table id="sensCourier"></table></div></div>
+  <div class="card"><h3>Share of customers in Beirut and surroundings</h3><p class="muted">Total profit if this share of buyers and sellers is local...</p><div class="tw"><table id="sensLocal"></table></div></div>
+</div>
+
+<h2>4. Scaled up: 12 months</h2>
+<div class="card">
+  <p class="muted">Uses profit and sales per product from the mix above. Set starting volume, growth and fixed costs in the assumptions.</p>
+  <div class="grid2"><div id="chartMonth"></div><div class="tw scroll" style="max-height:420px"><table id="months"></table></div></div>
+</div>
+
+<h2>5. The 100 products</h2>
+<div class="tools" id="filters"></div>
+<div class="tw scroll"><table id="rows"></table></div>
+
+<h2>6. How each type is calculated</h2>
+<div class="card">
+  <ul>
+    <li><span class="dot" style="background:var(--c-used)"></span><strong>Used games (40):</strong> bought from customers (cash or credit, reduced by the condition factor) and resold. Profit = sale price − what we paid − shrinkage + delivery fee − courier cost − the cost of collecting from the seller. Every seller pays the $5 pickup from their credit, so pickups cost us little; the real risk is remote items rejected on inspection, where part of the return leg is never recovered.</li>
+    <li><span class="dot" style="background:var(--c-new)"></span><strong>New games (15):</strong> sealed copies bought from a supplier at a set margin.</li>
+    <li><span class="dot" style="background:var(--c-acc)"></span><strong>Accessories (15):</strong> controllers, headsets and cables bought from a supplier at a higher margin.</li>
+    <li><span class="dot" style="background:var(--c-card)"></span><strong>Gift cards (15):</strong> digital, so no courier and no delivery fee. Profit is the thin card margin minus expected fraud losses.</li>
+    <li><span class="dot" style="background:var(--c-member)"></span><strong>Member sales (15):</strong> the buyer pays the member's price plus our commission (rounded up to $0.50) plus the delivery fee. We pay for collecting and delivering.</li>
+  </ul>
+  <p class="muted" style="margin-bottom:0">Each product is assigned to a local or remote customer from a fixed random draw, so changing the local share moves the same products between zones.</p>
+</div>
+
+<footer>Prices, mix and rates are illustrations, not financial advice or a guarantee. Fixed monthly costs default to an assumed $150 and are editable.</footer>
+</div>
+
+<script>
+const DATA = [{"cat":"used","day":1,"u":0.639,"u2":0.318,"platform":"Switch","item":"Mario Kart 8 Deluxe","price":40,"n":1},{"cat":"card","day":1,"u":0.995,"u2":0.044,"platform":"PSN","item":"PlayStation Store card $50","price":52,"n":2},{"cat":"member","day":1,"u":0.844,"u2":0.931,"platform":"PS5","item":"Returnal","price":31,"n":3},{"cat":"used","day":2,"u":0.334,"u2":0.678,"platform":"Switch","item":"Zelda: Breath of the Wild","price":37,"n":4},{"cat":"used","day":2,"u":0.49,"u2":0.478,"platform":"Switch","item":"Super Mario Odyssey","price":37,"n":5},{"cat":"used","day":2,"u":0.384,"u2":0.358,"platform":"Switch","item":"Mario Kart 8 Deluxe","price":43,"n":6},{"cat":"used","day":3,"u":0.765,"u2":0.047,"platform":"Switch","item":"Super Smash Bros. Ultimate","price":34,"n":7},{"cat":"acc","day":3,"u":0.639,"u2":0.934,"platform":"Xbox","item":"Xbox wireless controller","price":48,"n":8},{"cat":"member","day":3,"u":0.446,"u2":0.865,"platform":"Xbox","item":"Forza Horizon 5","price":27,"n":9},{"cat":"used","day":4,"u":0.153,"u2":0.408,"platform":"Switch","item":"Splatoon 3","price":36,"n":10},{"cat":"used","day":5,"u":0.197,"u2":0.452,"platform":"PS4","item":"Bloodborne","price":14,"n":11},{"cat":"used","day":6,"u":0.668,"u2":0.982,"platform":"PS4","item":"Ghost of Tsushima","price":17,"n":12},{"cat":"new","day":6,"u":0.22,"u2":0.355,"platform":"PS4","item":"EA Sports FC 25 (sealed)","price":42,"n":13},{"cat":"acc","day":6,"u":0.57,"u2":0.871,"platform":"PS4","item":"DualShock 4 controller","price":29,"n":14},{"cat":"member","day":6,"u":0.413,"u2":0.28,"platform":"PS4","item":"DualShock 4 controller (used)","price":18,"n":15},{"cat":"used","day":7,"u":0.121,"u2":0.059,"platform":"Switch","item":"Animal Crossing: New Horizons","price":35,"n":16},{"cat":"used","day":7,"u":0.549,"u2":0.803,"platform":"Switch","item":"Super Mario Odyssey","price":42,"n":17},{"cat":"new","day":7,"u":0.656,"u2":0.933,"platform":"PS5","item":"Call of Duty: Black Ops 6 (sealed)","price":64,"n":18},{"cat":"new","day":7,"u":0.302,"u2":0.738,"platform":"Switch","item":"Mario Kart 8 Deluxe (sealed)","price":53,"n":19},{"cat":"acc","day":7,"u":0.955,"u2":0.382,"platform":"PS4","item":"DualShock 4 controller","price":31,"n":20},{"cat":"new","day":8,"u":0.446,"u2":0.583,"platform":"PS5","item":"EA Sports FC 25 (sealed)","price":66,"n":21},{"cat":"new","day":8,"u":0.528,"u2":0.486,"platform":"PS5","item":"Elden Ring (sealed)","price":63,"n":22},{"cat":"card","day":8,"u":0.581,"u2":0.19,"platform":"Xbox","item":"Xbox gift card $25","price":26,"n":23},{"cat":"used","day":9,"u":0.401,"u2":0.344,"platform":"PS5","item":"Ratchet & Clank: Rift Apart","price":39,"n":24},{"cat":"acc","day":9,"u":0.032,"u2":0.672,"platform":"PS5","item":"HDMI cable + stand","price":15,"n":25},{"cat":"card","day":9,"u":0.424,"u2":0.764,"platform":"PSN","item":"PlayStation Store card $50","price":52,"n":26},{"cat":"member","day":9,"u":0.66,"u2":0.094,"platform":"PS5","item":"Spider-Man: Miles Morales","price":27,"n":27},{"cat":"acc","day":10,"u":0.041,"u2":0.594,"platform":"Xbox","item":"Xbox wireless controller","price":39,"n":28},{"cat":"member","day":10,"u":0.639,"u2":0.118,"platform":"PS4","item":"FIFA 23","price":8,"n":29},{"cat":"member","day":10,"u":0.583,"u2":0.957,"platform":"Switch","item":"Mario Kart 8 Deluxe","price":33,"n":30},{"cat":"used","day":11,"u":0.173,"u2":0.757,"platform":"Xbox","item":"Halo Infinite","price":14,"n":31},{"cat":"card","day":11,"u":0.476,"u2":0.31,"platform":"Steam","item":"Steam Wallet card $20","price":21,"n":32},{"cat":"new","day":12,"u":0.527,"u2":0.302,"platform":"Switch","item":"Pokémon Scarlet (sealed)","price":56,"n":33},{"cat":"used","day":13,"u":0.149,"u2":0.25,"platform":"PS4","item":"Bloodborne","price":17,"n":34},{"cat":"card","day":13,"u":0.678,"u2":0.449,"platform":"PSN","item":"PlayStation Store card $25","price":26,"n":35},{"cat":"used","day":14,"u":0.762,"u2":0.832,"platform":"Switch","item":"Splatoon 3","price":34,"n":36},{"cat":"used","day":14,"u":0.244,"u2":0.252,"platform":"PS4","item":"Grand Theft Auto V","price":12,"n":37},{"cat":"used","day":14,"u":0.264,"u2":0.939,"platform":"PS4","item":"The Witcher 3","price":15,"n":38},{"cat":"new","day":14,"u":0.376,"u2":0.525,"platform":"PS5","item":"Spider-Man 2 (sealed)","price":70,"n":39},{"cat":"member","day":14,"u":0.34,"u2":0.636,"platform":"PS5","item":"Demon's Souls","price":37,"n":40},{"cat":"used","day":15,"u":0.601,"u2":0.775,"platform":"PS5","item":"Ratchet & Clank: Rift Apart","price":37,"n":41},{"cat":"new","day":15,"u":0.771,"u2":0.865,"platform":"PS5","item":"Spider-Man 2 (sealed)","price":72,"n":42},{"cat":"card","day":15,"u":0.795,"u2":0.924,"platform":"PSN","item":"PlayStation Store card $25","price":26,"n":43},{"cat":"member","day":15,"u":0.574,"u2":0.865,"platform":"Switch","item":"Super Smash Bros. Ultimate","price":33,"n":44},{"cat":"used","day":16,"u":0.227,"u2":0.787,"platform":"PS5","item":"Returnal","price":28,"n":45},{"cat":"new","day":16,"u":0.22,"u2":0.397,"platform":"Switch","item":"Zelda: Tears of the Kingdom (sealed)","price":66,"n":46},{"cat":"acc","day":16,"u":0.28,"u2":0.246,"platform":"PS4 / PS5","item":"Gaming headset","price":38,"n":47},{"cat":"used","day":17,"u":0.279,"u2":0.931,"platform":"PS5","item":"Ratchet & Clank: Rift Apart","price":32,"n":48},{"cat":"used","day":17,"u":0.509,"u2":0.649,"platform":"PS4","item":"The Last of Us Remastered","price":9,"n":49},{"cat":"used","day":17,"u":0.68,"u2":0.364,"platform":"PS4","item":"Uncharted 4","price":10,"n":50},{"cat":"used","day":17,"u":0.051,"u2":0.965,"platform":"PS5","item":"Demon's Souls","price":38,"n":51},{"cat":"new","day":17,"u":0.383,"u2":0.407,"platform":"Switch","item":"Mario Kart 8 Deluxe (sealed)","price":55,"n":52},{"cat":"new","day":17,"u":0.326,"u2":0.637,"platform":"PS5","item":"Spider-Man 2 (sealed)","price":68,"n":53},{"cat":"acc","day":17,"u":0.062,"u2":0.252,"platform":"PS4","item":"Charging dock","price":13,"n":54},{"cat":"card","day":17,"u":0.197,"u2":0.111,"platform":"Steam","item":"Steam Wallet card $50","price":52,"n":55},{"cat":"used","day":18,"u":0.119,"u2":0.065,"platform":"PS4","item":"FIFA 23","price":13,"n":56},{"cat":"new","day":18,"u":0.306,"u2":0.517,"platform":"PS5","item":"EA Sports FC 25 (sealed)","price":62,"n":57},{"cat":"acc","day":18,"u":0.102,"u2":0.929,"platform":"PS4","item":"DualShock 4 controller","price":28,"n":58},{"cat":"acc","day":18,"u":0.36,"u2":0.357,"platform":"PS4 / PS5","item":"Gaming headset","price":39,"n":59},{"cat":"card","day":18,"u":0.818,"u2":0.952,"platform":"Steam","item":"Steam Wallet card $20","price":21,"n":60},{"cat":"member","day":18,"u":0.323,"u2":0.666,"platform":"PS4","item":"DualShock 4 controller (used)","price":19,"n":61},{"cat":"used","day":19,"u":0.994,"u2":0.337,"platform":"Switch","item":"Luigi's Mansion 3","price":30,"n":62},{"cat":"used","day":19,"u":0.999,"u2":0.274,"platform":"PS5","item":"Hogwarts Legacy","price":40,"n":63},{"cat":"used","day":19,"u":0.051,"u2":0.761,"platform":"PS5","item":"God of War Ragnarök","price":41,"n":64},{"cat":"new","day":19,"u":0.278,"u2":0.157,"platform":"Switch","item":"Zelda: Tears of the Kingdom (sealed)","price":65,"n":65},{"cat":"acc","day":19,"u":0.09,"u2":0.494,"platform":"PS5","item":"DualSense controller","price":57,"n":66},{"cat":"card","day":19,"u":0.903,"u2":0.803,"platform":"PSN","item":"PlayStation Store card $10","price":10.5,"n":67},{"cat":"member","day":19,"u":0.648,"u2":0.47,"platform":"Switch","item":"Switch Pro Controller (used)","price":34,"n":68},{"cat":"member","day":19,"u":0.23,"u2":0.124,"platform":"PS5","item":"Returnal","price":34,"n":69},{"cat":"used","day":20,"u":0.107,"u2":0.187,"platform":"PS4","item":"Marvel's Spider-Man","price":14,"n":70},{"cat":"used","day":20,"u":0.418,"u2":0.165,"platform":"PS5","item":"Gran Turismo 7","price":29,"n":71},{"cat":"card","day":20,"u":0.04,"u2":0.792,"platform":"Switch","item":"Nintendo eShop card $25","price":26,"n":72},{"cat":"used","day":21,"u":0.313,"u2":0.849,"platform":"PS4","item":"Resident Evil 2","price":11,"n":73},{"cat":"used","day":21,"u":0.219,"u2":0.677,"platform":"PS4","item":"The Last of Us Remastered","price":12,"n":74},{"cat":"used","day":21,"u":0.472,"u2":0.026,"platform":"Switch","item":"Animal Crossing: New Horizons","price":34,"n":75},{"cat":"acc","day":21,"u":0.477,"u2":0.849,"platform":"PS4","item":"DualShock 4 controller","price":31,"n":76},{"cat":"card","day":21,"u":0.79,"u2":0.861,"platform":"Steam","item":"Steam Wallet card $50","price":52,"n":77},{"cat":"acc","day":22,"u":0.565,"u2":0.559,"platform":"PS5","item":"DualSense controller","price":48,"n":78},{"cat":"used","day":23,"u":0.187,"u2":0.933,"platform":"PS5","item":"Gran Turismo 7","price":31,"n":79},{"cat":"new","day":23,"u":0.038,"u2":0.535,"platform":"Switch","item":"Mario Kart 8 Deluxe (sealed)","price":58,"n":80},{"cat":"member","day":23,"u":0.157,"u2":0.353,"platform":"PS4","item":"DualShock 4 controller (used)","price":17,"n":81},{"cat":"used","day":24,"u":0.863,"u2":0.754,"platform":"PS5","item":"Spider-Man: Miles Morales","price":35,"n":82},{"cat":"card","day":24,"u":0.728,"u2":0.474,"platform":"Switch","item":"Nintendo eShop card $25","price":26,"n":83},{"cat":"used","day":25,"u":0.422,"u2":0.862,"platform":"Xbox","item":"Halo Infinite","price":18,"n":84},{"cat":"used","day":25,"u":0.862,"u2":0.692,"platform":"PS5","item":"Spider-Man: Miles Morales","price":36,"n":85},{"cat":"card","day":25,"u":0.225,"u2":0.247,"platform":"Steam","item":"Steam Wallet card $10","price":10.5,"n":86},{"cat":"member","day":25,"u":0.072,"u2":0.485,"platform":"PS4","item":"Days Gone","price":11,"n":87},{"cat":"card","day":26,"u":0.812,"u2":0.151,"platform":"PSN","item":"PlayStation Store card $25","price":26,"n":88},{"cat":"used","day":27,"u":0.124,"u2":0.2,"platform":"PS4","item":"Uncharted 4","price":8,"n":89},{"cat":"new","day":27,"u":0.227,"u2":0.494,"platform":"Switch","item":"Pokémon Scarlet (sealed)","price":51,"n":90},{"cat":"used","day":28,"u":0.361,"u2":0.125,"platform":"Switch","item":"Mario Kart 8 Deluxe","price":40,"n":91},{"cat":"used","day":28,"u":0.224,"u2":0.925,"platform":"Xbox","item":"Halo Infinite","price":14,"n":92},{"cat":"used","day":28,"u":0.686,"u2":0.757,"platform":"PS5","item":"Elden Ring","price":45,"n":93},{"cat":"acc","day":28,"u":0.016,"u2":0.322,"platform":"Switch","item":"Extra Joy-Con pair","price":62,"n":94},{"cat":"acc","day":28,"u":0.433,"u2":0.719,"platform":"PS5","item":"HDMI cable + stand","price":10,"n":95},{"cat":"acc","day":28,"u":0.873,"u2":0.722,"platform":"PS4","item":"DualShock 4 controller","price":37,"n":96},{"cat":"used","day":29,"u":0.567,"u2":0.777,"platform":"PS4","item":"Bloodborne","price":15,"n":97},{"cat":"card","day":29,"u":0.16,"u2":0.122,"platform":"Xbox","item":"Xbox gift card $25","price":26,"n":98},{"cat":"member","day":29,"u":0.676,"u2":0.626,"platform":"PS4","item":"Red Dead Redemption 2","price":21,"n":99},{"cat":"member","day":30,"u":0.666,"u2":0.308,"platform":"PS5","item":"Returnal","price":38,"n":100}];
+const DEF = {cashPct:45, creditPct:50, cond:90, cashShare:60, commission:10, courierCost:5, courierRemote:6, pickupFee:5, feeLocal:5, feeRemote:6, localShare:65, pickupShare:40, rejectRate:10, recoverRate:70, shrinkUsed:3, shrinkNew:1, shrinkAcc:2, newMargin:15, accMargin:25, cardMargin:4, cardLoss:0.5, sellThrough:85, monthly:100, growth:8, fixed:150};
+const FIELDS = [
+  ['g','Buying and selling'],
+  ['cashPct','Buy-back rate, cash','%','of resale value'],
+  ['creditPct','Buy-back rate, credit','%','of resale value'],
+  ['cond','Average condition factor','%','Good = 90%'],
+  ['cashShare','Sellers who take cash','%','the rest take credit'],
+  ['commission','Member commission','%','on the seller\'s price'],
+  ['sellThrough','Stock resold in the month','%',''],
+  ['g','Delivery'],
+  ['courierCost','Courier cost, local trip','$','your own courier, about $5'],
+  ['courierRemote','Courier cost, outside area','$','third-party courier (assumed)'],
+  ['pickupFee','Pickup fee charged to sellers','$','deducted from their credit'],
+  ['feeLocal','Delivery fee, local','$','Beirut and surroundings'],
+  ['feeRemote','Delivery fee, remote','$','rest of Lebanon'],
+  ['localShare','Customers in the local area','%','buyers and sellers'],
+  ['pickupShare','Local sellers needing pickup','%','the rest drop off at your hub'],
+  ['rejectRate','Remote items rejected on inspection','%',''],
+  ['recoverRate','Return cost recovered from seller','%','paid on return delivery'],
+  ['g','Margins and losses'],
+  ['newMargin','Margin on new games','%','of sale price'],
+  ['accMargin','Margin on accessories','%','of sale price'],
+  ['cardMargin','Margin on gift cards','%','of face value'],
+  ['cardLoss','Gift card fraud loss','%','of face value'],
+  ['shrinkUsed','Loss on used games','%','returns, damage, fraud'],
+  ['shrinkNew','Loss on new games','%',''],
+  ['shrinkAcc','Loss on accessories','%',''],
+  ['g','Scaling'],
+  ['monthly','Products in month 1','#','for the 12-month view'],
+  ['growth','Monthly growth','%',''],
+  ['fixed','Fixed monthly costs','$','hosting, packaging, phone']
+];
+const CATS = {used:['Used games','--c-used'], new:['New games','--c-new'], acc:['Accessories','--c-acc'], card:['Gift cards','--c-card'], member:['Member sales','--c-member']};
+let A = Object.assign({}, DEF), filter = 'all';
+
+const ceilHalf = x => Math.ceil(Math.round(x * 100) / 50) / 2;
+const usd = (n, d = 0) => (n < -0.005 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cls = n => n < -0.005 ? 'neg' : 'pos';
+
+function calc(r, a) {
+  const P = r.price, st = a.sellThrough / 100, pk = a.pickupShare / 100;
+  const rej = a.rejectRate / 100, rec = a.recoverRate / 100, pc = a.cond / 100, cash = a.cashPct / 100, cred = a.creditPct / 100, cs = a.cashShare / 100;
+  const buyerLocal = r.u < a.localShare / 100, sellerLocal = r.u2 < a.localShare / 100;
+  const fee = buyerLocal ? a.feeLocal : a.feeRemote;
+  const cc = buyerLocal ? a.courierCost : a.courierRemote, ccS = sellerLocal ? a.courierCost : a.courierRemote;
+  const pickupNet = sellerLocal ? pk * (ccS - a.pickupFee) : (ccS - a.pickupFee) + rej * (1 - rec) * ccS;
+  const pickupCost = sellerLocal ? pk * ccS : ccS + rej * (1 - rec) * ccS;
+  const pickupFees = sellerLocal ? pk * a.pickupFee : a.pickupFee;
+  const o = {sales: 0, profit: 0, cashOut: 0, credit: 0, fees: 0, courier: 0, zone: buyerLocal ? 'Local' : 'Remote', flow: ''};
+  if (r.cat === 'used') {
+    const buyCost = P * pc * (cash * cs + cred * (1 - cs));
+    o.cashOut = P * pc * cash * cs; o.credit = P * pc * cred * (1 - cs);
+    o.sales = st * (P + fee); o.fees = st * fee + pickupFees; o.courier = st * cc + pickupCost;
+    o.profit = st * (P - buyCost - a.shrinkUsed / 100 * P + fee - cc) - pickupNet;
+    o.flow = 'Bought for ' + usd(buyCost, 2) + (sellerLocal ? ' (local seller)' : ' (remote seller)') + '; sold at ' + usd(P);
+  } else if (r.cat === 'new' || r.cat === 'acc') {
+    const m = (r.cat === 'new' ? a.newMargin : a.accMargin) / 100, sh = (r.cat === 'new' ? a.shrinkNew : a.shrinkAcc) / 100;
+    o.sales = st * (P + fee); o.fees = st * fee; o.courier = st * cc;
+    o.profit = st * (P * m - sh * P + fee - cc);
+    o.flow = 'Supplier cost ' + usd(P * (1 - m), 2) + '; sold at ' + usd(P);
+  } else if (r.cat === 'card') {
+    o.sales = P;
+    o.profit = P * a.cardMargin / 100 - P * a.cardLoss / 100;
+    o.flow = 'Digital: no delivery, margin ' + usd(P * a.cardMargin / 100, 2);
+  } else {
+    const B = ceilHalf(P * (1 + a.commission / 100));
+    o.sales = B + fee; o.fees = fee + pickupFees; o.courier = cc + pickupCost;
+    o.profit = (B - P) + fee - pickupNet - cc - a.shrinkUsed / 100 * P;
+    o.flow = 'Buyer pays ' + usd(B, 2) + ' + ' + usd(fee) + '; seller gets ' + usd(P);
+  }
+  return o;
+}
+
+function run(a) {
+  a = a || A;
+  const res = DATA.map(r => ({r, o: calc(r, a)}));
+  const sum = (arr, k) => arr.reduce((t, x) => t + x.o[k], 0);
+  const tot = {sales: sum(res, 'sales'), profit: sum(res, 'profit'), cashOut: sum(res, 'cashOut'), credit: sum(res, 'credit'), fees: sum(res, 'fees'), courier: sum(res, 'courier')};
+  const by = {};
+  Object.keys(CATS).forEach(c => {
+    const x = res.filter(y => y.r.cat === c);
+    by[c] = {n: x.length, sales: sum(x, 'sales'), profit: sum(x, 'profit'), fees: sum(x, 'fees'), courier: sum(x, 'courier')};
+  });
+  return {res, tot, by};
+}
+
+function kpis(m) {
+  const n = DATA.length, net = m.tot.fees - m.tot.courier;
+  const items = [
+    ['Customers pay us', usd(m.tot.sales), 'gross sales incl. delivery fees'],
+    ['Our profit', usd(m.tot.profit), 'before fixed costs', 'main'],
+    ['Profit per product', usd(m.tot.profit / n, 2), 'average of ' + n],
+    ['Delivery fees collected', usd(m.tot.fees), 'paid by buyers'],
+    ['Courier costs', usd(m.tot.courier), 'pickups and deliveries'],
+    ['Delivery, net', usd(net), net >= 0 ? 'fees cover the couriers' : 'you subsidise delivery'],
+    ['Credit issued', usd(m.tot.credit), 'money you owe in the shop']
+  ];
+  document.getElementById('kpis').innerHTML = items.map(i => '<div class="kpi ' + (i[3] || '') + '"><div class="v ' + (i[0] === 'Our profit' ? cls(m.tot.profit) : i[0] === 'Delivery, net' ? cls(net) : '') + '">' + i[1] + '</div><div class="l"><strong>' + i[0] + '</strong><br>' + i[2] + '</div></div>').join('');
+}
+
+function cats(m) {
+  let h = '<thead><tr><th>Type</th><th class="r">Products</th><th class="r">Customers pay</th><th class="r">Profit</th><th class="r">Per product</th></tr></thead><tbody>';
+  Object.keys(CATS).forEach(c => {
+    const s = m.by[c];
+    h += '<tr><td><span class="dot" style="background:var(' + CATS[c][1] + ')"></span>' + CATS[c][0] + '</td><td class="r">' + s.n + '</td><td class="r">' + usd(s.sales) + '</td><td class="r ' + cls(s.profit) + '">' + usd(s.profit) + '</td><td class="r ' + cls(s.profit) + '">' + usd(s.profit / s.n, 2) + '</td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td>Total</td><td class="r">' + DATA.length + '</td><td class="r">' + usd(m.tot.sales) + '</td><td class="r ' + cls(m.tot.profit) + '">' + usd(m.tot.profit) + '</td><td class="r">' + usd(m.tot.profit / DATA.length, 2) + '</td></tr></tfoot>';
+  document.getElementById('cats').innerHTML = h;
+}
+
+function bars(el, labels, values, colors, fmt) {
+  const W = 480, H = 230, L = 36, B = 34, T = 14, n = values.length, gap = 10;
+  const max = Math.max(0, ...values), min = Math.min(0, ...values), span = (max - min) || 1;
+  const y = v => T + (H - T - B) * (max - v) / span;
+  const bw = (W - L - 8) / n - gap;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Bar chart">';
+  s += '<line class="ax" x1="' + L + '" x2="' + W + '" y1="' + y(0) + '" y2="' + y(0) + '"/>';
+  values.forEach((v, i) => {
+    const x = L + i * (bw + gap) + gap / 2, y0 = y(0), y1 = y(v);
+    s += '<rect x="' + x + '" y="' + Math.min(y0, y1) + '" width="' + bw + '" height="' + Math.max(1, Math.abs(y0 - y1)) + '" rx="3" fill="' + (colors[i] || 'var(--cyan)') + '"/>';
+    s += '<text x="' + (x + bw / 2) + '" y="' + (v >= 0 ? y1 - 4 : y1 + 12) + '" text-anchor="middle">' + fmt(v) + '</text>';
+    s += '<text x="' + (x + bw / 2) + '" y="' + (H - 12) + '" text-anchor="middle">' + labels[i] + '</text>';
+  });
+  document.getElementById(el).innerHTML = s + '</svg>';
+}
+
+function insights(m) {
+  const list = Object.keys(CATS).map(c => ({c, pp: m.by[c].profit / m.by[c].n})).sort((a, b) => b.pp - a.pp);
+  const net = m.tot.fees - m.tot.courier, out = [];
+  out.push('Best earner per product: <strong>' + CATS[list[0].c][0] + '</strong> at ' + usd(list[0].pp, 2) + '. Weakest: <strong>' + CATS[list[4].c][0] + '</strong> at ' + usd(list[4].pp, 2) + '.');
+  out.push(net >= 0
+    ? 'Delivery pays for itself: fees of ' + usd(m.tot.fees) + ' cover courier costs of ' + usd(m.tot.courier) + ' (net ' + usd(net) + ').'
+    : '<span class="neg"><strong>Delivery costs you ' + usd(-net) + '</strong></span>: courier costs of ' + usd(m.tot.courier) + ' exceed the ' + usd(m.tot.fees) + ' collected in fees. Raise fees, batch trips, or push drop-off to your hub.');
+  list.filter(x => x.pp < 0).forEach(x => out.push('<span class="neg"><strong>' + CATS[x.c][0] + ' loses money</strong></span> at these settings.'));
+  out.push('Gift cards earn ' + usd(m.by.card.profit / m.by.card.n, 2) + ' each: they bring traffic and cost nothing to deliver, but never carry the business alone.');
+  out.push('Credit issued (' + usd(m.tot.credit) + ') is stock you must be able to honour.');
+  document.getElementById('insights').innerHTML = out.map(x => '<li>' + x + '</li>').join('');
+}
+
+function sens() {
+  const base = run().tot.profit;
+  const sweep = (id, key, values, fmtV) => {
+    let h = '<thead><tr><th>' + fmtV.head + '</th><th class="r">Total profit</th><th class="r">Per product</th><th class="r">vs now</th></tr></thead><tbody>';
+    values.forEach(v => {
+      const a = Object.assign({}, A); a[key] = v; if (key === 'courierCost') a.courierRemote = v + (A.courierRemote - A.courierCost);
+      const p = run(a).tot.profit, cur = Math.abs(A[key] - v) < 1e-9;
+      h += '<tr class="' + (cur ? 'hl' : '') + '"><td>' + fmtV.f(v) + (cur ? ' (current)' : '') + '</td><td class="r ' + cls(p) + '">' + usd(p) + '</td><td class="r">' + usd(p / DATA.length, 2) + '</td><td class="r ' + cls(p - base) + '">' + (cur ? '' : (p - base >= 0 ? '+' : '') + usd(p - base)) + '</td></tr>';
+    });
+    document.getElementById(id).innerHTML = h + '</tbody>';
+  };
+  sweep('sensCourier', 'courierCost', [3, 4, 5, 6, 7], {head: 'Local courier cost (outside = +$' + (A.courierRemote - A.courierCost) + ')', f: v => usd(v)});
+  sweep('sensLocal', 'localShare', [100, 80, 65, 40, 0], {head: 'Local share', f: v => v + '%'});
+}
+
+function months(m) {
+  const ppt = m.tot.profit / DATA.length, spt = m.tot.sales / DATA.length;
+  let cum = 0, ts = 0, tp = 0, tt = 0;
+  let h = '<thead><tr><th>Month</th><th class="r">Products</th><th class="r">Sales</th><th class="r">Profit after costs</th><th class="r">Cumulative</th></tr></thead><tbody>';
+  const vals = [], labs = [];
+  for (let i = 1; i <= 12; i++) {
+    const tx = Math.round(A.monthly * Math.pow(1 + A.growth / 100, i - 1)), sales = tx * spt, profit = tx * ppt - A.fixed;
+    cum += profit; ts += sales; tp += profit; tt += tx; vals.push(profit); labs.push('M' + i);
+    h += '<tr><td>Month ' + i + '</td><td class="r">' + tx + '</td><td class="r">' + usd(sales) + '</td><td class="r ' + cls(profit) + '">' + usd(profit) + '</td><td class="r ' + cls(cum) + '">' + usd(cum) + '</td></tr>';
+  }
+  h += '</tbody><tfoot><tr><td>Year</td><td class="r">' + tt + '</td><td class="r">' + usd(ts) + '</td><td class="r ' + cls(tp) + '">' + usd(tp) + '</td><td class="r"></td></tr></tfoot>';
+  document.getElementById('months').innerHTML = h;
+  bars('chartMonth', labs, vals, vals.map(v => v >= 0 ? 'var(--c-new)' : 'var(--neg)'), v => Math.abs(v) >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v));
+}
+
+function table(m) {
+  document.getElementById('filters').innerHTML = [['all', 'All 100']].concat(Object.keys(CATS).map(c => [c, CATS[c][0] + ' (' + m.by[c].n + ')'])).map(f => '<button type="button" data-f="' + f[0] + '" class="' + (filter === f[0] ? 'on' : '') + '">' + f[1] + '</button>').join('');
+  document.querySelectorAll('#filters button').forEach(b => b.onclick = () => { filter = b.dataset.f; table(m); });
+  const rows = m.res.filter(x => filter === 'all' || x.r.cat === filter);
+  let h = '<thead><tr><th>#</th><th>Day</th><th>Type</th><th>Item</th><th>Platform</th><th class="r">Price</th><th>Buyer</th><th>Money flow</th><th class="r">Customers pay</th><th class="r">Our profit</th></tr></thead><tbody>';
+  rows.forEach(x => {
+    const digital = x.r.cat === 'card';
+    h += '<tr><td>' + x.r.n + '</td><td>' + x.r.day + '</td><td><span class="dot" style="background:var(' + CATS[x.r.cat][1] + ')"></span>' + CATS[x.r.cat][0] + '</td><td>' + esc(x.r.item) + '</td><td>' + esc(x.r.platform) + '</td><td class="r">' + usd(x.r.price, x.r.price % 1 ? 2 : 0) + '</td><td>' + (digital ? '<span class="tag">Digital</span>' : '<span class="tag ' + (x.o.zone === 'Remote' ? 'rem' : '') + '">' + x.o.zone + '</span>') + '</td><td>' + esc(x.o.flow) + '</td><td class="r">' + usd(x.o.sales, 2) + '</td><td class="r ' + cls(x.o.profit) + '">' + usd(x.o.profit, 2) + '</td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td colspan="8">' + rows.length + ' products</td><td class="r">' + usd(rows.reduce((t, x) => t + x.o.sales, 0)) + '</td><td class="r">' + usd(rows.reduce((t, x) => t + x.o.profit, 0)) + '</td></tr></tfoot>';
+  document.getElementById('rows').innerHTML = h;
+}
+
+function render() {
+  const m = run();
+  kpis(m); cats(m);
+  bars('chartCat', Object.keys(CATS).map(c => CATS[c][0].split(' ')[0]), Object.keys(CATS).map(c => m.by[c].profit / m.by[c].n), Object.keys(CATS).map(c => 'var(' + CATS[c][1] + ')'), v => usd(v, 2));
+  insights(m); sens(); months(m); table(m);
+  window.__m = m;
+}
+
+function build() {
+  document.getElementById('assump').innerHTML = FIELDS.map(f => f[0] === 'g'
+    ? '<div class="group">' + f[1] + '</div>'
+    : '<label class="f">' + f[1] + '<span class="h">' + f[3] + '</span><span class="in"><input type="number" step="any" min="0" data-k="' + f[0] + '" value="' + A[f[0]] + '"><em>' + f[2] + '</em></span></label>').join('');
+  document.querySelectorAll('#assump input').forEach(i => i.oninput = () => { const v = parseFloat(i.value); A[i.dataset.k] = isNaN(v) ? 0 : v; render(); });
+}
+document.getElementById('reset').onclick = () => { A = Object.assign({}, DEF); build(); render(); };
+build(); render();
+</script>
+</body>
+</html>

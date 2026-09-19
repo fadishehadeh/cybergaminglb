@@ -1,0 +1,23 @@
+DirectoryIndex index.html
+
+RewriteEngine On
+RewriteBase /
+
+# Block cPanel default page redirect
+RewriteCond %{REQUEST_URI} ^/cgi-sys/defaultwebpage\.cgi$ [NC]
+RewriteRule ^ /index.html [L,R=302]
+
+# Root URL - explicitly serve index.html
+RewriteRule ^$ /index.html [L]
+
+# If the request matches an existing file or directory, serve it
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Try adding .html extension
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.*)$ $1.html [L]
+
+# Fallback to 404
+RewriteRule ^ /404.html [L]

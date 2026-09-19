@@ -1,0 +1,9 @@
+.env
+storage/logs/*
+!storage/logs/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+
+# local test leftovers
+j[0-9]
+*.jar

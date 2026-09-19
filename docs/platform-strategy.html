@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberGaming Lebanon: platform model and strategy review</title>
+<meta name="description" content="How the CyberGaming credit marketplace works, the money examples, the risks and the recommended launch plan.">
+<style>
+:root{
+  --navy:#101a3f; --cyan:#1fb6e0; --cyan-d:#0a8aad;
+  --bg:#f8fafc; --card:#fff; --line:#e2e8f0; --text:#101a3f; --muted:#475569;
+  --teal-bg:#e1f5ee; --teal-line:#0f6e56; --teal-text:#085041;
+  --amber-bg:#faeeda; --amber-line:#854f0b; --amber-text:#633806;
+  --red-bg:#fcebeb; --red-text:#791f1f; --green-bg:#eaf3de; --green-text:#27500a;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b1020; --card:#131a33; --line:#27314f; --text:#e8ecf8; --muted:#9aa7c7; --cyan-d:#4fd0ee;
+    --teal-bg:#0c3b31; --teal-line:#5dcaa5; --teal-text:#c8f1e2;
+    --amber-bg:#3d2a0d; --amber-line:#ef9f27; --amber-text:#fbe2b6;
+    --red-bg:#3a1616; --red-text:#f7c1c1; --green-bg:#1c2c0d; --green-text:#c0dd97;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:32px 20px 64px}
+header{border-bottom:3px solid var(--cyan);padding-bottom:20px;margin-bottom:28px}
+header p.kicker{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan-d);font-weight:600}
+h1{margin:0 0 8px;font-size:30px;line-height:1.2}
+h2{margin:40px 0 12px;font-size:22px;line-height:1.25}
+h3{margin:22px 0 6px;font-size:17px}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:14px 0}
+.verdict{border-left:6px solid var(--cyan);border-radius:12px}
+.verdict strong.big{display:block;font-size:20px;margin-bottom:4px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 10px;border-radius:99px}
+.pill.done{background:var(--green-bg);color:var(--green-text)}
+.pill.wip{background:var(--amber-bg);color:var(--amber-text)}
+.pill.risk{background:var(--red-bg);color:var(--red-text)}
+ul{margin:6px 0 12px;padding-left:22px} li{margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:rgba(31,182,224,.12);font-weight:600}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;white-space:nowrap}
+.ex{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.ex .card{margin:0}
+.calc{font-variant-numeric:tabular-nums}
+.tot{font-weight:600;border-top:2px solid var(--line)}
+svg{display:block;width:100%;height:auto;color:var(--muted)}
+svg .box{fill:var(--card);stroke:var(--line);stroke-width:1.2}
+svg .th{font:500 14px system-ui,sans-serif;fill:var(--text)}
+svg .ts{font:400 12px system-ui,sans-serif;fill:var(--muted)}
+svg .arr{stroke:currentColor;stroke-width:1.5;fill:none}
+svg .teal rect{fill:var(--teal-bg);stroke:var(--teal-line)}
+svg .teal .th{fill:var(--teal-text)} svg .teal .ts{fill:var(--teal-text)}
+svg .amber rect{fill:var(--amber-bg);stroke:var(--amber-line)}
+svg .amber .ts{fill:var(--amber-text)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+@media print{body{background:#fff}.card,table{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="kicker">CyberGaming Lebanon · review of 19 Sep 2026</p>
+  <h1>Platform model and strategy review</h1>
+  <p class="muted">How the credit marketplace works, how it makes money, what could go wrong, and what to do first.</p>
+</header>
+
+<section class="card verdict">
+  <strong class="big">Verdict: a good strategy, with a few risks that could cost you money.</strong>
+  <p style="margin:0">It is the GameStop trade-in model plus a marketplace layer. The software is the easy part; the hard part is running it: collecting, inspecting and delivering items at a profit. Start lean with your own stock and buy-back, and open member-to-member selling once orders are flowing.</p>
+</section>
+
+<h2>1. How the platform works</h2>
+<p class="muted">Three flows feed one credit wallet (1 credit = $1, never expires). Every item passes through your hub, and buyers and sellers never see each other.</p>
+<div class="card">
+<svg viewBox="0 0 680 372" role="img" aria-labelledby="dt dd">
+<title id="dt">CyberGaming platform: earn credit, spend credit, member sales</title>
+<desc id="dd">Three lanes feeding one credit wallet. Lane 1: a customer submits games, we make an offer, they accept and we collect, we inspect and pay in credit or cash. Lane 2: credit is spent at checkout, any gap is paid in cash on delivery, and a delivery fee is added. Lane 3: a member lists a game, a buyer orders it, we collect and deliver, and the member is paid minus our commission.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text class="th" x="30" y="22">1. Earn credit by selling to us</text>
+<rect class="box" x="30" y="32" width="100" height="52" rx="4"/><text class="th" x="80" y="53" text-anchor="middle">Submit games</text><text class="ts" x="80" y="71" text-anchor="middle">with estimate</text>
+<line class="arr" x1="130" y1="58" x2="154" y2="58" marker-end="url(#arrow)"/>
+<rect class="box" x="154" y="32" width="100" height="52" rx="4"/><text class="th" x="204" y="53" text-anchor="middle">We send offer</text><text class="ts" x="204" y="71" text-anchor="middle">cash / credit</text>
+<line class="arr" x1="254" y1="58" x2="278" y2="58" marker-end="url(#arrow)"/>
+<rect class="box" x="278" y="32" width="100" height="52" rx="4"/><text class="th" x="328" y="53" text-anchor="middle">You accept</text><text class="ts" x="328" y="71" text-anchor="middle">we collect it</text>
+<line class="arr" x1="378" y1="58" x2="402" y2="58" marker-end="url(#arrow)"/>
+<rect class="box" x="402" y="32" width="100" height="52" rx="4"/><text class="th" x="452" y="53" text-anchor="middle">We inspect</text><text class="ts" x="452" y="71" text-anchor="middle">then we pay</text>
+<g class="amber"><rect x="402" y="90" width="100" height="22" rx="4"/><text class="ts" x="452" y="105" text-anchor="middle">or paid in cash</text></g>
+<text class="th" x="30" y="142">2. Spend credit in the shop</text>
+<rect class="box" x="402" y="152" width="100" height="52" rx="4"/><text class="th" x="452" y="173" text-anchor="middle">Shop library</text><text class="ts" x="452" y="191" text-anchor="middle">any item</text>
+<line class="arr" x1="402" y1="178" x2="378" y2="178" marker-end="url(#arrow)"/>
+<rect class="box" x="278" y="152" width="100" height="52" rx="4"/><text class="th" x="328" y="173" text-anchor="middle">Use credit</text><text class="ts" x="328" y="191" text-anchor="middle">at checkout</text>
+<line class="arr" x1="278" y1="178" x2="254" y2="178" marker-end="url(#arrow)"/>
+<rect class="box" x="154" y="152" width="100" height="52" rx="4"/><text class="th" x="204" y="173" text-anchor="middle">Pay the gap</text><text class="ts" x="204" y="191" text-anchor="middle">cash at door</text>
+<line class="arr" x1="154" y1="178" x2="130" y2="178" marker-end="url(#arrow)"/>
+<rect class="box" x="30" y="152" width="100" height="52" rx="4"/><text class="th" x="80" y="173" text-anchor="middle">We deliver</text><text class="ts" x="80" y="191" text-anchor="middle">+ delivery fee</text>
+<text class="th" x="30" y="236">3. Member-to-member sales</text>
+<rect class="box" x="30" y="246" width="100" height="52" rx="4"/><text class="th" x="80" y="267" text-anchor="middle">Member lists</text><text class="ts" x="80" y="285" text-anchor="middle">we approve it</text>
+<line class="arr" x1="130" y1="272" x2="154" y2="272" marker-end="url(#arrow)"/>
+<rect class="box" x="154" y="246" width="100" height="52" rx="4"/><text class="th" x="204" y="267" text-anchor="middle">Buyer orders</text><text class="ts" x="204" y="285" text-anchor="middle">pays us</text>
+<line class="arr" x1="254" y1="272" x2="278" y2="272" marker-end="url(#arrow)"/>
+<rect class="box" x="278" y="246" width="100" height="52" rx="4"/><text class="th" x="328" y="267" text-anchor="middle">We collect</text><text class="ts" x="328" y="285" text-anchor="middle">and deliver</text>
+<line class="arr" x1="378" y1="272" x2="402" y2="272" marker-end="url(#arrow)"/>
+<rect class="box" x="402" y="246" width="100" height="52" rx="4"/><text class="th" x="452" y="267" text-anchor="middle">Seller paid</text><text class="ts" x="452" y="285" text-anchor="middle">minus our cut</text>
+<g class="amber"><rect x="402" y="304" width="100" height="22" rx="4"/><text class="ts" x="452" y="319" text-anchor="middle">or paid in cash</text></g>
+<g class="teal"><rect x="540" y="32" width="110" height="266" rx="4"/><text class="th" x="595" y="150" text-anchor="middle">Wallet</text><text class="ts" x="595" y="170" text-anchor="middle">1 credit = $1</text><text class="ts" x="595" y="188" text-anchor="middle">never expires</text></g>
+<line class="arr" x1="502" y1="58" x2="540" y2="58" marker-end="url(#arrow)"/>
+<line class="arr" x1="540" y1="178" x2="502" y2="178" marker-end="url(#arrow)"/>
+<line class="arr" x1="502" y1="272" x2="540" y2="272" marker-end="url(#arrow)"/>
+<g class="teal"><rect x="30" y="346" width="14" height="14" rx="2"/></g><text class="ts" x="52" y="358">Credit</text>
+<g class="amber"><rect x="120" y="346" width="14" height="14" rx="2"/></g><text class="ts" x="142" y="358">Cash</text>
+</svg>
+</div>
+
+<h2>2. How it makes money: worked examples</h2>
+<p class="muted">Percentages are examples from the current defaults. All of them can be changed in the admin Settings.</p>
+<div class="ex">
+  <div class="card calc">
+    <h3 style="margin-top:0">A customer sells a $20 game (Good condition)</h3>
+    <table>
+      <tr><td>Standard buy-back rate</td><td class="num">45%</td></tr>
+      <tr><td>Good-condition factor</td><td class="num">90%</td></tr>
+      <tr><td>Cash offer</td><td class="num">$8</td></tr>
+      <tr><td>Credit offer (50% rate)</td><td class="num">$9</td></tr>
+      <tr class="tot"><td>You resell it for</td><td class="num">$20</td></tr>
+    </table>
+    <p class="muted" style="margin-top:10px">Gross margin: about $12 if you paid cash, about $11 if you paid credit, and the credit stays in your shop.</p>
+  </div>
+  <div class="card calc">
+    <h3 style="margin-top:0">A member sells a game for other members</h3>
+    <table>
+      <tr><td>Seller wants to receive</td><td class="num">$50.00</td></tr>
+      <tr><td>Commission (10%)</td><td class="num">+ $5.00</td></tr>
+      <tr><td>Buyer pays for the item</td><td class="num">$55.00</td></tr>
+      <tr><td>Delivery fee (Beirut), paid by buyer</td><td class="num">+ $3.00</td></tr>
+      <tr class="tot"><td>Buyer pays in total</td><td class="num">$58.00</td></tr>
+    </table>
+    <p class="muted" style="margin-top:10px">You keep $5 commission and the $3 delivery fee. The seller receives $50 in cash or credit after delivery.</p>
+  </div>
+</div>
+
+<h2>3. What is strong</h2>
+<div class="grid">
+  <div class="card"><h3 style="margin-top:0">Credit is your margin</h3><p style="margin:0">You pay 45–50% of resale value in credit, no cash leaves your pocket, and customers can only spend it with you.</p></div>
+  <div class="card"><h3 style="margin-top:0">Supply without capital</h3><p style="margin:0">Members and stores list items you never have to buy, and you only handle what actually sells.</p></div>
+  <div class="card"><h3 style="margin-top:0">The hub beats bypassing</h3><p style="margin:0">Hidden identities plus inspection stop people trading around you in a small market and build trust where scams are common.</p></div>
+  <div class="card"><h3 style="margin-top:0">Four income streams</h3><p style="margin:0">Resale margin, commission, delivery fees and swap fees.</p></div>
+</div>
+
+<h2>4. What could hurt you</h2>
+<table>
+  <tr><th style="width:26%">Risk</th><th>Why it matters</th><th style="width:34%">What to do</th></tr>
+  <tr><td><span class="pill risk">High</span> Delivery eats small sales</td><td>A $12 game at 10% commission earns about $1.20, while each pickup and delivery costs $3–4 plus your time.</td><td>Set a minimum order, batch pickups on fixed days, use a drop-off point, and push higher-value items.</td></tr>
+  <tr><td><span class="pill risk">High</span> Cold start</td><td>A marketplace needs sellers and buyers. With little traffic, member listings won't move at first.</td><td>Let your own stock and buy-back carry the first months; keep member listing invite-only.</td></tr>
+  <tr><td><span class="pill risk">Medium</span> Weak credit incentive</td><td>Credit at 50% versus cash at 45% won't change behaviour.</td><td>Widen the gap, for example 40% cash against 50–55% credit.</td></tr>
+  <tr><td><span class="pill risk">Medium</span> Credit is money you owe</td><td>If many customers redeem at once for items you don't stock, you can't honour it.</td><td>Watch the total owed on the admin Wallet page and keep stock that matches it.</td></tr>
+  <tr><td><span class="pill risk">Medium</span> Fraud</td><td>Stolen, fake or damaged items and scam accounts.</td><td>Inspect before crediting, pay members only after delivery, and ask for ID above a set value.</td></tr>
+  <tr><td><span class="pill risk">Check</span> Legal and tax</td><td>Selling used goods and holding stored credit may need business registration and receipts in Lebanon.</td><td>Ask an accountant or lawyer before scaling. This review is not legal advice.</td></tr>
+</table>
+
+<h2>5. What to do first</h2>
+<div class="card">
+  <ol style="margin:0;padding-left:22px">
+    <li><strong>Launch lean.</strong> Your own stock, buy-back offers with credit, and delivery. Keep member listings invite-only.</li>
+    <li><strong>Set the numbers.</strong> Widen the credit-versus-cash gap and set a minimum order value or free-delivery threshold.</li>
+    <li><strong>Track four numbers.</strong> Average profit per order, delivery cost per order, share of customers choosing credit, and total credit owed.</li>
+    <li><strong>Get customers.</strong> Instagram, a WhatsApp channel and your first 50 customers will decide whether this works. Then open member selling.</li>
+  </ol>
+</div>
+
+<h2>6. Where the build stands</h2>
+<table>
+  <tr><th>Feature</th><th style="width:150px">Status</th></tr>
+  <tr><td>Storefront with SEO, cart, checkout and cash on delivery</td><td><span class="pill done">Live</span></td></tr>
+  <tr><td>Admin panel: products, orders, sellers, payouts, settings, steelbook hide/show</td><td><span class="pill done">Live</span></td></tr>
+  <tr><td>Store seller portal, buy-back quote, trade-in calculator, swap board</td><td><span class="pill done">Live</span></td></tr>
+  <tr><td>Customer accounts, credit wallet, sell-offer workflow, delivery zones, member listings</td><td><span class="pill wip">In build</span></td></tr>
+</table>
+
+<h2>7. Decisions still open</h2>
+<ul>
+  <li>Should credit expire (for example after 12 months), or never? No expiry is friendlier; expiry limits what you owe.</li>
+  <li>The cash-versus-credit gap, the minimum order and the free-delivery threshold.</li>
+  <li>Your real WhatsApp number, still the placeholder <code>961</code>, in Admin → Settings.</li>
+</ul>
+
+<footer>Prepared for the owner of CyberGaming Lebanon. Figures use the current default settings and are illustrations, not forecasts.</footer>
+</div>
+</body>
+</html>

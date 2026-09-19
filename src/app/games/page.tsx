@@ -12,7 +12,7 @@ const allGenres: GameGenre[] = [
 
 export default function GamesPage() {
   return (
-    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 py-8"><p className="text-zinc-500">Loading games...</p></div>}>
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 py-8"><p className="text-slate-500">Loading games...</p></div>}>
       <GamesContent />
     </Suspense>
   );
@@ -59,7 +59,7 @@ function GamesContent() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Browse Games</h1>
-        <p className="text-zinc-400">{filtered.length} games available</p>
+        <p className="text-slate-600">{filtered.length} games available</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -68,12 +68,12 @@ function GamesContent() {
           placeholder="Search games..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50"
+          className="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:outline-none focus:border-brand"
         />
         <select
           value={selectedGenre}
           onChange={(e) => setSelectedGenre(e.target.value)}
-          className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-300 focus:outline-none focus:border-emerald-500/50"
+          className="bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
         >
           <option value="All">All Genres</option>
           {allGenres.map((g) => (
@@ -83,7 +83,7 @@ function GamesContent() {
         <select
           value={editionFilter}
           onChange={(e) => setEditionFilter(e.target.value)}
-          className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-300 focus:outline-none focus:border-emerald-500/50"
+          className="bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
         >
           <option value="All">All Editions</option>
           <option value="Standard">Standard Only</option>
@@ -92,7 +92,7 @@ function GamesContent() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-300 focus:outline-none focus:border-emerald-500/50"
+          className="bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
         >
           <option value="title">Sort: A-Z</option>
           <option value="price-low">Sort: Price Low</option>
@@ -103,10 +103,10 @@ function GamesContent() {
 
       {filtered.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-zinc-500 text-lg">No games found matching your filters.</p>
+          <p className="text-slate-500 text-lg">No games found matching your filters.</p>
           <button
             onClick={() => { setSearch(""); setSelectedGenre("All"); setEditionFilter("All"); }}
-            className="mt-4 text-emerald-400 text-sm hover:text-emerald-300"
+            className="mt-4 text-brand-dark text-sm hover:text-navy"
           >
             Clear filters
           </button>
