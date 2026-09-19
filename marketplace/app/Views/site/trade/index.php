@@ -1,5 +1,6 @@
 <?php
 use App\Modules\Storefront\Quoter;
+use App\Modules\Storefront\Rules;
 use App\Modules\Storefront\Ui;
 use App\Support\Pricing;
 
@@ -16,10 +17,11 @@ $factorText = implode(', ', array_map(static fn (string $c, float $f): string =>
 $faqs = [
     ['How does the trade-in calculator work?', 'List the games you want to trade (platform, title, condition) and the products you want from our shop. You instantly see what each game is worth in store credit and in cash, the price of each item you want, and your balance: what you pay, or the credit you keep. To send the request you sign in to a free account.'],
     ['How much credit do I get?', "Store credit is $tradein% of the price we list the same game at in our shop, adjusted for condition: $factorText of that amount. " . ($better ? "Taking cash instead pays $buyback%, so store credit is worth more." : "Taking cash instead pays $buyback% (see Sell).")],
-    ['What can I use my credit on?', 'Any game, steelbook, console, controller or accessory that is in stock in our shop. Credit lives in your CyberGaming wallet, never expires, and 1 credit is worth $1 at checkout. If it does not cover the whole order, you pay the gap in cash on delivery.'],
+    ['What can I use my credit on?', 'Any game, steelbook, console, controller or accessory that is in stock in our shop. Credit lives in your CyberGaming wallet, never expires, and 1 credit is worth $1 at checkout. If it does not cover the whole order, you pay the gap in cash on delivery in local areas, or first by OMT / Whish in remote areas.'],
     ['Do I have to pay the difference?', 'Only if what you want costs more than your credit. The calculator shows "You pay" for that amount, in cash on delivery, OMT or Whish.'],
     ['Is the calculator result final?', 'The result is an estimate based on the condition you select. We inspect your games in person, send you an offer and you accept it before anything is exchanged. Any change is agreed with you first.'],
     ['What makes a strong trade-in?', 'Tick what comes with each game (original box, cover art, manual) and add photos of the disc, the box from outside and the box from inside when you send your request. Complete copies in a clean box are the easiest for us to resell, so they get the best offers. Location data is removed from your photos automatically.'],
+    ...Rules::sellFaqs(),
     ['Can I trade in a game that is not in your catalogue?', 'Yes. Games we cannot price automatically are flagged, and our team prices them when they review your request.'],
 ];
 $meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
@@ -77,7 +79,7 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Trade in your games
         <ol class="steps steps-vertical">
             <li><span class="step-num">1</span><div><h3>Use the calculator</h3><p>List what you have and what you want. You see your balance straight away.</p></div></li>
             <li><span class="step-num">2</span><div><h3>Send your request</h3><p>Sign in to your free account (or create one) and send it. We review it and post an offer in your account, and nothing moves until you accept.</p></div></li>
-            <li><span class="step-num">3</span><div><h3>Hand over and we inspect</h3><p>Drop your games at our pickup point or ask us to collect them. We inspect them, and your credit is added to your wallet, ready to spend on the items you want.</p></div></li>
+            <li><span class="step-num">3</span><div><h3>Hand over and we inspect</h3><p>Bring your games to our hub for free, or have a courier pick them up (<?= e(money(Rules::pickupFee())) ?> fee, deducted from your credit or cash). We inspect them, and your credit is added to your wallet, ready to spend on the items you want. If an item is not acceptable you choose: a revised offer, send it back (<?= e(money(Rules::returnFee())) ?> in cash on delivery) or a free recycle.</p></div></li>
         </ol>
     </article>
 

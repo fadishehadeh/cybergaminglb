@@ -7,15 +7,9 @@ $nav = 'requests';
 $here = Forms::here();
 $isSwap = $tab === 'swaps';
 $siteName = (string) setting('site_name', 'CyberGaming Lebanon');
-$actionCount = $buybackCounts['new'] + $buybackCounts['contacted'] + $buybackCounts['accepted'] + $buybackCounts['collected'];
+$actionCount = (int) $extra['action'];
 $qs = static fn (array $extra): string => '/admin/requests?' . http_build_query(array_filter(['tab' => 'buyback', 'q' => $q] + $extra, static fn ($v) => $v !== '' && $v !== null));
-$whatNext = [
-    'new'       => 'Make an offer',
-    'contacted' => 'Make an offer',
-    'offered'   => 'Waiting for the customer',
-    'accepted'  => 'Collect the games',
-    'collected' => 'Inspect and pay',
-];
+
 ?>
 <div class="page-head">
     <div>
@@ -36,6 +30,8 @@ $whatNext = [
         <?php foreach ($statuses as $st): ?>
             <a href="<?= e(url($qs(['status' => $st]))) ?>" class="<?= $status === $st ? 'active' : '' ?>"><?= e(Forms::label($st)) ?> <span class="tab-count"><?= (int) $buybackCounts[$st] ?></span></a>
         <?php endforeach; ?>
+        <a href="<?= e(url($qs(['status' => 'undecided']))) ?>" class="<?= $status === 'undecided' ? 'active' : '' ?>" title="Rejected on inspection, the customer has not decided yet">Awaiting decision <span class="tab-count"><?= (int) $extra['undecided'] ?></span></a>
+        <a href="<?= e(url($qs(['status' => 'overdue']))) ?>" class="<?= $status === 'overdue' ? 'active' : '' ?>" title="Rejected, no decision, deadline passed: recycle">Overdue <span class="tab-count<?= $extra['overdue'] ? ' hot' : '' ?>"><?= (int) $extra['overdue'] ?></span></a>
     </div>
 <?php endif; ?>
 
@@ -71,21 +67,22 @@ $whatNext = [
     <section class="card">
         <div class="table-wrap">
             <table class="data">
-                <thead><tr><th>Request</th><th>Customer</th><th class="num">Games</th><th class="num">Estimate</th><th class="num">Offer</th><th>Customer chose</th><th>Status</th><th>Next step</th><th></th></tr></thead>
+                <thead><tr><th>Request</th><th>Customer</th><th class="num">Games</th><th class="num">Estimate</th><th class="num">Offer / net paid</th><th>Customer chose</th><th>Status</th><th>Next step</th><th></th></tr></thead>
                 <tbody>
-                <?php foreach ($rows as $r): $todo = in_array($r['status'], RequestController::ACTION_STATUSES, true); ?>
+                <?php foreach ($rows as $r): [$nextText, $todo] = RequestController::nextStep($r); $fee = (float) $r['pickup_fee']; ?>
                     <tr class="<?= $todo ? 'row-todo' : '' ?>">
                         <td class="nowrap"><a href="<?= e(url('/admin/requests/buyback/' . $r['id'])) ?>"><strong><?= e($r['code']) ?></strong></a><br><small class="muted"><?= e(date('j M Y, H:i', strtotime($r['created_at']))) ?></small></td>
                         <td>
                             <?= $r['user_id'] ? '<a href="' . e(url('/admin/customers/' . $r['user_id'])) . '">' . e($r['name']) . '</a>' : e($r['name']) . ' <span class="tag" title="Sent without an account">guest</span>' ?>
-                            <br><small class="muted"><?= e(Forms::label($r['kind'])) ?> &middot; <?= e($r['area'] ?? '-') ?></small>
+                            <br><small class="muted"><?= e(Forms::label($r['kind'])) ?> &middot; <?= e($r['zone'] ?: ($r['area'] ?? '-')) ?></small> <?= Forms::modeBadge($r['zone_mode']) ?>
+                            <br><small class="muted"><?= e(RequestController::collectionLabel($r)) ?></small>
                         </td>
                         <td class="num"><?= count($r['items_list']) ?></td>
                         <td class="num"><?php if ((float) $r['estimate_cash'] > 0 || (float) $r['estimate_credit'] > 0): ?><?= e(money($r['estimate_cash'])) ?><br><small class="muted"><?= e(money($r['estimate_credit'])) ?> credit</small><?php else: ?><?= e(money($r['offered_total'])) ?><?php endif; ?></td>
-                        <td class="num"><?php if ($r['final_amount'] !== null): ?><strong><?= e(money($r['final_amount'])) ?></strong><br><small class="muted">paid <?= e($r['final_method']) ?></small><?php elseif ($r['offer_cash'] !== null || $r['offer_credit'] !== null): ?><?= e(money($r['offer_cash'] ?? 0)) ?><br><small class="muted"><?= e(money($r['offer_credit'] ?? 0)) ?> credit</small><?php else: ?><span class="muted">-</span><?php endif; ?></td>
+                        <td class="num"><?php if ($r['final_amount'] !== null): ?><strong><?= e(money(RequestController::net((float) $r['final_amount'], $fee))) ?></strong><br><small class="muted">paid <?= e($r['final_method']) ?><?= $fee > 0 ? ' (' . e(money($r['final_amount'])) . ' &minus; ' . e(money($fee)) . ' fee)' : '' ?></small><?php elseif ($r['status'] === 'rejected' && $r['revised_amount'] !== null): ?><?= e(money($r['revised_amount'])) ?><br><small class="muted">revised offer</small><?php elseif ($r['offer_cash'] !== null || $r['offer_credit'] !== null): ?><?= e(money($r['offer_cash'] ?? 0)) ?><br><small class="muted"><?= e(money($r['offer_credit'] ?? 0)) ?> credit</small><?php else: ?><span class="muted">-</span><?php endif; ?></td>
                         <td><?= $r['accepted_method'] ? '<span class="pill pill-' . e($r['accepted_method']) . '">' . e(ucfirst($r['accepted_method'])) . '</span>' : '<span class="muted">-</span>' ?></td>
                         <td><?= Forms::pill($r['status']) ?></td>
-                        <td><?= isset($whatNext[$r['status']]) ? '<span class="' . ($todo ? 'next-todo' : 'muted') . '">' . e($whatNext[$r['status']]) . '</span>' : '<span class="muted">-</span>' ?></td>
+                        <td><?= $nextText !== '' ? '<span class="' . ($todo ? 'next-todo' : 'muted') . '">' . e($nextText) . '</span>' : '<span class="muted">-</span>' ?></td>
                         <td class="num"><a class="btn btn-sm<?= $todo ? ' btn-primary' : '' ?>" href="<?= e(url('/admin/requests/buyback/' . $r['id'])) ?>">Open</a></td>
                     </tr>
                 <?php endforeach; ?>

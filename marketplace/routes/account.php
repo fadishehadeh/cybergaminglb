@@ -30,6 +30,7 @@ $router->get('/account/orders/{code}', [OrderController::class, 'show'], $custom
 $router->get('/account/offers', [OfferController::class, 'index'], $customerOnly);
 $router->get('/account/offers/{code}', [OfferController::class, 'show'], $customerOnly);
 $router->post('/account/offers/{code}/accept', [OfferController::class, 'accept'], $customerOnly);
+$router->post('/account/offers/{code}/choose', [OfferController::class, 'choose'], $customerOnly);
 $router->post('/account/offers/{code}/decline', [OfferController::class, 'decline'], $customerOnly);
 $router->post('/account/offers/{code}/cancel', [OfferController::class, 'cancel'], $customerOnly);
 

@@ -407,11 +407,23 @@ final class Quoter
      * Read the options a signed-in customer picks when sending a request. Name, phone and area come from the
      * account, never from the form.
      *
-     * @return array{0:array{method:string,collection:string,pickup_note:string,note:string},1:string[]}
+     * The zone is a delivery zone picked from the admin-managed list; its mode (local / remote) decides how the
+     * games travel: dropoff = bring them to our hub (free), pickup = our own courier (local) or a third-party
+     * courier (remote), with the pickup fee deducted from the payout. The remote minimum needs the estimate, so
+     * it is checked by validateShipment() once the games are priced.
+     *
+     * @return array{0:array{method:string,collection:string,pickup_note:string,note:string,zone:string,zone_mode:string,pickup_fee:float},1:string[]}
      */
     public static function readOptions(Request $r): array
     {
         $errors = [];
+        $zone = $r->input('zone', '');
+        $zone = is_string($zone) ? trim($zone) : '';
+        $zoneMode = Shipping::mode($zone);
+        if ($zoneMode === '') {
+            $errors[] = 'Please choose the delivery zone you are in, so we know how your games can reach us.';
+            $zone = '';
+        }
         $method = $r->input('preferred_method', 'credit');
         $method = is_string($method) ? $method : '';
         if (!in_array($method, ['cash', 'credit'], true)) {
@@ -421,16 +433,29 @@ final class Quoter
         $collection = $r->input('collection', 'dropoff');
         $collection = is_string($collection) ? $collection : '';
         if (!in_array($collection, ['dropoff', 'pickup'], true)) {
-            $errors[] = 'Please choose how we get your games: you drop them off, or we collect them.';
+            $errors[] = 'Please choose how we get your games: you bring them to our hub, or a courier picks them up.';
             $collection = 'dropoff';
         }
         $d = [
+            'zone'        => $zone,
+            'zone_mode'   => $zoneMode,
+            'pickup_fee'  => $collection === 'pickup' ? Rules::pickupFee() : 0.0,
             'method'      => $method,
             'collection'  => $collection,
             'pickup_note' => $collection === 'pickup' ? self::clean($r->input('pickup_note'), 255) : '',
             'note'        => self::cleanNote($r->input('note')),
         ];
         return [$d, $errors];
+    }
+
+    /**
+     * Minimum shipment value for courier pickup from a remote zone, checked against the estimate for the chosen
+     * payout method. Returns the error text, or null when the request is fine.
+     */
+    public static function validateShipment(array $options, array $given): ?string
+    {
+        $estimate = $options['method'] === 'cash' ? (float) $given['total_cash'] : (float) $given['total_credit'];
+        return Rules::minSellError((string) $options['zone_mode'], (string) $options['collection'], $estimate);
     }
 
     /** Same rules as the checkout form (still used by the swap board). */
@@ -481,8 +506,8 @@ final class Quoter
         $area = trim((string) ($user['area'] ?? ''));
         db()->insert(
             'INSERT INTO buyback_requests (code, user_id, name, phone, area, kind, items, offered_total, estimate_cash, estimate_credit,
-                                            preferred_method, collection, pickup_note, wanted_items, photos, status, admin_note)
-             VALUES (:code, :user, :name, :phone, :area, :kind, :items, :total, :cash, :credit, :method, :collection, :pickup, :wanted, :photos, \'new\', :note)',
+                                            preferred_method, collection, pickup_note, zone, zone_mode, pickup_fee, wanted_items, photos, status, admin_note)
+             VALUES (:code, :user, :name, :phone, :area, :kind, :items, :total, :cash, :credit, :method, :collection, :pickup, :zone, :zmode, :pfee, :wanted, :photos, \'new\', :note)',
             [
                 'code'       => $code,
                 'user'       => (int) $user['id'],
@@ -497,6 +522,9 @@ final class Quoter
                 'method'     => $options['method'],
                 'collection' => $options['collection'],
                 'pickup'     => $options['pickup_note'] !== '' ? $options['pickup_note'] : null,
+                'zone'       => $options['zone'],
+                'zmode'      => $options['zone_mode'],
+                'pfee'       => number_format($options['collection'] === 'pickup' ? (float) $options['pickup_fee'] : 0.0, 2, '.', ''),
                 'wanted'     => $wanted === null ? null : json_encode(array_map(static fn (array $l): array => [
                     'title'    => $l['title'],
                     'platform' => $l['platform'],

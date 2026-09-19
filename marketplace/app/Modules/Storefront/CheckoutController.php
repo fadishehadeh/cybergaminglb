@@ -6,6 +6,7 @@ namespace App\Modules\Storefront;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Response;
+use App\Support\Delivery;
 use App\Support\InsufficientCreditException;
 use App\Support\Wallet;
 
@@ -45,10 +46,20 @@ final class CheckoutController extends Controller
             $values['area'] = '';
         }
         $needsDelivery = (bool) $cart['has_physical'];
+        $userId = $user ? (int) $user['id'] : null;
+        $mode = $needsDelivery && $values['area'] !== '' ? Shipping::mode($values['area']) : '';
+        $prepay = $mode === 'remote' && Delivery::requiresPrepay($values['area'], $userId);
+        // does this buyer have to pay first in the remote zones? (drives the live hint next to the area list)
+        $remoteNames = Rules::names('remote');
+        $remotePrepay = $needsDelivery && $remoteNames !== [] && Delivery::requiresPrepay($remoteNames[0], $userId);
         // credit only ever pays for physical items + delivery, so a digital-only cart has no credit option
         $useCredit = $needsDelivery && $user !== null && $balance > 0 && (string) old('use_credit', '1') === '1';
 
         $this->render('site/checkout', [
+            'mode'         => $mode,
+            'prepay'       => $prepay,
+            'remotePrepay' => $remotePrepay,
+            'delivered'    => Delivery::deliveredOrders($userId),
             'needsDelivery' => $needsDelivery,
             'cart'      => $cart,
             'zones'     => $zones,
@@ -56,7 +67,7 @@ final class CheckoutController extends Controller
             'balance'   => $balance,
             'useCredit' => $useCredit,
             'values'    => $values,
-            'totals'    => self::totals($cart, $values['area'], $balance, $useCredit),
+            'totals'    => self::totals($cart, $values['area'], $balance, $useCredit, $prepay),
             'freeOver'  => Shipping::freeOver(),
             'nav'       => 'cart',
             'meta'      => ['title' => 'Checkout | CyberGaming', 'noindex' => true, 'description' => 'Complete your order.'],
@@ -66,10 +77,12 @@ final class CheckoutController extends Controller
     /**
      * Display totals for the summary. $area '' means "not chosen yet" (delivery unknown).
      * Delivery applies to the physical part only; store credit pays for physical items + delivery, never digital lines;
-     * the digital part is prepaid (OMT / Whish), so "cash due on delivery" covers the physical part only.
-     * @return array{subtotal:float,physical:float,digital:float,fee:?float,grand:?float,credit:float,cash:?float,prepaid:float}
+     * the digital part is prepaid (OMT / Whish), so "cash due on delivery" covers the physical part only, and it is 0
+     * as well when $prepay says the physical part must be paid first too (remote zone). 'prepaid' = all that is paid
+     * by OMT / Whish before we ship.
+     * @return array{subtotal:float,physical:float,digital:float,fee:?float,grand:?float,credit:float,cash:?float,prepaid:float,prepay:bool}
      */
-    public static function totals(array $cart, string $area, float $balance, bool $useCredit): array
+    public static function totals(array $cart, string $area, float $balance, bool $useCredit, bool $prepay = false): array
     {
         $physical = (float) $cart['physical'];
         $digital = (float) $cart['digital'];
@@ -82,6 +95,7 @@ final class CheckoutController extends Controller
         $grand = $fee !== null ? round($subtotal + $fee, 2) : null;
         $creditable = round($physical + ($fee ?? 0.0), 2);
         $credit = $useCredit ? round(min($balance, $creditable), 2) : 0.0;
+        $physicalDue = round($creditable - $credit, 2);
         return [
             'subtotal' => $subtotal,
             'physical' => round($physical, 2),
@@ -89,8 +103,9 @@ final class CheckoutController extends Controller
             'fee'      => $fee,
             'grand'    => $grand,
             'credit'   => $credit,
-            'cash'     => $fee !== null ? round($creditable - $credit, 2) : null,
-            'prepaid'  => round($digital, 2),
+            'cash'     => $fee !== null ? ($prepay ? 0.0 : $physicalDue) : null,
+            'prepaid'  => round($digital + ($fee !== null && $prepay ? $physicalDue : 0.0), 2),
+            'prepay'   => $prepay,
         ];
     }
 
@@ -150,6 +165,7 @@ final class CheckoutController extends Controller
                 $total = 0.0;
                 $physical = 0.0;
                 $hasPhysical = false;
+                $hasDigital = false;
                 foreach ($cart as $productId => $qty) {
                     $productId = (int) $productId;
                     $qty = max(1, (int) $qty);
@@ -172,6 +188,8 @@ final class CheckoutController extends Controller
                     if ((int) $p['is_digital'] !== 1) {
                         $physical += $lineTotal;
                         $hasPhysical = true;
+                    } else {
+                        $hasDigital = true;
                     }
                 }
 
@@ -197,12 +215,22 @@ final class CheckoutController extends Controller
                     }
                 }
 
+                // Local vs remote is decided here from the zone table, never from the form. A remote zone means a
+                // third-party courier that cannot inspect, so the physical part is paid first (OMT / Whish) unless the
+                // customer has earned cash on delivery. Digital lines are always prepaid.
+                $zoneMode = $hasPhysical ? Delivery::mode($area) : 'digital';
+                $prepayPhysical = $hasPhysical && $zoneMode === 'remote' && Delivery::requiresPrepay($area, $userId);
+                // nothing to wait for when store credit already covers the physical part and there are no digital lines
+                $owed = ($hasDigital ? 1.0 : 0.0) + ($prepayPhysical ? round($creditable - $credit, 2) : 0.0);
+                $paymentStatus = $owed > 0 ? 'awaiting' : 'not_required';
+
                 $code = $this->uniqueCode($db);
                 $orderId = $db->insert(
-                    "INSERT INTO orders (code, user_id, buyer_name, buyer_phone, buyer_area, buyer_address, buyer_note, status, total, delivery_fee, grand_total, credit_used)
-                     VALUES (:code, :user, :name, :phone, :area, :address, :note, 'new', :total, :fee, :grand, :credit)",
+                    "INSERT INTO orders (code, user_id, buyer_name, buyer_phone, buyer_area, zone, zone_mode, buyer_address, buyer_note, status, total, delivery_fee, grand_total, credit_used, payment_status)
+                     VALUES (:code, :user, :name, :phone, :area, :zone, :zmode, :address, :note, 'new', :total, :fee, :grand, :credit, :pay)",
                     [
                         'code' => $code, 'user' => $userId, 'name' => $name, 'phone' => $phone,
+                        'zone' => $hasPhysical ? $area : null, 'zmode' => $zoneMode, 'pay' => $paymentStatus,
                         'area' => $hasPhysical ? $area : Digital::BILLING_ADDRESS,
                         'address' => $hasPhysical && $address !== '' ? $address : null, 'note' => $note !== '' ? $note : null,
                         'total' => number_format($total, 2, '.', ''),
@@ -251,7 +279,7 @@ final class CheckoutController extends Controller
             Response::abort(404);
         }
         $order = db()->fetch(
-            'SELECT id, code, user_id, buyer_name, buyer_phone, buyer_area, buyer_address, buyer_note, status, total, delivery_fee, grand_total, credit_used, created_at
+            'SELECT id, code, user_id, buyer_name, buyer_phone, buyer_area, zone, zone_mode, buyer_address, buyer_note, status, total, delivery_fee, grand_total, credit_used, payment_status, created_at
                FROM orders WHERE code = :code',
             ['code' => $code]
         ) ?? Response::abort(404);
@@ -265,24 +293,32 @@ final class CheckoutController extends Controller
         $fee = (float) $order['delivery_fee'];
         $grand = (float) $order['grand_total'] > 0 ? (float) $order['grand_total'] : round($subtotal + $fee, 2);
         $credit = (float) $order['credit_used'];
-        // Digital lines are prepaid (OMT / Whish) and credit never pays for them: cash on delivery is the physical part only.
-        $prepaid = 0.0;
+        // Digital lines are prepaid (OMT / Whish) and credit never pays for them. The physical part is cash on delivery
+        // in the local area, and prepaid too for a remote zone that needs prepayment (Rules::physicalPrepaid).
+        $digital = 0.0;
+        $nDigital = 0;
         $hasPhysical = false;
         foreach ($items as $i) {
             if ((int) $i['is_digital'] === 1) {
-                $prepaid += (float) $i['unit_price'] * (int) $i['qty'];
+                $digital += (float) $i['unit_price'] * (int) $i['qty'];
+                $nDigital++;
             } else {
                 $hasPhysical = true;
             }
         }
-        $prepaid = round($prepaid, 2);
-        $hasDigital = $prepaid > 0 || count(array_filter($items, static fn (array $i): bool => (int) $i['is_digital'] === 1)) > 0;
-        $cash = max(0.0, round($grand - $credit - $prepaid, 2));
+        $digital = round($digital, 2);
+        $hasDigital = $nDigital > 0;
+        $physPrepaid = Rules::physicalPrepaid($order, $hasDigital, $hasPhysical);
+        $due = Rules::due($grand, $credit, $digital, $physPrepaid);
+        $cash = $due['cash'];
+        $prepay = $due['prepay'];
+        $zoneMode = (string) ($order['zone_mode'] ?? '');
 
         $summary = implode(', ', array_map(static fn (array $i): string => $i['qty'] . 'x ' . $i['title'] . ((int) $i['is_digital'] === 1 ? ' (digital)' : ''), $items));
-        $waMessage = 'Hi CyberGaming, ' . ($hasDigital ? 'DIGITAL order ' : 'my order ') . $order['code'] . " — $summary — total " . money($grand)
+        $waMessage = 'Hi CyberGaming, ' . ($hasDigital && !$hasPhysical ? 'DIGITAL order ' : 'my order ') . $order['code'] . " — $summary — total " . money($grand)
+            . ($order['zone'] ? ' — zone ' . $order['zone'] . ($zoneMode === 'remote' ? ' (remote)' : '') : '')
             . ($credit > 0 ? ', paid with credit ' . money($credit) : '')
-            . ($hasDigital ? ', digital part ' . money($prepaid) . ' to pay via OMT/Whish before you send the code' : '')
+            . ($prepay > 0 ? ', PREPAY ' . money($prepay) . ' via OMT/Whish (please send me the payment details)' : '')
             . ($hasPhysical ? ', cash due on delivery ' . money($cash) : '')
             . ". Name: {$order['buyer_name']}";
 
@@ -294,7 +330,10 @@ final class CheckoutController extends Controller
             'grand'       => $grand,
             'credit'      => $credit,
             'cash'        => $cash,
-            'prepaid'     => $prepaid,
+            'prepaid'     => $digital,
+            'prepay'      => $prepay,
+            'physPrepaid' => $physPrepaid,
+            'zoneMode'    => $zoneMode,
             'hasDigital'  => $hasDigital,
             'hasPhysical' => $hasPhysical,
             'waLink'      => wa_link($waMessage),

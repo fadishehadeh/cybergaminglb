@@ -105,6 +105,55 @@ $waIsPlaceholder = preg_replace('/\D+/', '', $values['whatsapp_number']) === '96
             </div>
         </div>
     </section>
+    <section class="card" id="remote-rules">
+        <div class="card-head"><h2>Local vs remote delivery</h2><small class="muted">How orders and sell requests work outside your own courier's area.</small></div>
+        <div class="card-body">
+            <p class="hint"><strong>Local</strong> zones: your own courier delivers for the zone fee, can inspect on the spot and can take cash. <strong>Remote</strong> zones: a third-party courier who cannot inspect, so buyers prepay (OMT/Whish) and sellers ship to your hub, where you inspect. Set each zone's mode in <a href="#zones">Delivery zones</a>.</p>
+            <div class="form-grid" data-remote-rules>
+                <div class="field">
+                    <label for="remote_prepay_required">Buyers outside the local area must pay first</label>
+                    <select id="remote_prepay_required" name="remote_prepay_required">
+                        <option value="1" <?= $v('remote_prepay_required') === '1' ? 'selected' : '' ?>>On: pay by OMT/Whish before we ship</option>
+                        <option value="0" <?= $v('remote_prepay_required') === '0' ? 'selected' : '' ?>>Off: cash on delivery everywhere</option>
+                    </select>
+                    <small class="hint">On: a remote order waits for you to press "Mark payment received" and cannot be picked up or delivered before that. We inspect, photograph and seal the items at our hub.</small>
+                </div>
+                <div class="field">
+                    <label for="remote_cod_after_orders">Cash on delivery after N delivered orders</label>
+                    <input type="text" inputmode="numeric" id="remote_cod_after_orders" name="remote_cod_after_orders" value="<?= e($v('remote_cod_after_orders')) ?>" required>
+                    <small class="hint">A trusted customer who already has this many delivered orders may pay cash on delivery even outside the local area. <strong>0 = never cash on delivery outside.</strong> Example: with 3, a buyer in the Bekaa pays first for their first three orders and may pay cash from the fourth.</small>
+                </div>
+                <div class="field">
+                    <label for="remote_min_sell_value">Minimum shipment value from outside ($)</label>
+                    <input type="text" inputmode="decimal" id="remote_min_sell_value" name="remote_min_sell_value" value="<?= e($v('remote_min_sell_value')) ?>" required>
+                    <small class="hint">A seller outside the local area must send games worth at least this (our estimate), so the courier trip is worth it. <strong>0 = no minimum.</strong> Example: at $25, a $20 shipment is refused and a $30 one is accepted.</small>
+                </div>
+                <div class="field">
+                    <label for="pickup_fee">Pickup fee ($)</label>
+                    <input type="text" inputmode="decimal" id="pickup_fee" name="pickup_fee" value="<?= e($v('pickup_fee')) ?>" required data-rr-pickup>
+                    <small class="hint">Charged to a seller when a courier collects the games (our courier locally, the third-party courier outside). It is deducted from their payout; bringing the games to the hub is free. Example: a seller outside the area ships $40 of games and you offer $18: with a <span data-ex-pickup><?= e(money((float) $values['pickup_fee'])) ?></span> pickup fee they receive <strong data-ex-net><?= e(money(max(0, 18 - (float) $values['pickup_fee']))) ?></strong>.</small>
+                </div>
+                <div class="field">
+                    <label for="return_fee">Return fee ($)</label>
+                    <input type="text" inputmode="decimal" id="return_fee" name="return_fee" value="<?= e($v('return_fee')) ?>" required data-rr-return>
+                    <small class="hint">When an item fails inspection and the seller asks for it back, they pay this in cash to the courier on the return delivery (pickup + return trip). Example: with <span data-ex-return><?= e(money((float) $values['return_fee'])) ?></span>, the courier collects that amount when handing the games back. Nothing is charged for a revised offer or for recycling.</small>
+                </div>
+                <div class="field">
+                    <label for="reject_hold_days">Days to wait for a decision</label>
+                    <input type="text" inputmode="numeric" id="reject_hold_days" name="reject_hold_days" value="<?= e($v('reject_hold_days')) ?>" required>
+                    <small class="hint">After an item fails inspection the seller can accept a lower offer, get it back, or let us recycle it. With no answer by this many days, it is recycled (we keep it, no payment). Example: rejected today with 14 days, it is recycled once the 14th day has passed unless they reply.</small>
+                </div>
+            </div>
+            <div class="example-box">
+                <h3>How a sell request from outside the local area plays out</h3>
+                <ol class="plain-steps">
+                    <li>The seller ships $40 of games to your hub. You inspect them and they are fine, so you pay the $18 offer: <strong>they receive $18 &minus; <?= e(money((float) $values['pickup_fee'])) ?> pickup fee = <?= e(money(max(0, 18 - (float) $values['pickup_fee']))) ?></strong>, in cash or credit.</li>
+                    <li>They arrive damaged: you reject them and may propose a lower revised offer. The seller chooses: take the revised offer, get the games back (<?= e(money((float) $values['return_fee'])) ?> cash to the courier), or let you recycle them.</li>
+                    <li>Local sellers can bring the games to your hub for free, or let your own courier check them on the spot for the pickup fee. If the courier declines them on the spot there is no return trip and no fee.</li>
+                </ol>
+            </div>
+        </div>
+    </section>
     <section class="card" id="buyback-factors">
         <div class="card-head"><h2>Buy-back condition factors</h2></div>
         <div class="card-body">
@@ -175,18 +224,26 @@ $waIsPlaceholder = preg_replace('/\D+/', '', $values['whatsapp_number']) === '96
 </form>
 
 <section class="card" id="zones">
-    <div class="card-head"><h2>Delivery zones</h2><small class="muted">Each zone has its own fee. Customers pick their zone when they order.</small></div>
+    <div class="card-head"><h2>Delivery zones</h2><small class="muted">Each zone has its own fee and mode. Customers pick their zone when they order.</small></div>
     <div class="card-body">
-        <p class="hint">Example: with Beirut at $3, a $30 order to Beirut costs $33 in total. Deactivating a zone hides it from customers; it is never deleted. Lower sort numbers are listed first.</p>
+        <p class="hint"><strong>Local = your own courier can inspect and take cash; Remote = third-party courier, prepay + hub inspection.</strong> Example: with Beirut at $5, a $30 order to Beirut costs $35 in total. Deactivating a zone hides it from customers; it is never deleted. Lower sort numbers are listed first.</p>
+        <?php if ($zones): ?>
+            <ul class="zone-summary" aria-label="Zones at a glance">
+                <?php foreach ($zones as $z): ?>
+                    <li class="<?= (int) $z['is_active'] ? '' : 'zone-off' ?>"><?= Forms::modeBadge($z['mode']) ?> <?= e($z['name']) ?> <strong><?= e(money($z['fee'])) ?></strong><?= (int) $z['is_active'] ? '' : ' <small class="muted">(hidden)</small>' ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
         <?php if (!$zones): ?>
             <p class="empty-inline">No zones yet. Every delivery uses the default fee. Add your first zone below.</p>
         <?php else: ?>
-            <div class="zone-head" aria-hidden="true"><span>Zone</span><span>Fee ($)</span><span>Sort</span><span>Active</span><span></span></div>
+            <div class="zone-head" aria-hidden="true"><span>Zone</span><span>Fee ($)</span><span>Mode</span><span>Sort</span><span>Active</span><span></span></div>
             <?php foreach ($zones as $z): ?>
                 <form method="post" action="<?= e(url('/admin/delivery/zones/' . $z['id'])) ?>" class="zone-row<?= (int) $z['is_active'] ? '' : ' zone-off' ?>">
                     <?= csrf_field() ?>
                     <input type="text" name="name" value="<?= e($z['name']) ?>" maxlength="80" required aria-label="Zone name">
                     <input type="text" inputmode="decimal" name="fee" value="<?= e($z['fee']) ?>" required aria-label="Fee for <?= e($z['name']) ?>">
+                    <select name="mode" aria-label="Mode for <?= e($z['name']) ?>" required><?= Forms::options(\App\Modules\Admin\DeliveryController::MODES, $z['mode']) ?></select>
                     <input type="text" inputmode="numeric" name="sort_order" value="<?= (int) $z['sort_order'] ?>" aria-label="Sort order">
                     <label class="check"><input type="checkbox" name="is_active" value="1" <?= (int) $z['is_active'] ? 'checked' : '' ?>> <span class="zone-active-label">Active</span></label>
                     <button class="btn btn-sm" type="submit">Save</button>
@@ -199,6 +256,7 @@ $waIsPlaceholder = preg_replace('/\D+/', '', $values['whatsapp_number']) === '96
             <?= csrf_field() ?>
             <input type="text" name="name" value="<?= e(Forms::val('new_zone_name', '')) ?>" maxlength="80" placeholder="Zone name" required aria-label="New zone name">
             <input type="text" inputmode="decimal" name="fee" value="<?= e(Forms::val('new_zone_fee', '')) ?>" placeholder="Fee" required aria-label="New zone fee">
+            <select name="mode" aria-label="New zone mode" required><option value="">Mode...</option><?= Forms::options(\App\Modules\Admin\DeliveryController::MODES, Forms::val('new_zone_mode', '')) ?></select>
             <input type="text" inputmode="numeric" name="sort_order" value="<?= e(Forms::val('new_zone_sort', '')) ?>" placeholder="Sort" aria-label="New zone sort order">
             <label class="check"><input type="checkbox" name="is_active" value="1" checked> <span class="zone-active-label">Active</span></label>
             <button class="btn btn-primary btn-sm" type="submit">Add zone</button>

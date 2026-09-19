@@ -28,6 +28,7 @@ require base_path('app/Views/account/_nav.php');
                         <small><?= e(AccountUi::date($o['created_at'])) ?> &middot; <?= (int) $o['item_count'] ?> <?= (int) $o['item_count'] === 1 ? 'item' : 'items' ?></small>
                     </div>
                     <?= AccountUi::pill($label, $mod) ?>
+                    <?php if (($o['payment_status'] ?? '') === 'awaiting' && $o['status'] !== 'cancelled'): ?><?= AccountUi::pill('Awaiting your payment', 'warn') ?><?php endif; ?>
                     <div class="acc-row-amount">
                         <strong><?= e(AccountUi::amount($grand)) ?></strong>
                         <?php if ((float) $o['credit_used'] > 0): ?><small><?= e(AccountUi::amount($o['credit_used'])) ?> paid with credit</small><?php endif; ?>

@@ -54,10 +54,21 @@ final class AccountUi
         return $ts ? date($time ? 'j M Y, H:i' : 'j M Y', $ts) : '';
     }
 
-    /** @return array{0:string,1:string} label, css modifier */
-    public static function offerStatus(string $status): array
+    /**
+     * Customer-language status of a sell / trade request. A rejected item stays 'rejected' after a 'new offer' choice
+     * (we complete it), so the choice is needed to tell "please choose" from "waiting for us".
+     * @return array{0:string,1:string} label, css modifier
+     */
+    public static function offerStatus(string $status, ?string $choice = null): array
     {
+        if ($status === 'rejected' && $choice === 'new_offer') {
+            return ['New offer chosen: we will complete it', 'info'];
+        }
         return match ($status) {
+            'rejected'         => ['We couldn\'t accept it: please choose', 'warn'],
+            'return_pending'   => ['Being returned to you', 'warn'],
+            'returned'         => ['Returned to you', 'done'],
+            'recycled'         => ['Recycled', 'off'],
             'new', 'contacted' => ['Under review', 'info'],
             'offered'          => ['Offer ready', 'warn'],
             'accepted'         => ['Accepted', 'ok'],
@@ -79,6 +90,16 @@ final class AccountUi
             'delivered' => ['Delivered', 'done'],
             'cancelled' => ['Cancelled', 'off'],
             default     => [ucfirst($status), 'info'],
+        };
+    }
+
+    /** Payment state of an order that has to be paid before we ship. @return ?array{0:string,1:string} label, css modifier */
+    public static function paymentStatus(?string $status): ?array
+    {
+        return match ($status) {
+            'awaiting' => ['Awaiting your payment', 'warn'],
+            'received' => ['Payment received', 'ok'],
+            default    => null,
         };
     }
 

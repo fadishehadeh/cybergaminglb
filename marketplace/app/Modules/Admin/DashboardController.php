@@ -50,20 +50,31 @@ final class DashboardController extends AdminController
             'sell_offered'     => $count('offered'),
             'sell_to_collect'  => $count('accepted'),
             'sell_to_inspect'  => $count('collected'),
+            'sell_return'      => $count('return_pending'),
+            'sell_undecided'   => (int) db()->fetchValue('SELECT COUNT(*) FROM buyback_requests r WHERE ' . RequestController::UNDECIDED_SQL),
+            'sell_overdue'     => (int) db()->fetchValue('SELECT COUNT(*) FROM buyback_requests r WHERE ' . RequestController::OVERDUE_SQL),
+            'sell_revised'     => (int) db()->fetchValue("SELECT COUNT(*) FROM buyback_requests WHERE status = 'rejected' AND reject_choice = 'new_offer'"),
+            'orders_awaiting_payment' => (int) db()->fetchValue("SELECT COUNT(*) FROM orders WHERE payment_status = 'awaiting' AND status <> 'cancelled'"),
             'delivery_fees_month' => (float) db()->fetchValue(
                 "SELECT COALESCE(SUM(delivery_fee), 0) FROM orders WHERE status = 'delivered' AND created_at >= $monthStart"
             ),
         ];
 
-        // Cash the courier collects. Digital lines are prepaid (OMT/Whish): a digital-only order collects nothing, and in a
-        // mixed order only the physical part counts (wallet credit is applied to the digital part first).
+        // Cash the courier collects. Prepaid orders (payment_status awaiting/received: remote zones, digital items) collect
+        // nothing at the door. Digital lines are always prepaid: a digital-only order collects nothing, and in a mixed order
+        // only the physical part counts (wallet credit is applied to the digital part first), unless the mixed order is
+        // remote and prepaid as a whole.
         $cash = db()->fetch(
             "SELECT COALESCE(SUM(c.cash), 0) AS amount, COALESCE(SUM(c.cash > 0), 0) AS orders FROM (
-                SELECT IF(x.dl = 0,
-                          GREATEST(0, x.grand - x.credit_used),
-                          IF(x.pl = 0, 0, GREATEST(0, x.grand - x.dsub - GREATEST(0, x.credit_used - x.dsub)))) AS cash
+                SELECT CASE
+                         WHEN x.dl = 0 THEN IF(x.prepaid = 1, 0, GREATEST(0, x.grand - x.credit_used))
+                         WHEN x.pl = 0 THEN 0
+                         WHEN x.prepaid = 1 AND x.zone_mode = 'remote' THEN 0
+                         ELSE GREATEST(0, x.grand - x.dsub - GREATEST(0, x.credit_used - x.dsub))
+                       END AS cash
                   FROM (
-                    SELECT IF(o.grand_total > 0, o.grand_total, o.total + o.delivery_fee) AS grand, o.credit_used,
+                    SELECT IF(o.grand_total > 0, o.grand_total, o.total + o.delivery_fee) AS grand, o.credit_used, o.zone_mode,
+                           (o.payment_status <> 'not_required') AS prepaid,
                            (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND is_digital = 1) AS dl,
                            (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND is_digital = 0) AS pl,
                            (SELECT COALESCE(SUM(unit_price * qty), 0) FROM order_items WHERE order_id = o.id AND is_digital = 1) AS dsub
@@ -91,6 +102,12 @@ final class DashboardController extends AdminController
               WHERE o.status = 'new' AND EXISTS (SELECT 1 FROM order_items x WHERE x.order_id = o.id AND x.is_digital = 1)"
         );
 
+        $awaitingOrders = db()->fetchAll(
+            "SELECT o.id, o.code, o.buyer_name, o.zone, o.zone_mode, o.status, o.created_at,
+                    IF(o.grand_total > 0, o.grand_total, o.total + o.delivery_fee) - o.credit_used AS due
+               FROM orders o WHERE o.payment_status = 'awaiting' AND o.status <> 'cancelled'
+              ORDER BY o.created_at ASC, o.id ASC LIMIT 6"
+        );
         $newOrders = db()->fetchAll(
             "SELECT id, code, buyer_name, buyer_area, total, created_at FROM orders WHERE status = 'new' ORDER BY created_at ASC LIMIT 8"
         );
@@ -112,6 +129,6 @@ final class DashboardController extends AdminController
                FROM orders o ORDER BY o.created_at DESC, o.id DESC LIMIT 10"
         );
 
-        $this->view('dashboard', compact('kpi', 'newOrders', 'pendingProducts', 'pendingSellers', 'recentOrders', 'digitalOrders'));
+        $this->view('dashboard', compact('kpi', 'newOrders', 'pendingProducts', 'pendingSellers', 'recentOrders', 'digitalOrders', 'awaitingOrders'));
     }
 }

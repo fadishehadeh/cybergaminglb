@@ -33,13 +33,9 @@ $credit = (float) $given['total_credit'];
             <label class="choice"><input type="radio" name="preferred_method" value="cash"<?= $method === 'cash' ? ' checked' : '' ?>><span><strong>Cash</strong> <em><?= e(money($cash)) ?></em><small>Paid to you once we have inspected the games</small></span></label>
         </fieldset>
 
-        <fieldset class="choice-set">
-            <legend>How do we get your games?</legend>
-            <label class="choice"><input type="radio" name="collection" value="dropoff"<?= $collection === 'dropoff' ? ' checked' : '' ?>><span><strong>I will drop them off</strong><small>At our pickup point</small></span></label>
-            <label class="choice"><input type="radio" name="collection" value="pickup"<?= $collection === 'pickup' ? ' checked' : '' ?>><span><strong>Please collect them</strong><small>We come to your area</small></span></label>
-        </fieldset>
+        <?= Ui::partial('sell-shipping', ['options' => $options, 'cash' => $cash, 'credit' => $credit]) ?>
         <div class="form-row">
-            <label for="o-pickup">Pickup details <span class="opt">(if you chose collection)</span></label>
+            <label for="o-pickup">Pickup address and best time <span class="opt">(if a courier picks it up)</span></label>
             <input id="o-pickup" name="pickup_note" type="text" maxlength="255" placeholder="Address hint, best time, floor..." value="<?= e($options['pickup_note']) ?>">
         </div>
         <div class="form-row">
@@ -54,6 +50,6 @@ $credit = (float) $given['total_credit'];
         </div>
         <div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
         <button class="btn btn-primary btn-lg btn-block" type="submit">Send my request</button>
-        <p class="fine">Nothing is charged. We review your request, send you an offer, and you accept it before anything moves.</p>
+        <p class="fine">Nothing is charged up front: a courier pickup fee, if you choose one, is deducted from your payout. We review your request, send you an offer, and you accept it before anything moves.</p>
     </form>
 <?php endif; ?>

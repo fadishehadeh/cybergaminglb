@@ -6,10 +6,15 @@ namespace App\Modules\Admin;
 use App\Core\Request;
 use App\Core\Response;
 
-/** Delivery zones editor (the list itself is shown on the Settings page). Zones are never deleted, only deactivated. */
+/**
+ * Delivery zones editor (the list itself is shown on the Settings page). Zones are never deleted, only deactivated.
+ * Every zone is LOCAL (our own courier: flat fee, can inspect, cash on delivery) or REMOTE (third-party courier:
+ * prepay + hub inspection).
+ */
 final class DeliveryController extends AdminController
 {
-    private const BACK = '/admin/settings#zones';
+    private const BACK  = '/admin/settings#zones';
+    public const MODES = ['local' => 'Local', 'remote' => 'Remote'];
 
     public function index(Request $request): void
     {
@@ -20,13 +25,13 @@ final class DeliveryController extends AdminController
     {
         [$errors, $data] = $this->validate($request, null);
         if ($errors) {
-            $this->back(self::BACK, "Zone not added:\n" . implode("\n", $errors), ['new_zone_name' => $data['name'], 'new_zone_fee' => $request->input('fee'), 'new_zone_sort' => $request->input('sort_order'), '_form' => '1']);
+            $this->back(self::BACK, "Zone not added:\n" . implode("\n", $errors), ['new_zone_name' => $data['name'], 'new_zone_fee' => $request->input('fee'), 'new_zone_mode' => $this->str($request, 'mode'), 'new_zone_sort' => $request->input('sort_order'), '_form' => '1']);
         }
         db()->execute(
-            'INSERT INTO delivery_zones (name, fee, sort_order, is_active) VALUES (?, ?, ?, ?)',
-            [$data['name'], $data['fee'], $data['sort_order'], $data['is_active']]
+            'INSERT INTO delivery_zones (name, fee, mode, sort_order, is_active) VALUES (?, ?, ?, ?, ?)',
+            [$data['name'], $data['fee'], $data['mode'], $data['sort_order'], $data['is_active']]
         );
-        $this->ok('Zone "' . $data['name'] . '" added with a ' . money($data['fee']) . ' delivery fee.');
+        $this->ok('Zone "' . $data['name'] . '" added: ' . strtolower(self::MODES[$data['mode']]) . ' delivery, ' . money($data['fee']) . ' fee.');
         $this->redirect(self::BACK);
     }
 
@@ -41,10 +46,13 @@ final class DeliveryController extends AdminController
             $this->back(self::BACK, 'Zone "' . $zone['name'] . "\" not saved:\n" . implode("\n", $errors));
         }
         db()->execute(
-            'UPDATE delivery_zones SET name = ?, fee = ?, sort_order = ?, is_active = ? WHERE id = ?',
-            [$data['name'], $data['fee'], $data['sort_order'], $data['is_active'], $zone['id']]
+            'UPDATE delivery_zones SET name = ?, fee = ?, mode = ?, sort_order = ?, is_active = ? WHERE id = ?',
+            [$data['name'], $data['fee'], $data['mode'], $data['sort_order'], $data['is_active'], $zone['id']]
         );
         $msg = 'Zone "' . $data['name'] . '" saved.';
+        if ($data['mode'] !== $zone['mode']) {
+            $msg .= ' It is now a ' . strtolower(self::MODES[$data['mode']]) . ' zone.';
+        }
         if (!$data['is_active'] && (int) $zone['is_active'] === 1) {
             $msg .= ' It is now hidden from customers; orders to it would use the default delivery fee.';
         }
@@ -52,7 +60,7 @@ final class DeliveryController extends AdminController
         $this->redirect(self::BACK);
     }
 
-    /** @return array{0: string[], 1: array{name:string,fee:float,sort_order:int,is_active:int}} */
+    /** @return array{0: string[], 1: array{name:string,fee:float,mode:string,sort_order:int,is_active:int}} */
     private function validate(Request $request, ?int $ignoreId): array
     {
         $errors = [];
@@ -69,6 +77,12 @@ final class DeliveryController extends AdminController
             $fee = 0.0;
         }
 
+        $mode = $this->str($request, 'mode');
+        if (!array_key_exists($mode, self::MODES)) {
+            $errors[] = 'Choose the delivery mode: Local (our own courier) or Remote (third-party courier).';
+            $mode = 'remote';
+        }
+
         $sortIn = $this->str($request, 'sort_order');
         $sort   = $sortIn === '' ? 0 : Forms::int($sortIn);
         if ($sort === null || $sort < 0 || $sort > 9999) {
@@ -79,6 +93,7 @@ final class DeliveryController extends AdminController
         return [$errors, [
             'name'       => $name,
             'fee'        => $fee,
+            'mode'       => $mode,
             'sort_order' => $sort,
             'is_active'  => $request->input('is_active') ? 1 : 0,
         ]];

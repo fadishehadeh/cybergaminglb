@@ -18,13 +18,19 @@ final class DashboardController extends BaseController
               WHERE user_id = ? AND status = 'offered' ORDER BY offered_at DESC, id DESC",
             [$id]
         );
+        // rejected items wait for the customer's decision (new offer / return / recycle)
+        $choices = db()->fetchAll(
+            "SELECT code, kind, revised_amount, hold_until FROM buyback_requests
+              WHERE user_id = ? AND status = 'rejected' AND reject_choice IS NULL ORDER BY id DESC",
+            [$id]
+        );
         $openOffers = (int) db()->fetchValue(
-            "SELECT COUNT(*) FROM buyback_requests WHERE user_id = ? AND status IN ('new','contacted','accepted','collected')",
+            "SELECT COUNT(*) FROM buyback_requests WHERE user_id = ? AND status IN ('new','contacted','accepted','collected','rejected','return_pending')",
             [$id]
         );
         $ledger = AccountUi::describeLedger(Wallet::history($id, 5), $id);
         $orders = db()->fetchAll(
-            'SELECT code, status, total, delivery_fee, grand_total, credit_used, created_at FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 3',
+            'SELECT code, status, total, delivery_fee, grand_total, credit_used, payment_status, created_at FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 3',
             [$id]
         );
 
@@ -43,6 +49,7 @@ final class DashboardController extends BaseController
             'me'         => $me,
             'balance'    => Wallet::balance($id),
             'offers'     => $offers,
+            'choices'    => $choices,
             'openOffers' => $openOffers,
             'ledger'     => $ledger,
             'orders'     => $orders,

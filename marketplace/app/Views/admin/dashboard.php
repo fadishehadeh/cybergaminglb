@@ -33,7 +33,11 @@ $here = Forms::here();
     <a class="kpi <?= $kpi['sell_to_collect'] ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/requests?tab=buyback&status=accepted')) ?>"><span class="kpi-label">Games to collect</span><span class="kpi-value"><?= (int) $kpi['sell_to_collect'] ?></span><span class="kpi-sub">offer accepted</span></a>
     <a class="kpi <?= $kpi['sell_to_inspect'] ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/requests?tab=buyback&status=collected')) ?>"><span class="kpi-label">To inspect and pay</span><span class="kpi-value"><?= (int) $kpi['sell_to_inspect'] ?></span><span class="kpi-sub">collected games</span></a>
     <div class="kpi"><span class="kpi-label">Delivery fees</span><span class="kpi-value"><?= e(money($kpi['delivery_fees_month'])) ?></span><span class="kpi-sub">this month, delivered orders</span></div>
-    <a class="kpi <?= $kpi['cash_to_collect'] > 0 ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/orders?status=picked_up')) ?>"><span class="kpi-label">Cash to collect</span><span class="kpi-value"><?= e(money($kpi['cash_to_collect'])) ?></span><span class="kpi-sub"><?= (int) $kpi['cash_orders'] ?> order<?= $kpi['cash_orders'] === 1 ? '' : 's' ?> with cash due, digital excluded</span></a>
+    <a class="kpi <?= $kpi['cash_to_collect'] > 0 ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/orders?status=picked_up')) ?>"><span class="kpi-label">Cash to collect</span><span class="kpi-value"><?= e(money($kpi['cash_to_collect'])) ?></span><span class="kpi-sub"><?= (int) $kpi['cash_orders'] ?> order<?= $kpi['cash_orders'] === 1 ? '' : 's' ?> with cash due, prepaid and digital excluded</span></a>
+    <a class="kpi <?= $kpi['orders_awaiting_payment'] ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/orders?payment=awaiting')) ?>"><span class="kpi-label">Orders awaiting payment</span><span class="kpi-value"><?= (int) $kpi['orders_awaiting_payment'] ?></span><span class="kpi-sub">prepaid: waiting for OMT/Whish</span></a>
+    <a class="kpi <?= $kpi['sell_undecided'] ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/requests?tab=buyback&status=undecided')) ?>"><span class="kpi-label">Rejected, customer to decide</span><span class="kpi-value"><?= (int) $kpi['sell_undecided'] ?></span><span class="kpi-sub">revised offer, return or recycle</span></a>
+    <a class="kpi <?= $kpi['sell_overdue'] ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/requests?tab=buyback&status=overdue')) ?>"><span class="kpi-label">Overdue rejected items</span><span class="kpi-value"><?= (int) $kpi['sell_overdue'] ?></span><span class="kpi-sub">no answer, deadline passed: recycle</span></a>
+    <a class="kpi <?= $kpi['sell_return'] ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/requests?tab=buyback&status=return_pending')) ?>"><span class="kpi-label">Returns to send</span><span class="kpi-value"><?= (int) $kpi['sell_return'] ?></span><span class="kpi-sub">customer wants the games back</span></a>
     <a class="kpi <?= $kpi['digital_open'] ? 'kpi-alert' : '' ?>" href="<?= e(url('/admin/orders?kind=digital&open=1')) ?>"><span class="kpi-label">Digital orders to process</span><span class="kpi-value"><?= (int) $kpi['digital_open'] ?></span><span class="kpi-sub">waiting for payment or code<?= $kpi['digital_new'] > 0 ? ' (' . (int) $kpi['digital_new'] . ' unpaid)' : '' ?></span></a>
 </div>
 
@@ -44,6 +48,10 @@ $here = Forms::here();
             <?php
             $queues = [
                 [$kpi['sell_to_inspect'], 'Collected games to inspect and pay', '/admin/requests?tab=buyback&status=collected'],
+                [$kpi['sell_revised'], 'Customers who accepted a revised offer: complete them', '/admin/requests?tab=buyback&status=rejected'],
+                [$kpi['sell_return'], 'Rejected games to send back', '/admin/requests?tab=buyback&status=return_pending'],
+                [$kpi['sell_overdue'], 'Rejected games with no answer past the deadline: recycle', '/admin/requests?tab=buyback&status=overdue'],
+                [$kpi['sell_undecided'], 'Rejected games waiting for the customer to decide', '/admin/requests?tab=buyback&status=undecided'],
                 [$kpi['sell_to_collect'], 'Accepted offers: games to collect', '/admin/requests?tab=buyback&status=accepted'],
                 [$kpi['sell_to_offer'], 'Sell requests waiting for your offer', '/admin/requests?tab=buyback&status=toprice'],
             ];
@@ -62,6 +70,27 @@ $here = Forms::here();
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
+            <h3 class="sub-title">Orders awaiting payment <span class="muted">(<?= (int) $kpi['orders_awaiting_payment'] ?>)</span></h3>
+            <?php if (!$awaitingOrders): ?>
+                <p class="empty-inline">No orders waiting for payment.</p>
+            <?php else: ?>
+                <ul class="list">
+                    <?php foreach ($awaitingOrders as $o): ?>
+                        <li>
+                            <a href="<?= e(url('/admin/orders/' . $o['id'])) ?>"><strong><?= e($o['code']) ?></strong></a>
+                            <?= Forms::modeBadge($o['zone_mode']) ?>
+                            <span class="muted"><?= e($o['buyer_name']) ?><?= $o['zone'] ? ', ' . e($o['zone']) : '' ?></span>
+                            <span class="grow"></span>
+                            <strong><?= e(money(max(0, (float) $o['due']))) ?></strong>
+                            <a class="btn btn-sm" href="<?= e(url('/admin/orders/' . $o['id'])) ?>">Open</a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php if ($kpi['orders_awaiting_payment'] > count($awaitingOrders)): ?>
+                    <p><a href="<?= e(url('/admin/orders?payment=awaiting')) ?>">See all <?= (int) $kpi['orders_awaiting_payment'] ?> orders awaiting payment &rarr;</a></p>
+                <?php endif; ?>
+            <?php endif; ?>
+
             <h3 class="sub-title">Digital orders waiting for payment / code <span class="muted">(<?= (int) $kpi['digital_open'] ?>)</span></h3>
             <?php if (!$digitalOrders): ?>
                 <p class="empty-inline">No digital orders waiting.</p>

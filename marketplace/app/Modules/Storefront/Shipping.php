@@ -8,24 +8,35 @@ use App\Support\Delivery;
 /** Storefront-side view of the delivery zones (admin-editable table) with a safe fallback to the built-in area list. */
 final class Shipping
 {
-    /** @return array<int, array{name:string,fee:float}> */
+    /** @return array<int, array{name:string,fee:float,mode:string}> */
     public static function zones(): array
     {
         $out = [];
         foreach (Delivery::zones() as $z) {
-            $out[] = ['name' => (string) $z['name'], 'fee' => (float) $z['fee']];
+            $out[] = ['name' => (string) $z['name'], 'fee' => (float) $z['fee'], 'mode' => ($z['mode'] ?? '') === 'local' ? 'local' : 'remote'];
         }
         if ($out) {
             return $out;
         }
         $fee = Delivery::defaultFee();
-        return array_map(static fn (string $a): array => ['name' => $a, 'fee' => $fee], CheckoutController::AREAS);
+        return array_map(static fn (string $a): array => ['name' => $a, 'fee' => $fee, 'mode' => $a === 'Beirut' ? 'local' : 'remote'], CheckoutController::AREAS);
     }
 
     /** @return string[] */
     public static function names(): array
     {
         return array_column(self::zones(), 'name');
+    }
+
+    /** 'local' or 'remote' for a zone name ('' when the name is not a delivery zone). */
+    public static function mode(string $zone): string
+    {
+        foreach (self::zones() as $z) {
+            if ($z['name'] === $zone) {
+                return $z['mode'];
+            }
+        }
+        return '';
     }
 
     public static function minFee(): float
@@ -45,13 +56,14 @@ final class Shipping
         return Delivery::fee($area, $subtotal);
     }
 
-    /** "Beirut — $3 delivery" (or "free delivery" once the subtotal reaches the free-delivery threshold). */
-    public static function label(array $zone, float $subtotal = 0.0): string
+    /** "Beirut — $5 delivery · Local" (or "free delivery" once the subtotal reaches the free-delivery threshold). */
+    public static function label(array $zone, float $subtotal = 0.0, ?bool $prepay = null): string
     {
         $free = self::freeOver();
+        $kind = ($zone['mode'] ?? 'remote') === 'local' ? 'Local' : (($prepay ?? Rules::prepayOn()) ? 'Prepay' : 'Remote');
         if ($free > 0 && $subtotal >= $free) {
-            return $zone['name'] . ' — free delivery';
+            return $zone['name'] . ' — free delivery · ' . $kind;
         }
-        return $zone['name'] . ' — ' . money($zone['fee']) . ' delivery';
+        return $zone['name'] . ' — ' . money($zone['fee']) . ' delivery · ' . $kind;
     }
 }

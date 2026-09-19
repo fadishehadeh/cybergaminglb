@@ -10,10 +10,59 @@ final class Delivery
     public static function zones(): array
     {
         try {
-            return db()->fetchAll('SELECT id, name, fee FROM delivery_zones WHERE is_active = 1 ORDER BY sort_order, name');
+            return db()->fetchAll('SELECT id, name, fee, mode FROM delivery_zones WHERE is_active = 1 ORDER BY sort_order, name');
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /** 'local' (our own courier, can inspect, cash on delivery) or 'remote' (third-party courier). Unknown zones are remote. */
+    public static function mode(string $zone): string
+    {
+        $mode = db()->fetchValue('SELECT mode FROM delivery_zones WHERE name = ?', [$zone]);
+        return $mode === 'local' ? 'local' : 'remote';
+    }
+
+    public static function isLocal(string $zone): bool
+    {
+        return self::mode($zone) === 'local';
+    }
+
+    /** Number of delivered orders a customer already has (used to allow cash on delivery outside the local area). */
+    public static function deliveredOrders(?int $userId): int
+    {
+        return $userId ? (int) db()->fetchValue("SELECT COUNT(*) FROM orders WHERE user_id = ? AND status = 'delivered'", [$userId]) : 0;
+    }
+
+    /**
+     * Must this buyer pay BEFORE we ship? True for remote zones when the switch is on, unless the customer has enough
+     * delivered orders (remote_cod_after_orders; 0 means cash on delivery is never allowed outside the local area).
+     */
+    public static function requiresPrepay(string $zone, ?int $userId): bool
+    {
+        if ((string) setting('remote_prepay_required', '1') !== '1' || self::isLocal($zone)) {
+            return false;
+        }
+        $after = (int) setting('remote_cod_after_orders', 3);
+        return !($after > 0 && self::deliveredOrders($userId) >= $after);
+    }
+
+    /** Minimum estimated value of a sell shipment from a remote zone (0 = no minimum). */
+    public static function remoteMinSell(): float
+    {
+        return (float) setting('remote_min_sell_value', 25);
+    }
+
+    /** Courier pickup fee charged to a seller, deducted from their payout. */
+    public static function pickupFee(): float
+    {
+        return (float) setting('pickup_fee', 5);
+    }
+
+    /** Pickup + return trip, paid in cash by the seller when a rejected item is sent back. */
+    public static function returnFee(): float
+    {
+        return (float) setting('return_fee', 10);
     }
 
     public static function defaultFee(): float

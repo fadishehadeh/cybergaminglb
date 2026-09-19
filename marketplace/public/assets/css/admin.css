@@ -554,3 +554,44 @@ code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: .85
     .review-actions .btn-lg { width: 100%; }
     .review-form { width: 100%; }
 }
+
+/* ---------- Local vs remote delivery, prepaid orders, rejected sell requests ---------- */
+.tag-local { background: var(--good-bg); color: var(--good); }
+.tag-remote { background: #fef3c7; color: #92400e; }
+.pill-rejected { background: #ffedd5; color: #9a3412; }
+.pill-return-pending { background: #fef3c7; color: #92400e; }
+.pill-returned { background: #e0e7ff; color: #3730a3; }
+.pill-recycled { background: #e2e8f0; color: #475569; }
+.pay-awaiting { background: var(--warn-bg); color: #92400e; }
+.pay-received { background: var(--good-bg); color: var(--good); }
+.pay-none { background: #f1f5f9; color: #64748b; }
+.prepaid-note { font-weight: 700; font-size: .78rem; letter-spacing: .04em; color: #5b21b6; }
+
+.zone-head, .zone-row { grid-template-columns: minmax(150px, 2fr) 90px 110px 70px 80px 70px; }
+.zone-row select { width: 100%; }
+.zone-summary { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.zone-summary li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #e2e8f0; border-radius: 999px; background: #fff; font-size: .85rem; }
+.zone-summary li.zone-off { opacity: .6; }
+@media (max-width: 700px) {
+    .zone-row { grid-template-columns: 1fr 1fr; padding: 12px 0; gap: 8px; }
+    .zone-row input[name=name], .zone-row button { grid-column: 1 / -1; }
+}
+
+.payment-panel.is-awaiting { border-color: #f59e0b; }
+.payment-panel.is-awaiting .card-head { background: #fffbeb; }
+.payment-panel.is-received .card-head { background: var(--good-bg); }
+
+.inspect-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.inspect-cols .sub-title { margin-top: 0; }
+@media (max-width: 900px) { .inspect-cols { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+.reject-form .field, .spot-decline-form .field { margin-bottom: 12px; max-width: 520px; }
+.spot-decline-form { margin-top: 20px; padding-top: 16px; border-top: 1px dashed #e2e8f0; }
+.callout-warn { background: #fff7ed; border-color: #fed7aa; }
+.net-hint { display: block; }
+.plain-steps { margin: 6px 0 0; padding-left: 20px; }
+.plain-steps li { margin-bottom: 6px; }
+.status-actions .inline-form { max-width: 100%; }
+@media (max-width: 600px) {
+    .status-actions .btn-lg { white-space: normal; text-align: center; }
+    .zone-summary li { font-size: .8rem; }
+}

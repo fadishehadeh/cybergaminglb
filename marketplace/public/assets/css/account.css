@@ -198,3 +198,14 @@
 .tl-todo strong { color: var(--muted); font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) { .acc-page * { transition: none !important; } }
+
+/* ---------- local vs remote delivery rules ---------- */
+.acc-steps { margin: .6em 0 0 1.2em; padding: 0; }
+.acc-steps li { margin-bottom: 4px; }
+.acc-dl-prepay dd { color: #9a3412; }
+.acc-zone-rules ul { margin: .4em 0 0 1.2em; }
+.acc-zone-rules li { margin-bottom: 4px; }
+.acc-zone-rules h2 .pay-pill { vertical-align: middle; }
+.acc-net { margin: 0 0 14px; }
+.acc-status .acc-dl { margin-top: 12px; }
+.acc-status .acc-dl small { color: var(--muted); font-weight: 400; }

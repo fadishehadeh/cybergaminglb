@@ -63,6 +63,7 @@ $router->post('/admin/sellers/{id}/suspend', [SellerController::class, 'suspend'
 $router->get('/admin/orders', [OrderController::class, 'index'], $admin);
 $router->get('/admin/orders/{id}', [OrderController::class, 'show'], $admin);
 $router->post('/admin/orders/{id}/status', [OrderController::class, 'status'], $admin);
+$router->post('/admin/orders/{id}/payment', [OrderController::class, 'payment'], $admin);
 $router->post('/admin/orders/{id}/note', [OrderController::class, 'note'], $admin);
 
 // Payouts
@@ -79,6 +80,14 @@ $router->post('/admin/requests/buyback/{id}/decline', [RequestController::class,
 $router->post('/admin/requests/buyback/{id}/collect', [RequestController::class, 'collect'], $admin);
 $router->post('/admin/requests/buyback/{id}/complete', [RequestController::class, 'complete'], $admin);
 $router->post('/admin/requests/buyback/{id}/cancel', [RequestController::class, 'cancel'], $admin);
+// Local courier pickup (checked on the spot) and the hub-inspection reject flow.
+$router->post('/admin/requests/buyback/{id}/spot-accept', [RequestController::class, 'spotAccept'], $admin);
+$router->post('/admin/requests/buyback/{id}/spot-decline', [RequestController::class, 'spotDecline'], $admin);
+$router->post('/admin/requests/buyback/{id}/inspect-reject', [RequestController::class, 'inspectReject'], $admin);
+$router->post('/admin/requests/buyback/{id}/decision', [RequestController::class, 'decision'], $admin);
+$router->post('/admin/requests/buyback/{id}/complete-revised', [RequestController::class, 'completeRevised'], $admin);
+$router->post('/admin/requests/buyback/{id}/returned', [RequestController::class, 'markReturned'], $admin);
+$router->post('/admin/requests/buyback/{id}/recycle', [RequestController::class, 'recycle'], $admin);
 $router->post('/admin/requests/swap/{id}', [RequestController::class, 'updateSwap'], $admin);
 $router->post('/admin/requests/swap/{id}/publish', [RequestController::class, 'publishSwap'], $admin);
 $router->post('/admin/requests/swap/{id}/unpublish', [RequestController::class, 'unpublishSwap'], $admin);

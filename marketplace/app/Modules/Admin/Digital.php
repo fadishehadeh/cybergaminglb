@@ -126,20 +126,30 @@ final class Digital
      *  - digital only  : prepaid via OMT/Whish, nothing to collect at the door
      *  - mixed         : digital lines are prepaid; wallet credit settles the digital part first, cash covers the rest
      *
-     * $order needs total, delivery_fee, credit_used and grand_total (0 on old orders).
-     * @return array{kind:string, grand:float, digital:float, prepaid:float, cash:float}
+     * $order needs total, delivery_fee, credit_used and grand_total (0 on old orders); payment_status and zone_mode refine it:
+     * an order with payment_status awaiting/received is prepaid, so a physical order collects nothing at the door, and a
+     * REMOTE mixed order is prepaid as a whole (a local mixed order still collects cash for the physical part).
+     * @return array{kind:string, grand:float, digital:float, prepaid:float, cash:float, all_prepaid:bool}
      */
     public static function split(array $order, float $digitalSubtotal, int $digitalLines, int $physicalLines): array
     {
         $grandTotal = (float) ($order['grand_total'] ?? 0);
         $grand  = $grandTotal > 0 ? $grandTotal : (float) $order['total'] + (float) $order['delivery_fee'];
         $credit = (float) $order['credit_used'];
+        // Prepaid orders (payment_status awaiting/received): the customer pays by OMT/Whish, so nothing is collected at the door.
+        $prepaid = ($order['payment_status'] ?? 'not_required') !== 'not_required';
+        $remote  = ($order['zone_mode'] ?? null) === 'remote';
 
         if ($digitalLines === 0) {
-            return ['kind' => 'physical', 'grand' => $grand, 'digital' => 0.0, 'prepaid' => 0.0, 'cash' => max(0.0, round($grand - $credit, 2))];
+            return ['kind' => 'physical', 'grand' => $grand, 'digital' => 0.0, 'prepaid' => $prepaid ? max(0.0, round($grand - $credit, 2)) : 0.0,
+                    'cash' => $prepaid ? 0.0 : max(0.0, round($grand - $credit, 2)), 'all_prepaid' => $prepaid];
         }
         if ($physicalLines === 0) {
-            return ['kind' => 'digital', 'grand' => $grand, 'digital' => $grand, 'prepaid' => max(0.0, round($grand - $credit, 2)), 'cash' => 0.0];
+            return ['kind' => 'digital', 'grand' => $grand, 'digital' => $grand, 'prepaid' => max(0.0, round($grand - $credit, 2)), 'cash' => 0.0, 'all_prepaid' => true];
+        }
+        if ($prepaid && $remote) {
+            // Remote mixed order: the courier cannot take cash, so the whole order is prepaid.
+            return ['kind' => 'mixed', 'grand' => $grand, 'digital' => $digitalSubtotal, 'prepaid' => max(0.0, round($grand - $credit, 2)), 'cash' => 0.0, 'all_prepaid' => true];
         }
         $creditLeft = max(0.0, $credit - $digitalSubtotal);
         return [
@@ -148,6 +158,7 @@ final class Digital
             'digital' => $digitalSubtotal,
             'prepaid' => max(0.0, round($digitalSubtotal - $credit, 2)),
             'cash'    => max(0.0, round($grand - $digitalSubtotal - $creditLeft, 2)),
+            'all_prepaid' => false,
         ];
     }
 

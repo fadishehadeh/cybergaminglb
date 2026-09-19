@@ -2,7 +2,7 @@
 use App\Modules\Account\AccountUi;
 use App\Modules\Storefront\Ui;
 
-/** @var array $me @var float $balance @var array $offers @var int $openOffers @var array $ledger @var array $orders @var string[] $missing */
+/** @var array $me @var float $balance @var array $offers @var array $choices @var int $openOffers @var array $ledger @var array $orders @var string[] $missing */
 $meta = ['title' => 'My account | CyberGaming Lebanon', 'description' => 'Your CyberGaming account.', 'noindex' => true];
 $accountNav = 'dashboard';
 require base_path('app/Views/account/_nav.php');
@@ -20,6 +20,16 @@ require base_path('app/Views/account/_nav.php');
                     <?php if ($o['offer_cash'] !== null): ?><strong><?= e(AccountUi::amount($o['offer_cash'])) ?> cash</strong><?php endif; ?>.</span>
             </div>
             <a class="btn btn-primary btn-sm" href="<?= e(url('/account/offers/' . $o['code'])) ?>">Review offer</a>
+        </div>
+    <?php endforeach; ?>
+
+    <?php foreach ($choices as $c): ?>
+        <div class="acc-alert" role="status">
+            <div>
+                <strong>We couldn't accept an item: please choose</strong>
+                <span>on your <?= $c['kind'] === 'trade_in' ? 'trade-in' : 'sell' ?> request <?= e($c['code']) ?>. Take a new offer<?= $c['revised_amount'] !== null ? ' of ' . e(AccountUi::amount($c['revised_amount'])) : '' ?>, get it sent back, or let us recycle it<?= $c['hold_until'] ? ' (decide by ' . e(AccountUi::date($c['hold_until'] . ' 12:00:00')) . ')' : '' ?>.</span>
+            </div>
+            <a class="btn btn-primary btn-sm" href="<?= e(url('/account/offers/' . $c['code'])) ?>">Choose</a>
         </div>
     <?php endforeach; ?>
 
@@ -89,6 +99,7 @@ require base_path('app/Views/account/_nav.php');
                                 <small><?= e(AccountUi::date($o['created_at'])) ?></small>
                             </span>
                             <?= AccountUi::pill($label, $mod) ?>
+                            <?php if (($o['payment_status'] ?? '') === 'awaiting' && $o['status'] !== 'cancelled'): ?><?= AccountUi::pill('Awaiting your payment', 'warn') ?><?php endif; ?>
                             <strong><?= e(AccountUi::amount((float) $o['grand_total'] > 0 ? $o['grand_total'] : (float) $o['total'] + (float) $o['delivery_fee'])) ?></strong>
                         </li>
                     <?php endforeach; ?>

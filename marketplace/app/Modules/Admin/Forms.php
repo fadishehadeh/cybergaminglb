@@ -11,6 +11,15 @@ final class Forms
         'trade_in'  => 'Trade-in',
         'sell'      => 'Buy-back',
         'disabled'  => 'Suspended',
+        // sell-request statuses in the customer's language
+        'rejected'       => 'Rejected on inspection',
+        'return_pending' => 'Being returned',
+        'returned'       => 'Returned to customer',
+        'recycled'       => 'Recycled',
+        // order payment statuses
+        'not_required' => 'Pay on delivery',
+        'awaiting'     => 'Awaiting payment',
+        'received'     => 'Payment received',
     ];
 
     /** Trimmed string with control characters removed; non-strings become ''. */
@@ -159,6 +168,24 @@ final class Forms
     public static function pill(string $status): string
     {
         return '<span class="pill pill-' . e(str_replace('_', '-', $status)) . '">' . e(self::label($status)) . '</span>';
+    }
+
+    /** Badge for a delivery mode: Local (own courier), Remote (third-party courier) or Digital. Unknown/old rows show nothing. */
+    public static function modeBadge(?string $mode): string
+    {
+        return match ($mode) {
+            'local'   => '<span class="tag tag-local" title="Our own courier: can inspect on the spot, cash on delivery allowed">Local</span>',
+            'remote'  => '<span class="tag tag-remote" title="Third-party courier: cannot inspect, so prepaid and checked at our hub">Remote</span>',
+            'digital' => '<span class="tag tag-digital" title="Digital items: prepaid, code sent on WhatsApp">Digital</span>',
+            default   => '',
+        };
+    }
+
+    /** Order payment status pill (not_required / awaiting / received). */
+    public static function paymentPill(string $status): string
+    {
+        $cls = ['awaiting' => 'pay-awaiting', 'received' => 'pay-received'][$status] ?? 'pay-none';
+        return '<span class="pill ' . $cls . '">' . e(self::label($status)) . '</span>';
     }
 
     /** "12" for whole numbers, "12.5" otherwise: for percentages. */

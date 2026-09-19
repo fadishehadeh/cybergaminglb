@@ -8,7 +8,7 @@ $siteName  = (string) setting('site_name', 'CyberGaming Lebanon');
 $badge = [
     'orders'   => (int) db()->fetchValue("SELECT COUNT(*) FROM orders WHERE status = 'new'"),
     'products' => (int) db()->fetchValue("SELECT COUNT(*) FROM products WHERE status = 'pending'"),
-    'requests' => (int) db()->fetchValue("SELECT COUNT(*) FROM buyback_requests WHERE status IN ('new', 'accepted', 'collected')")
+    'requests' => (int) db()->fetchValue('SELECT COUNT(*) FROM buyback_requests r WHERE ' . \App\Modules\Admin\RequestController::actionSql('r'))
                 + (int) db()->fetchValue("SELECT COUNT(*) FROM swap_requests WHERE status = 'new'"),
     'payouts'  => (int) db()->fetchValue("SELECT COUNT(DISTINCT seller_id) FROM payouts WHERE status = 'pending'"),
 ];

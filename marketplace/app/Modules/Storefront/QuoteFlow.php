@@ -133,6 +133,13 @@ abstract class QuoteFlow extends Controller
         }
 
         [$options, $errors] = Quoter::readOptions($request);
+        // The remote-zone minimum depends on the estimate, so price the list first (prices are never read from the form).
+        if (!$errors) {
+            $shipmentError = Quoter::validateShipment($options, Quoter::priceGames($rows, $this->isTrade() ? 'trade' : 'sell'));
+            if ($shipmentError !== null) {
+                $errors[] = $shipmentError;
+            }
+        }
         $phone = Phone::normalize((string) ($user['phone'] ?? ''));
         if (!Phone::isValid($phone)) {
             $errors[] = 'Your account needs a valid phone / WhatsApp number so we can reach you. Please add it in your profile first.';
@@ -179,7 +186,7 @@ abstract class QuoteFlow extends Controller
             Response::abort(404);
         }
         $req = db()->fetch(
-            'SELECT code, user_id, name, area, kind, items, offered_total, estimate_cash, estimate_credit, preferred_method, collection, wanted_items, photos, created_at
+            'SELECT code, user_id, name, area, zone, zone_mode, pickup_fee, kind, items, offered_total, estimate_cash, estimate_credit, preferred_method, collection, wanted_items, photos, created_at
                FROM buyback_requests WHERE code = :c AND kind = :k',
             ['c' => $code, 'k' => $this->kind()]
         ) ?? Response::abort(404);
@@ -202,6 +209,9 @@ abstract class QuoteFlow extends Controller
             $credit = $credit > 0 ? $credit : (float) $req['offered_total'];
         }
         $method = (string) $req['preferred_method'];
+        $pickupFee = (float) $req['pickup_fee'];
+        $estimate = $method === 'cash' ? $cash : $credit;
+        $net = Rules::net($estimate, $pickupFee);
 
         $wantedTotal = 0.0;
         foreach ($wanted as $w) {
@@ -214,6 +224,8 @@ abstract class QuoteFlow extends Controller
         $msg = "Hi CyberGaming, I just sent " . ($this->isTrade() ? 'a trade-in' : 'a sell') . " request {$req['code']}.\nGames:\n" . Quoter::summaryLines($items)
             . "\nEstimate: cash " . money($cash) . ' / credit ' . money($credit) . ' (I prefer ' . ($method === 'cash' ? 'cash' : 'store credit') . ')'
             . ($this->isTrade() && $wanted ? "\nI want:\n" . implode("\n", array_map(static fn (array $w): string => '- ' . $w['title'] . (!empty($w['matched']) ? ': ' . money($w['price']) : ': (to be checked)'), $wanted)) : '')
+            . ($req['zone'] ? "\nZone: " . $req['zone'] . ' (' . ($req['zone_mode'] === 'remote' ? 'remote' : 'local') . ')' : '')
+            . ($req['collection'] === 'pickup' ? "\nCourier pickup requested, fee " . money($pickupFee) . ' deducted, I receive about ' . money($net) : "\nI will bring the games to your hub")
             . "\nName: " . $req['name'];
 
         $this->render('site/buyback/thanks', [
@@ -228,6 +240,9 @@ abstract class QuoteFlow extends Controller
             'method'      => $method,
             'wantedTotal' => $wantedTotal,
             'balance'     => $balance,
+            'pickupFee'   => $pickupFee,
+            'net'         => $net,
+            'estimate'    => $estimate,
             'waLink'      => wa_link($msg),
             'nav'         => $this->mode(),
             'meta'        => ['title' => ($this->isTrade() ? 'Trade-in request ' : 'Sell request ') . $req['code'] . ' | CyberGaming', 'noindex' => true, 'description' => 'Your request has been received.'],
@@ -250,7 +265,13 @@ abstract class QuoteFlow extends Controller
 
     private function defaultOptions(): array
     {
-        return ['method' => 'credit', 'collection' => 'dropoff', 'pickup_note' => '', 'note' => ''];
+        // the zone is prefilled from the account's area when it is one of the delivery zones
+        $area = trim((string) ($this->customer()['area'] ?? ''));
+        $zone = in_array($area, Shipping::names(), true) ? $area : '';
+        return [
+            'method' => 'credit', 'collection' => 'dropoff', 'pickup_note' => '', 'note' => '',
+            'zone' => $zone, 'zone_mode' => $zone !== '' ? Shipping::mode($zone) : '', 'pickup_fee' => 0.0,
+        ];
     }
 
     private function pendingKey(): string

@@ -24,10 +24,11 @@ require base_path('app/Views/account/_nav.php');
     <?php else: ?>
         <ul class="acc-cards">
             <?php foreach ($offers as $o):
-                [$label, $mod] = AccountUi::offerStatus($o['status']);
+                [$label, $mod] = AccountUi::offerStatus($o['status'], $o['reject_choice']);
+                $needsChoice = $o['status'] === 'rejected' && $o['reject_choice'] === null;
                 $ec = (float) $o['estimate_cash'] > 0 ? (float) $o['estimate_cash'] : (float) $o['offered_total'];
                 ?>
-                <li class="acc-row-card<?= $o['status'] === 'offered' ? ' is-attention' : '' ?>">
+                <li class="acc-row-card<?= $o['status'] === 'offered' || $needsChoice ? ' is-attention' : '' ?>">
                     <div class="acc-row-main">
                         <a class="acc-row-title" href="<?= e(url('/account/offers/' . $o['code'])) ?>"><?= e($o['code']) ?></a>
                         <small><?= e(AccountUi::date($o['created_at'])) ?> &middot; <?= (int) $o['item_count'] ?> <?= (int) $o['item_count'] === 1 ? 'game' : 'games' ?><?= $o['kind'] === 'trade_in' ? ' &middot; trade-in' : '' ?></small>
@@ -37,6 +38,9 @@ require base_path('app/Views/account/_nav.php');
                         <?php if ($o['status'] === 'offered'): ?>
                             <strong><?= $o['offer_credit'] !== null ? e(AccountUi::amount($o['offer_credit'])) . ' credit' : e(AccountUi::amount($o['offer_cash'])) . ' cash' ?></strong>
                             <small>our offer</small>
+                        <?php elseif ($needsChoice): ?>
+                            <strong><?= $o['revised_amount'] !== null ? e(AccountUi::amount($o['revised_amount'])) : 'Return or recycle' ?></strong>
+                            <small><?= $o['revised_amount'] !== null ? 'revised offer' : 'please choose' ?></small>
                         <?php elseif ($o['status'] === 'completed' && $o['final_amount'] !== null): ?>
                             <strong><?= e(AccountUi::amount($o['final_amount'])) ?></strong>
                             <small><?= $o['final_method'] === 'credit' ? 'added as credit' : 'paid in cash' ?></small>
@@ -45,7 +49,7 @@ require base_path('app/Views/account/_nav.php');
                             <small>estimate</small>
                         <?php endif; ?>
                     </div>
-                    <a class="btn <?= $o['status'] === 'offered' ? 'btn-primary' : 'btn-ghost' ?> btn-sm" href="<?= e(url('/account/offers/' . $o['code'])) ?>"><?= $o['status'] === 'offered' ? 'Review offer' : 'View' ?><span class="sr-only"> request <?= e($o['code']) ?></span></a>
+                    <a class="btn <?= $o['status'] === 'offered' || $needsChoice ? 'btn-primary' : 'btn-ghost' ?> btn-sm" href="<?= e(url('/account/offers/' . $o['code'])) ?>"><?= $o['status'] === 'offered' ? 'Review offer' : ($needsChoice ? 'Choose' : 'View') ?><span class="sr-only"> request <?= e($o['code']) ?></span></a>
                 </li>
             <?php endforeach; ?>
         </ul>

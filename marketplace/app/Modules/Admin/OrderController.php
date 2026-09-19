@@ -17,10 +17,11 @@ final class OrderController extends AdminController
 
     /**
      * Forward moves (skipping is allowed, e.g. house stock needs no pickup) plus cancel, until delivered/cancelled.
-     * Orders with digital lines can never skip "confirmed": that is the step where the OMT/Whish payment is checked,
-     * and the code must not be released before it. Digital-only orders also skip "picked up".
+     * Orders with digital lines can never skip "confirmed" (we have contacted the customer about the OMT/Whish payment).
+     * Digital-only orders also skip "picked up". While the payment is still AWAITING (prepaid orders: remote zones and
+     * digital items) the order may be confirmed but never picked up or delivered: press "Mark payment received" first.
      */
-    public static function allowed(string $from, bool $hasDigital = false, bool $digitalOnly = false): array
+    public static function allowed(string $from, bool $hasDigital = false, bool $digitalOnly = false, string $payment = 'not_required'): array
     {
         $i = array_search($from, self::FLOW, true);
         if ($i === false || $from === 'delivered') {
@@ -33,7 +34,23 @@ final class OrderController extends AdminController
         if ($hasDigital && $from === 'new') {
             $next = ['confirmed'];
         }
+        if ($payment === 'awaiting') {
+            $next = array_values(array_intersect($next, ['confirmed']));
+        }
         return [...$next, 'cancelled'];
+    }
+
+    /**
+     * May the digital code be released? Only once the payment is received. Orders placed before payment tracking existed
+     * (payment_status not_required, e.g. fully covered by credit) keep the old rule: released once confirmed.
+     */
+    public static function codeUnlocked(array $order): bool
+    {
+        $payment = (string) ($order['payment_status'] ?? 'not_required');
+        if ($payment === 'received') {
+            return true;
+        }
+        return $payment === 'not_required' && in_array($order['status'], ['confirmed', 'picked_up', 'delivered'], true);
     }
 
     /** Counts of digital / physical lines and the digital subtotal, for one order. */
@@ -67,6 +84,10 @@ final class OrderController extends AdminController
             $kind = '';
         }
         $open = $request->query('open') === '1';
+        $payment = Forms::text($request->query('payment'));
+        if (!in_array($payment, ['awaiting', 'received', 'not_required'], true)) {
+            $payment = '';
+        }
 
         $where  = [];
         $params = [];
@@ -76,6 +97,12 @@ final class OrderController extends AdminController
         } elseif ($open) {
             // "still to process": waiting for payment (new) or for the code / hand-over (confirmed)
             $where[] = "o.status IN ('new', 'confirmed')";
+        }
+        if ($payment === 'awaiting') {
+            $where[] = "o.payment_status = 'awaiting' AND o.status <> 'cancelled'";
+        } elseif ($payment !== '') {
+            $where[]  = 'o.payment_status = ?';
+            $params[] = $payment;
         }
         if ($kind === 'digital') {
             $where[] = 'EXISTS (SELECT 1 FROM order_items x WHERE x.order_id = o.id AND x.is_digital = 1)';
@@ -94,6 +121,7 @@ final class OrderController extends AdminController
 
         $orders = db()->fetchAll(
             'SELECT o.id, o.code, o.user_id, o.buyer_name, o.buyer_phone, o.buyer_area, o.total, o.delivery_fee, o.credit_used, o.grand_total, o.status, o.created_at,
+                    o.zone, o.zone_mode, o.payment_status,
                     ' . self::GRAND_SQL . ' AS grand,
                     (SELECT COALESCE(SUM(qty), 0) FROM order_items WHERE order_id = o.id) AS units,
                     (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND seller_id IS NOT NULL) AS seller_lines,
@@ -109,12 +137,14 @@ final class OrderController extends AdminController
             $counts[$row['status']] = (int) $row['n'];
         }
 
+        $awaitingCount = (int) db()->fetchValue("SELECT COUNT(*) FROM orders WHERE payment_status = 'awaiting' AND status <> 'cancelled'");
+
         foreach ($orders as &$o) {
             $o['split'] = Digital::split($o, (float) $o['digital_subtotal'], (int) $o['digital_lines'], (int) $o['physical_lines']);
         }
         unset($o);
 
-        $this->view('orders/index', compact('orders', 'pager', 'status', 'q', 'counts', 'kind', 'open'));
+        $this->view('orders/index', compact('orders', 'pager', 'status', 'q', 'counts', 'kind', 'open', 'payment', 'awaitingCount'));
     }
 
     public function show(Request $request, string $id): void
@@ -167,7 +197,8 @@ final class OrderController extends AdminController
             'messages' => $messages,
             'items'   => $items,
             'totals'  => $totals,
-            'allowed' => self::allowed($order['status'], $mix['digital'] > 0, $split['kind'] === 'digital'),
+            'unlocked' => self::codeUnlocked($order),
+            'allowed' => self::allowed($order['status'], $mix['digital'] > 0, $split['kind'] === 'digital', (string) $order['payment_status']),
         ]);
     }
 
@@ -184,10 +215,13 @@ final class OrderController extends AdminController
                 return ['error' => 'Order not found.'];
             }
             $mix = self::lineMix($orderId);
-            if (!in_array($to, self::allowed($order['status'], $mix['digital'] > 0, $mix['digital'] > 0 && $mix['physical'] === 0), true)) {
-                $why = $mix['digital'] > 0 && $order['status'] === 'new' && $to !== 'cancelled'
-                    ? ' Orders with digital items must be confirmed (payment received) first.'
-                    : '';
+            if (!in_array($to, self::allowed($order['status'], $mix['digital'] > 0, $mix['digital'] > 0 && $mix['physical'] === 0, (string) $order['payment_status']), true)) {
+                $why = '';
+                if ($order['payment_status'] === 'awaiting' && in_array($to, ['picked_up', 'delivered'], true)) {
+                    $why = ' The customer has not paid yet: press "Mark payment received" once the OMT/Whish payment has arrived.';
+                } elseif ($mix['digital'] > 0 && $order['status'] === 'new' && $to !== 'cancelled') {
+                    $why = ' Orders with digital items must be confirmed first.';
+                }
                 return ['error' => 'Order ' . $order['code'] . ' is ' . Forms::label($order['status']) . ' and cannot be moved to ' . Forms::label($to) . '.' . $why];
             }
 
@@ -253,6 +287,10 @@ final class OrderController extends AdminController
                     $balance = Wallet::credit((int) $order['user_id'], $credit, 'order_refund', 'order', $orderId, 'Refund order ' . $order['code'], (int) auth()->id());
                     $message .= ' ' . money($credit) . ' credit was refunded to the customer\'s wallet (balance ' . money($balance) . ').';
                 }
+                if ($order['payment_status'] === 'received') {
+                    $paid = max(0.0, round(self::grandOf($order) - $credit, 2));
+                    $message .= ' Payment was already received: refund the customer\'s ' . money($paid) . ' manually via OMT/Whish (nothing is refunded automatically).';
+                }
             }
 
             return ['ok' => $message];
@@ -263,6 +301,50 @@ final class OrderController extends AdminController
         }
         $this->ok($result['ok']);
         $this->redirect($back);
+    }
+
+    /** Prepaid order: the OMT/Whish payment has arrived. Only from 'awaiting', once (a second press changes nothing). */
+    public function payment(Request $request, string $id): void
+    {
+        $orderId = $this->id($id);
+        $back    = '/admin/orders/' . $orderId;
+
+        $result = db()->transaction(function () use ($orderId): array {
+            $order = db()->fetch('SELECT * FROM orders WHERE id = ? FOR UPDATE', [$orderId]);
+            if ($order === null) {
+                return ['error' => 'Order not found.'];
+            }
+            if ($order['status'] === 'cancelled') {
+                return ['error' => 'Order ' . $order['code'] . ' is cancelled, so no payment can be recorded.'];
+            }
+            if ($order['payment_status'] === 'received') {
+                return ['ok' => 'Payment for order ' . $order['code'] . ' was already marked as received. Nothing was changed.'];
+            }
+            if ($order['payment_status'] !== 'awaiting') {
+                return ['error' => 'Order ' . $order['code'] . ' does not need a prepayment (it is paid on delivery).'];
+            }
+            $changed = db()->execute(
+                "UPDATE orders SET payment_status = 'received', admin_note = ? WHERE id = ? AND payment_status = 'awaiting' AND status <> 'cancelled'",
+                [trim((string) $order['admin_note'] . "\n" . 'Payment received ' . date('j M Y, H:i') . ' (marked by ' . (string) (auth()->user()['name'] ?? 'admin') . ').'), $orderId]
+            );
+            if ($changed !== 1) {
+                return ['error' => 'The order changed while you were updating it. Reload and check its payment status.'];
+            }
+            $digital = (int) db()->fetchValue('SELECT COUNT(*) FROM order_items WHERE order_id = ? AND is_digital = 1', [$orderId]) > 0;
+            return ['ok' => 'Payment for order ' . $order['code'] . ' marked as received. The order can now be picked up and delivered' . ($digital ? ', and the digital code can be sent' : '') . '.'];
+        });
+
+        if (isset($result['error'])) {
+            $this->back($back, $result['error']);
+        }
+        $this->ok($result['ok']);
+        $this->redirect($back);
+    }
+
+    /** Amount the order comes to (falls back to total + fee on old orders). */
+    private static function grandOf(array $order): float
+    {
+        return (float) $order['grand_total'] > 0 ? (float) $order['grand_total'] : (float) $order['total'] + (float) $order['delivery_fee'];
     }
 
     public function note(Request $request, string $id): void

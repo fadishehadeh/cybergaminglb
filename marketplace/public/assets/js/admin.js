@@ -165,10 +165,41 @@
         var cMethod = completeForm.querySelector('[data-final-method]');
         var cAmount = completeForm.querySelector('[data-final-amount]');
         var cHint = completeForm.querySelector('[data-final-hint]');
+        var cFee = parseFloat(completeForm.getAttribute('data-pickup-fee')) || 0;
+        var cNet = completeForm.querySelector('[data-net-out]');
+        var showNet = function () {
+            if (!cNet) { return; }
+            var gross = parseAmount(cAmount.value);
+            cNet.textContent = isNaN(gross) ? '-' : money(Math.max(0, Math.round((gross - cFee) * 100) / 100));
+        };
         cMethod.addEventListener('change', function () {
             var offer = completeForm.getAttribute(cMethod.value === 'credit' ? 'data-offer-credit' : 'data-offer-cash') || '0';
             cAmount.value = offer;
             cHint.textContent = 'Agreed offer for this method: ' + money(parseFloat(offer)) + '.';
+            showNet();
+        });
+        cAmount.addEventListener('input', showNet);
+    }
+
+    /* Settings: pickup / return fee worked examples. */
+    var rrPickup = document.querySelector('[data-rr-pickup]');
+    var rrReturn = document.querySelector('[data-rr-return]');
+    if (rrPickup) {
+        var exPickup = document.querySelector('[data-ex-pickup]');
+        var exNet = document.querySelector('[data-ex-net]');
+        var pickupRefresh = function () {
+            var v = parseAmount(rrPickup.value);
+            if (isNaN(v)) { return; }
+            exPickup.textContent = money(v);
+            exNet.textContent = money(Math.max(0, Math.round((18 - v) * 100) / 100));
+        };
+        rrPickup.addEventListener('input', pickupRefresh);
+    }
+    if (rrReturn) {
+        var exReturn = document.querySelector('[data-ex-return]');
+        rrReturn.addEventListener('input', function () {
+            var v = parseAmount(rrReturn.value);
+            if (!isNaN(v)) { exReturn.textContent = money(v); }
         });
     }
 

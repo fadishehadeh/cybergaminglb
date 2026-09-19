@@ -16,6 +16,7 @@ final class CartController extends Controller
             'cart'    => $cart,
             'suggest' => $cart['lines'] ? [] : Catalog::latest(4),
             'minFee'  => Shipping::minFee(),
+            'deliveryLine' => Rules::cartLine(),
             'freeOver' => Shipping::freeOver(),
             'balance' => auth()->hasRole('customer') ? \App\Support\Wallet::balance((int) auth()->id()) : null,
             'nav'     => 'cart',

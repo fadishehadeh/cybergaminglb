@@ -3,7 +3,7 @@ use App\Modules\Storefront\Cart;
 use App\Modules\Storefront\Digital;
 use App\Modules\Storefront\Ui;
 
-/** @var array $cart @var array $suggest @var float $minFee @var float $freeOver @var ?float $balance */
+/** @var array $cart @var array $suggest @var float $minFee @var float $freeOver @var ?float $balance @var string $deliveryLine */
 $hasDigital = !empty($cart['has_digital']);
 $hasPhysical = !empty($cart['has_physical']);
 $physical = (float) ($cart['physical'] ?? $cart['total']);
@@ -75,7 +75,7 @@ $physical = (float) ($cart['physical'] ?? $cart['total']);
                 <div class="grand"><dt>Subtotal</dt><dd><?= e(money($cart['total'])) ?></dd></div>
             </dl>
             <?php if ($hasPhysical): ?>
-                <p class="fine delivery-note"><?= Ui::icon('truck', 16) ?> Delivery from <?= e(money($minFee)) ?> &mdash; exact fee at checkout, by area<?= $hasDigital ? ' (charged on the physical items only)' : '' ?>.
+                <p class="fine delivery-note"><?= Ui::icon('truck', 16) ?> <span><?= e($deliveryLine) ?> Exact fee at checkout, by area<?= $hasDigital ? ' (charged on the physical items only)' : '' ?>. <a href="<?= e(url('/delivery-and-payment')) ?>">How delivery works</a>.</span>
                     <?php if ($freeOver > 0): ?>
                         <br><strong>Free delivery over <?= e(money($freeOver)) ?></strong><?php if ($physical < $freeOver): ?> &mdash; add <?= e(money(round($freeOver - $physical, 2))) ?> more<?= $hasDigital ? ' in physical items' : '' ?> to get it.<?php else: ?> &mdash; you qualify!<?php endif; ?>
                     <?php endif; ?>
@@ -92,7 +92,7 @@ $physical = (float) ($cart['physical'] ?? $cart['total']);
                 <?php endif; ?>
             <?php endif; ?>
             <a class="btn btn-primary btn-lg btn-block" href="<?= e(url('/checkout')) ?>">Checkout</a>
-            <p class="fine"><?= $hasDigital && !$hasPhysical ? 'Nothing is charged on the site: we send you the OMT / Whish payment details on WhatsApp.' : 'Pay with store credit and/or cash on delivery. No card details, nothing is charged on the site.' ?></p>
+            <p class="fine"><?= $hasDigital && !$hasPhysical ? 'Nothing is charged on the site: we send you the OMT / Whish payment details on WhatsApp.' : 'Pay with store credit and cash on delivery, or prepay by OMT / Whish for remote areas. No card details, nothing is charged on the site.' ?></p>
             <form method="post" action="<?= e(url('/cart/clear')) ?>">
                 <?= csrf_field() ?>
                 <button class="btn-link" type="submit">Empty cart</button>

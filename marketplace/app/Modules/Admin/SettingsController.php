@@ -17,10 +17,13 @@ final class SettingsController extends AdminController
         'buyback_factor_fair'     => ['Fair', 'Fair'],
     ];
 
+    /** Settings of the local-vs-remote delivery rules (see Delivery). */
+    public const DELIVERY_KEYS = ['remote_prepay_required', 'remote_cod_after_orders', 'remote_min_sell_value', 'pickup_fee', 'return_fee', 'reject_hold_days'];
+
     public function index(Request $request): void
     {
         $values = [];
-        foreach (['commission_pct', 'member_commission_pct', 'delivery_fee', 'free_delivery_over', 'buyback_pct', 'tradein_pct', 'swap_fee', 'whatsapp_number', 'site_name', 'tagline', 'contact_email', 'instagram_url', 'hub_address', ...array_keys(self::FACTORS)] as $key) {
+        foreach (['commission_pct', 'member_commission_pct', 'delivery_fee', 'free_delivery_over', 'buyback_pct', 'tradein_pct', 'swap_fee', 'whatsapp_number', 'site_name', 'tagline', 'contact_email', 'instagram_url', 'hub_address', ...self::DELIVERY_KEYS, ...array_keys(self::FACTORS)] as $key) {
             $values[$key] = (string) (Settings::all()[$key] ?? '');
         }
 
@@ -35,7 +38,7 @@ final class SettingsController extends AdminController
                 'key'    => $key,
             ];
         }
-        $zones = db()->fetchAll('SELECT id, name, fee, sort_order, is_active FROM delivery_zones ORDER BY sort_order, name');
+        $zones = db()->fetchAll('SELECT id, name, fee, mode, sort_order, is_active FROM delivery_zones ORDER BY sort_order, name');
         $this->view('settings/index', ['values' => $values, 'example' => $example, 'zones' => $zones, 'digital' => Digital::counts()]);
     }
 
@@ -70,6 +73,37 @@ final class SettingsController extends AdminController
             }
             $in[$key] = $v;
         }
+
+        // Local vs remote delivery rules.
+        $prepay = $this->str($request, 'remote_prepay_required');
+        if (!in_array($prepay, ['0', '1'], true)) {
+            $errors[] = 'Prepayment outside the local area must be On or Off.';
+            $prepay = '1';
+        }
+        $in['remote_prepay_required'] = $prepay;
+
+        $codAfter = Forms::int($request->input('remote_cod_after_orders'));
+        if ($codAfter === null || $codAfter < 0 || $codAfter > 1000) {
+            $errors[] = 'Cash on delivery after N delivered orders must be a whole number from 0 to 1000 (0 = never cash on delivery outside the local area).';
+            $codAfter = 3;
+        }
+        $in['remote_cod_after_orders'] = (string) $codAfter;
+
+        foreach (['remote_min_sell_value' => 'Minimum shipment value (outside the local area)', 'pickup_fee' => 'Pickup fee', 'return_fee' => 'Return fee'] as $key => $label) {
+            $v = Forms::decimal($request->input($key));
+            if ($v === null || $v > 9999.99) {
+                $errors[] = $label . ' must be an amount of 0 or more' . ($key === 'remote_min_sell_value' ? ' (0 = no minimum).' : '.');
+                $v = 0.0;
+            }
+            $in[$key] = $v;
+        }
+
+        $holdDays = Forms::int($request->input('reject_hold_days'));
+        if ($holdDays === null || $holdDays < 1 || $holdDays > 365) {
+            $errors[] = 'Days to wait for a decision on a rejected item must be a whole number from 1 to 365.';
+            $holdDays = 14;
+        }
+        $in['reject_hold_days'] = (string) $holdDays;
 
         $fee = Forms::decimal($request->input('swap_fee'));
         if ($fee === null) {

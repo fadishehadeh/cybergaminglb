@@ -16,17 +16,24 @@ $flowIdx = array_search($status, $flow, true);
 $next = $allowed && $allowed[0] !== 'cancelled' ? $allowed[0] : null;
 $skip = array_values(array_filter($allowed, static fn ($s) => $s !== 'cancelled' && $s !== $next));
 $hasSeller = $totals['seller'] > 0;
-$paymentConfirmed = in_array($status, ['confirmed', 'picked_up', 'delivered'], true);
-$nextLabel = static function (string $st) use ($hasDigital): string {
-    if ($hasDigital && $st === 'confirmed') {
-        return 'Payment received: mark as confirmed';
+$payStatus = (string) $order['payment_status'];          // not_required | awaiting | received
+$awaiting = $payStatus === 'awaiting';
+$paymentConfirmed = $unlocked;                            // the digital code may be released
+$allPrepaid = !empty($split['all_prepaid']);
+$zoneName = (string) ($order['zone'] ?: $order['buyer_area']);
+$modeBadge = Forms::modeBadge($order['zone_mode']);
+$grandShown = (float) $order['grand_total'] > 0 ? (float) $order['grand_total'] : (float) $order['total'] + (float) $order['delivery_fee'];
+$paidOnline = max(0.0, round($grandShown - (float) $order['credit_used'], 2));   // what the customer pays by OMT/Whish on a prepaid order
+$nextLabel = static function (string $st): string {
+    if ($st === 'confirmed') {
+        return 'Mark as confirmed (customer contacted)';
     }
     return 'Mark as ' . strtolower(Forms::label($st));
 };
 ?>
 <div class="page-head">
     <div>
-        <h1>Order <?= e($order['code']) ?> <?= Forms::pill($status) ?></h1>
+        <h1>Order <?= e($order['code']) ?> <?= Forms::pill($status) ?> <?= $modeBadge ?> <?= Forms::paymentPill($payStatus) ?></h1>
         <p class="muted">Placed <?= e(date('j M Y, H:i', strtotime($order['created_at']))) ?> &middot; last update <?= e(date('j M Y, H:i', strtotime($order['updated_at']))) ?></p>
     </div>
     <div class="actions"><a class="btn btn-ghost" href="<?= e(url('/admin/orders')) ?>">&larr; All orders</a></div>
@@ -40,6 +47,18 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
     </div>
     <div class="cash-math">
         <strong>Nothing to collect at the door.</strong> This order has digital items only: no courier, no pickup.
+        <?= (float) $order['credit_used'] > 0 ? '<br>' . e(money($order['credit_used'])) . ' was paid with wallet credit.' : '' ?>
+        <?= $split['prepaid'] <= 0 ? '<br><strong>Fully paid with credit: no OMT/Whish payment needed.</strong>' : '' ?>
+    </div>
+</section>
+<?php elseif (!$cancelled && $allPrepaid): ?>
+<section class="cash-banner banner-prepaid" aria-label="Prepaid order">
+    <div>
+        <span class="cash-label">PREPAID: nothing to collect</span>
+        <strong class="cash-amount"><?= e(money($split['prepaid'])) ?></strong>
+    </div>
+    <div class="cash-math">
+        <strong>PREPAID &mdash; nothing to collect at the door.</strong> <?= $awaiting ? 'Waiting for the customer\'s OMT/Whish payment' : 'The OMT/Whish payment was received' ?><?= $kind === 'mixed' ? ' (whole order, digital and physical items)' : '' ?>.
         <?= (float) $order['credit_used'] > 0 ? '<br>' . e(money($order['credit_used'])) . ' was paid with wallet credit.' : '' ?>
         <?= $split['prepaid'] <= 0 ? '<br><strong>Fully paid with credit: no OMT/Whish payment needed.</strong>' : '' ?>
     </div>
@@ -71,6 +90,24 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
 <?php endif; ?>
 <?php endif; ?>
 
+<?php if (!$cancelled && $payStatus !== 'not_required'): ?>
+<section class="card payment-panel <?= $awaiting ? 'is-awaiting' : 'is-received' ?>" aria-label="Payment">
+    <div class="card-head"><h2><?= $awaiting ? 'Awaiting payment' : 'Payment received' ?></h2><?= Forms::paymentPill($payStatus) ?></div>
+    <div class="card-body">
+        <?php if ($awaiting): ?>
+            <p><strong><?= e(money($paidOnline)) ?></strong> is due from <?= e($order['buyer_name']) ?> by OMT or Whish<?= $order['zone_mode'] === 'remote' ? ' (remote zone: we ship only after payment, and we inspect, photograph and seal the items at the hub)' : '' ?>.
+                Until you press the button the order can be confirmed, but <strong>not picked up or delivered</strong><?= $hasDigital ? ', and the digital code stays locked' : '' ?>.</p>
+            <form method="post" action="<?= e(url('/admin/orders/' . $order['id'] . '/payment')) ?>" class="inline-form" data-confirm="Mark payment received? Do this only after the <?= e(money($paidOnline)) ?> has really arrived by OMT or Whish.">
+                <?= csrf_field() ?>
+                <button class="btn btn-primary btn-lg" type="submit">Mark payment received</button>
+            </form>
+        <?php else: ?>
+            <p>The <?= e(money($paidOnline)) ?> OMT/Whish payment was received. The order can go through pickup and delivery<?= $hasDigital ? ' and the digital code can be sent' : '' ?>.</p>
+        <?php endif; ?>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php if ($digitalLines && !$cancelled): ?>
 <section class="card digital-panel" aria-label="Digital items">
     <div class="card-head"><h2>DIGITAL: release the code only AFTER payment is confirmed</h2><span class="tag tag-digital"><?= count($digitalLines) ?> digital line<?= count($digitalLines) === 1 ? '' : 's' ?></span></div>
@@ -78,12 +115,12 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
         <ol class="digital-steps">
             <li class="<?= $paymentConfirmed ? 'done' : 'todo' ?>">
                 <strong>1. Confirm the payment</strong>
-                <span>Check that the <?= e(money($split['prepaid'])) ?> arrived by OMT or Whish, then set the order to <em>confirmed</em>.<?= $paymentConfirmed ? ' <b class="text-good">Done.</b>' : '' ?></span>
+                <span>Check that the <?= e(money($paidOnline)) ?> arrived by OMT or Whish, then press <em>Mark payment received</em> above.<?= $paymentConfirmed ? ' <b class="text-good">Done.</b>' : '' ?></span>
             </li>
             <li class="<?= $status === 'delivered' ? 'done' : ($paymentConfirmed ? 'todo' : 'wait') ?>">
                 <strong>2. Send the code on WhatsApp</strong>
                 <?php if (!$paymentConfirmed): ?>
-                    <span class="muted">Locked until the order is confirmed. The WhatsApp message appears here once payment is confirmed.</span>
+                    <span class="muted">Locked until the payment is marked as received. The WhatsApp message appears here once it is.</span>
                 <?php else: ?>
                     <span>Open WhatsApp with the message ready, paste the code where it says <code>[PASTE CODE]</code> and send it.</span>
                     <?php foreach ($digitalLines as $it): ?>
@@ -120,6 +157,9 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
         <?php if ($cancelled): ?>
             <div class="stepper stepper-cancelled"><div class="step done"><i>&times;</i><span>Cancelled</span></div></div>
             <p class="muted">This order was cancelled. Stock was returned to the shop and any pending seller payouts were removed.<?= $refunded ? ' ' . e(money($order['credit_used'])) . ' credit was refunded to the customer wallet.' : '' ?></p>
+            <?php if ($payStatus === 'received'): ?>
+                <div class="alert alert-warn alert-inline"><strong>Refund the customer's payment manually via OMT/Whish:</strong> <?= e(money($paidOnline)) ?> was received for this order and nothing is refunded automatically.</div>
+            <?php endif; ?>
         <?php else: ?>
             <ol class="stepper">
                 <?php foreach ($flow as $i => $st): ?>
@@ -133,8 +173,8 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
                 <?php if ($next): ?>
                     <?php
                     $nextConfirm = '';
-                    if ($hasDigital && $next === 'confirmed') {
-                        $nextConfirm = 'Confirm only if the OMT/Whish payment has really arrived. The code must not be sent before that.';
+                    if ($next === 'confirmed' && $awaiting) {
+                        $nextConfirm = 'Confirm that you have contacted the customer. The order still cannot be picked up or delivered until the payment is marked as received.';
                     } elseif ($hasDigital && $next === 'delivered') {
                         $nextConfirm = 'Mark as delivered? Do this after the code has been sent on WhatsApp.' . ($hasSeller ? ' This also queues the seller payouts.' : '');
                     } elseif ($next === 'delivered' && $hasSeller) {
@@ -152,7 +192,7 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
                         <button class="btn" type="submit">Skip to <?= e(strtolower(Forms::label($st))) ?></button>
                     </form>
                 <?php endforeach; ?>
-                <form method="post" action="<?= e(url('/admin/orders/' . $order['id'] . '/status')) ?>" class="inline-form push-right" data-confirm="Cancel order <?= e($order['code']) ?>?<?= $kind === 'digital' ? ' Digital stock is managed by hand and is not changed.' : ' Items go back into stock and pending seller payouts are removed.' ?><?= (float) $order['credit_used'] > 0 && $order['user_id'] ? ' ' . e(money($order['credit_used'])) . ' credit is refunded to the customer.' : '' ?><?= $hasDigital && $paymentConfirmed ? ' If a code was already sent on WhatsApp, cancelling does not take it back.' : '' ?>">
+                <form method="post" action="<?= e(url('/admin/orders/' . $order['id'] . '/status')) ?>" class="inline-form push-right" data-confirm="Cancel order <?= e($order['code']) ?>?<?= $kind === 'digital' ? ' Digital stock is managed by hand and is not changed.' : ' Items go back into stock and pending seller payouts are removed.' ?><?= (float) $order['credit_used'] > 0 && $order['user_id'] ? ' ' . e(money($order['credit_used'])) . ' credit is refunded to the customer.' : '' ?><?= $hasDigital && $paymentConfirmed ? ' If a code was already sent on WhatsApp, cancelling does not take it back.' : '' ?><?= $payStatus === 'received' ? ' The customer\'s ' . e(money($paidOnline)) . ' payment was received: you must refund it manually via OMT/Whish.' : '' ?>">
                     <?= csrf_field() ?><input type="hidden" name="status" value="cancelled">
                     <button class="btn btn-danger" type="submit">Cancel order</button>
                 </form>
@@ -171,6 +211,8 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
             <?php if ($customer): ?><dt>Wallet</dt><dd><?= e(money($customer['credit_balance'])) ?> credit now</dd><?php endif; ?>
             <dt>Phone</dt><dd><?= $waBuyer ? '<a href="' . e($waBuyer) . '" target="_blank" rel="noopener">' . e($order['buyer_phone']) . '</a>' : e($order['buyer_phone']) ?></dd>
             <dt>Area</dt><dd><?= e($order['buyer_area']) ?></dd>
+            <dt>Delivery zone</dt><dd><?= $order['zone'] ? e($order['zone']) . ' ' . $modeBadge : '<span class="muted">not recorded (older order)</span>' ?></dd>
+            <dt>Payment</dt><dd><?= Forms::paymentPill($payStatus) ?></dd>
             <dt>Address</dt><dd><?= $order['buyer_address'] ? e($order['buyer_address']) : '<span class="muted">-</span>' ?></dd>
             <dt>Buyer's note</dt><dd><?= $order['buyer_note'] ? nl2br(e($order['buyer_note'])) : '<span class="muted">-</span>' ?></dd>
         </dl>
@@ -180,11 +222,11 @@ $nextLabel = static function (string $st) use ($hasDigital): string {
         <div class="card-head"><h2>Totals</h2></div>
         <dl class="kv kv-totals">
             <dt>Items subtotal</dt><dd><?= e(money($order['total'])) ?></dd>
-            <dt>Delivery fee (<?= e($order['buyer_area']) ?>)</dt><dd><?= e(money($order['delivery_fee'])) ?></dd>
+            <dt>Delivery fee (<?= e($zoneName) ?>)</dt><dd><?= e(money($order['delivery_fee'])) ?></dd>
             <dt>Order total</dt><dd><strong><?= e(money((float) $order['grand_total'] > 0 ? $order['grand_total'] : (float) $order['total'] + (float) $order['delivery_fee'])) ?></strong></dd>
             <dt>Paid with credit</dt><dd><?= (float) $order['credit_used'] > 0 ? '&minus;' . e(money($order['credit_used'])) . ($refunded ? ' <small class="muted">(refunded)</small>' : '') : '<span class="muted">$0</span>' ?></dd>
-            <dt>Cash to collect</dt><dd><strong class="big cash-due"><?= $cancelled ? '-' : e(money($cashDue)) ?></strong><?= !$cancelled && $kind === 'digital' ? '<br><small class="muted">prepaid: nothing at the door</small>' : '' ?></dd>
-            <?php if ($hasDigital): ?><dt>Prepaid digital (OMT/Whish)</dt><dd><strong><?= $cancelled ? '-' : e(money($split['prepaid'])) ?></strong></dd><?php endif; ?>
+            <dt>Cash to collect</dt><dd><?php if ($cancelled): ?><strong class="big cash-due">-</strong><?php elseif ($allPrepaid): ?><strong class="big">PREPAID</strong><br><small class="muted">nothing to collect at the door</small><?php else: ?><strong class="big cash-due"><?= e(money($cashDue)) ?></strong><?php endif; ?></dd>
+            <?php if ($hasDigital || $allPrepaid): ?><dt>Prepaid (OMT/Whish)</dt><dd><strong><?= $cancelled ? '-' : e(money($split['prepaid'])) ?></strong></dd><?php endif; ?>
             <dt>Owed to sellers</dt><dd><?= e(money($totals['seller'])) ?></dd>
             <dt>Our commission</dt><dd class="text-good"><strong><?= e(money($totals['commission'])) ?></strong></dd>
             <dt>House stock revenue</dt><dd><?= e(money($totals['house'])) ?></dd>

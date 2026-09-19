@@ -2,7 +2,7 @@
 use App\Modules\Account\AccountUi;
 use App\Modules\Storefront\Ui;
 
-/** @var array $me @var array $order @var array $items @var float $subtotal @var float $delivery @var float $grand @var float $credit @var float $cashDue @var string $waLink */
+/** @var array $me @var array $order @var array $items @var float $subtotal @var float $delivery @var float $grand @var float $credit @var float $cashDue @var float $prepay @var bool $physPrepaid @var string $waLink */
 $meta = ['title' => 'Order ' . $order['code'] . ' | CyberGaming Lebanon', 'description' => 'Your order details.', 'noindex' => true];
 $accountNav = 'orders';
 require base_path('app/Views/account/_nav.php');
@@ -17,17 +17,39 @@ $steps = [
 $order_keys = array_keys($steps);
 $reached = array_search($order['status'], $order_keys, true);
 $cancelled = $order['status'] === 'cancelled';
+$payment = $cancelled ? null : AccountUi::paymentStatus($order['payment_status'] ?? null);
+$zoneMode = (string) ($order['zone_mode'] ?? '');
+$zoneName = trim((string) ($order['zone'] ?? ''));
 ?>
 <div class="container acc-page">
     <?= Ui::breadcrumbs([['My account', '/account'], ['My orders', '/account/orders'], [$order['code'], null]]) ?>
     <div class="acc-title-row">
         <h1>Order <span class="order-code"><?= e($order['code']) ?></span></h1>
         <?= AccountUi::pill($statusLabel, $statusMod) ?>
+        <?php if ($payment): ?><?= AccountUi::pill($payment[0], $payment[1]) ?><?php endif; ?>
     </div>
     <p class="lead-sm">Placed on <?= e(AccountUi::date($order['created_at'], true)) ?>.</p>
 
     <div class="acc-grid acc-grid-order">
         <div>
+            <?php if ($payment && $prepay > 0 && $payment[1] === 'warn'): ?>
+            <section class="acc-card acc-status acc-status-warn" aria-labelledby="pp-h">
+                <h2 id="pp-h">Awaiting your payment: <?= e(AccountUi::amount($prepay)) ?></h2>
+                <p><strong>PREPAY via OMT or Whish. We ship as soon as your payment is confirmed.</strong>
+                    <?= $physPrepaid ? e($zoneName !== '' ? $zoneName : 'Your area') . ' is served by a third-party courier who cannot inspect the game, so we inspect, photograph and seal it at our hub and you pay first.' : 'This covers your digital items.' ?></p>
+                <ol class="acc-steps">
+                    <li>Message us on WhatsApp and we send our OMT and Whish details.</li>
+                    <li>Send <?= e(AccountUi::amount($prepay)) ?> and write <strong><?= e($order['code']) ?></strong> in the transfer note.</li>
+                    <li>We confirm your payment, then <?= $physPrepaid ? 'inspect, photograph, seal and ship your order.' : 'send your code on WhatsApp.' ?></li>
+                </ol>
+            </section>
+            <?php elseif ($payment && $payment[1] === 'ok'): ?>
+            <section class="acc-card acc-status acc-status-ok" aria-labelledby="pp-h">
+                <h2 id="pp-h">Payment received</h2>
+                <p>Thank you, we have your OMT / Whish payment<?= $prepay > 0 ? ' of ' . e(AccountUi::amount($prepay)) : '' ?>.</p>
+            </section>
+            <?php endif; ?>
+
             <section class="acc-card" aria-labelledby="track-h">
                 <h2 id="track-h">Status</h2>
                 <?php if ($cancelled): ?>
@@ -71,6 +93,9 @@ $cancelled = $order['status'] === 'cancelled';
                 <?php if ($credit > 0): ?>
                     <div class="acc-dl-credit"><dt>Paid with credit</dt><dd>-<?= e(AccountUi::amount($credit)) ?></dd></div>
                 <?php endif; ?>
+                <?php if ($prepay > 0 || ($payment && $payment[1] === 'ok')): ?>
+                    <div class="acc-dl-prepay"><dt><?= $payment && $payment[1] === 'ok' ? 'Paid via OMT / Whish' : 'Prepay via OMT / Whish' ?></dt><dd><?= e(AccountUi::amount($prepay)) ?></dd></div>
+                <?php endif; ?>
                 <div class="acc-dl-due">
                     <dt><?= $order['status'] === 'delivered' ? 'Paid in cash' : ($cancelled ? 'Cash due' : 'Cash due on delivery') ?></dt>
                     <dd><?= e(AccountUi::amount($cashDue)) ?></dd>
@@ -80,6 +105,9 @@ $cancelled = $order['status'] === 'cancelled';
             <address class="acc-address">
                 <?= e($order['buyer_area']) ?><?= $order['buyer_address'] ? '<br>' . e($order['buyer_address']) : '' ?>
             </address>
+            <?php if ($zoneMode === 'local' || $zoneMode === 'remote'): ?>
+                <p class="fine"><?= $zoneName !== '' ? 'Zone: <strong>' . e($zoneName) . '</strong> (' . ($zoneMode === 'remote' ? 'remote' : 'local') . '). ' : '' ?><?= $zoneMode === 'remote' ? 'A third-party courier delivers it; we inspect, photograph and seal it at our hub first.' : 'Our own courier delivers it: you can inspect it before you pay.' ?></p>
+            <?php endif; ?>
             <?php if ($order['buyer_note']): ?><p class="fine">Your note: <?= e($order['buyer_note']) ?></p><?php endif; ?>
         </aside>
     </div>

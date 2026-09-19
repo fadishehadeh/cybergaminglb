@@ -1,5 +1,6 @@
 <?php
 use App\Modules\Storefront\Quoter;
+use App\Modules\Storefront\Rules;
 use App\Modules\Storefront\Ui;
 use App\Support\Pricing;
 
@@ -19,7 +20,7 @@ $blurb = [
 ];
 $factorText = implode(', ', array_map(static fn (string $c, float $f): string => $c . ' ' . $fmt($f) . '%', array_keys($factors), $factors));
 $faqs = [
-    ['How does selling work?', 'Add your games (platform, title and condition) and press Get my quote. You instantly see what they are worth in cash and in store credit. Create a free account, send your request, and we reply with an offer. You accept it, hand the games over (or we collect them), we inspect them, and you are paid in cash or credit.'],
+    ['How does selling work?', 'Add your games (platform, title and condition) and press Get my quote. You instantly see what they are worth in cash and in store credit. Create a free account, send your request, and we reply with an offer. You accept it, hand the games over (bring them to our hub, or have a courier pick them up), we inspect them, and you are paid in cash or credit.'],
     ['How much will I get for my games?', "Cash is $buyback% of the price we list the same game at in our shop, and store credit is $tradein%. Both go up or down with the condition of your copy: $factorText (each as a share of the standard amount)."],
     ['Cash or store credit: which is better?', $creditBetter
         ? "Store credit is worth more: $tradein% of the shop price against $buyback% in cash. Credit goes into your CyberGaming wallet, never expires, and 1 credit is always worth 1 US dollar at checkout."
@@ -29,7 +30,8 @@ $faqs = [
     ['Is the online quote final?', 'The quote is an estimate based on the condition you select. We inspect every game in person, and if the condition matches what you described, you get exactly the offered amount. If it is worse than described, we tell you and agree a new price before any money or credit changes hands.'],
     ['What makes a strong offer?', 'Tick everything that comes with each game (original box, cover art, manual) and add clear photos of the disc, the box from outside and the box from inside. Complete copies with all three, in a clean box, are the easiest for us to resell, so they earn the best offers. Photos are optional and we still inspect every game in person.'],
     ['What photos should I add, and is my location safe?', 'Add up to 6 photos when you send your request: the disc, the box from outside and the box from inside are the most useful. Your phone may store where a photo was taken, so we re-save every photo and remove that location data automatically.'],
-    ['Where do I hand my games over?', 'You can drop them off at our pickup point, or ask us to collect them from your area. You choose when you send your request.'],
+
+    ...Rules::sellFaqs(),
     ['Do other customers see my name or number?', 'Never. Your details are used only by CyberGaming to contact you about your request, and buyers and sellers never see each other.'],
 ];
 $meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
@@ -78,8 +80,8 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Sell your used game
             <li><span class="step-num">1</span><div><h3>Get your instant quote</h3><p>Enter your games above. Matching titles get a price in cash and in credit immediately, and anything we do not recognise is priced by our team.</p></div></li>
             <li><span class="step-num">2</span><div><h3>Send your request</h3><p>Create a free account (or sign in) and send it. It takes a minute, and your quote is waiting for you afterwards.</p></div></li>
             <li><span class="step-num">3</span><div><h3>Get our offer and accept</h3><p>We review your list and post an offer in your account. Pick cash or credit and accept it.</p></div></li>
-            <li><span class="step-num">4</span><div><h3>Hand over and we inspect</h3><p>Drop your games at our pickup point or ask us to collect them. We check discs, cases and codes.</p></div></li>
-            <li><span class="step-num">5</span><div><h3>Get paid in cash or credit</h3><p>If the condition matches your description, you get the offered amount: cash, or credit added to your wallet.</p></div></li>
+            <li><span class="step-num">4</span><div><h3>Hand over and we inspect</h3><p>Bring your games to our hub (free), or have them picked up: our own courier checks them on the spot in local areas, and elsewhere a courier ships them to our hub. We check discs, cases and codes.</p></div></li>
+            <li><span class="step-num">5</span><div><h3>Get paid in cash or credit</h3><p>If the condition matches your description, you get the offered amount: cash, or credit added to your wallet, minus the courier pickup fee if you chose a pickup.</p></div></li>
         </ol>
 
         <h2>Cash versus store credit</h2>
@@ -89,6 +91,14 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Sell your used game
             <div class="offer-box<?= $exCredit > $exCash ? ' is-best' : '' ?>"><span>Store credit</span><strong><?= e(money($exCredit)) ?></strong><small><?= $exCredit > $exCash ? 'credit is worth more' : 'added to your wallet' ?></small></div>
         </div>
         <p>Credit is kept in your CyberGaming wallet. It never expires, 1 credit is worth $1 when you shop, and any gap is paid in cash on delivery. Read <a href="<?= e(url('/credit')) ?>">how store credit works</a>.</p>
+
+        <h2>How your games reach us: local or remote</h2>
+        <div class="worked cond-list">
+            <div><span><strong>Bring them to our hub</strong><small>Free, in every area. No minimum.</small></span><strong>Free</strong></div>
+            <div><span><strong>Local pickup</strong> &mdash; <?= e(Rules::nameList(Rules::names('local'))) ?><small>Our own courier collects and checks the games on the spot. If the courier declines an item, there is no return trip and no fee.</small></span><strong>&minus;<?= e(money(Rules::pickupFee())) ?></strong></div>
+            <div><span><strong>Courier shipment from anywhere else</strong><small>A third-party courier brings them to our hub and we inspect on arrival.<?= Rules::minSell() > 0 ? ' Shipments must be worth at least ' . e(money(Rules::minSell())) . '.' : '' ?></small></span><strong>&minus;<?= e(money(Rules::pickupFee())) ?></strong></div>
+        </div>
+        <p>The pickup fee is <strong>deducted from your payout</strong>: you never pay it separately, and the request form shows what you will receive. If a shipped item is not acceptable, you choose: a revised offer, get it sent back for <?= e(money(Rules::returnFee())) ?> (paid in cash to the courier on delivery), or let us recycle it for free. We hold it <?= (int) Rules::holdDays() ?> days for your answer, then recycle it.</p>
 
         <h2>What we buy</h2>
         <ul>

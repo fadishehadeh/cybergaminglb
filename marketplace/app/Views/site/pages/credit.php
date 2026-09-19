@@ -1,4 +1,5 @@
 <?php
+use App\Modules\Storefront\Rules;
 use App\Modules\Storefront\Shipping;
 use App\Modules\Storefront\Ui;
 use App\Support\Pricing;
@@ -14,6 +15,8 @@ $minFee = Shipping::minFee();
 $example = 20.0;
 $exCash = Pricing::buybackOffer($example, 'Good');
 $exCredit = Pricing::tradeCredit($example, 'Good');
+$prepayOn = Rules::prepayOn();
+$pickupFeeText = money(Rules::pickupFee());
 $zoneText = implode(', ', array_map(static fn (array $z): string => $z['name'] . ' ' . money($z['fee']), Shipping::zones()));
 
 $faqs = [
@@ -22,7 +25,8 @@ $faqs = [
     ['How do I spend credit?', 'At checkout, tick "Pay with my credit". It is taken off your order, and if it does not cover everything you pay the rest in cash on delivery. If your credit covers the whole order, you pay nothing on delivery.'],
     ['Does credit expire?', 'No. Credit never expires and stays in your wallet until you spend it.'],
     ['Can I take cash instead of credit?', "Yes. When you sell us games you can choose cash or credit. Credit is worth more ($tradein% of the shop price against $buyback% in cash), but the choice is yours."],
-    ['Is there a fee for using credit?', "No fee for earning or spending credit. Delivery is charged by area ($zoneText" . ($freeOver > 0 ? '; free over ' . money($freeOver) : '') . "), and members who sell to other customers pay a $memberPct% commission."],
+    ['Is there a fee for using credit?', "No fee for earning or spending credit. Delivery is charged by area ($zoneText" . ($freeOver > 0 ? '; free over ' . money($freeOver) : '') . "), and members who sell to other customers pay a $memberPct% commission. If you sell us games and a courier picks them up, a $pickupFeeText pickup fee is deducted from your payout; bringing them to our hub is free."],
+    ['Can I use credit outside the local area?', $prepayOn ? 'Yes. Credit is taken off your order in every area. In remote areas you prepay whatever it does not cover by OMT or Whish (cash on delivery there unlocks after ' . Rules::codAfter() . ' delivered orders); in local areas you pay the rest in cash on delivery.' : 'Yes. Credit is taken off your order in every area and you pay the rest on delivery.'],
     ['Is it safe?', 'We inspect every game we buy and every item we sell, and every credit movement is recorded in your wallet history. Buyers and sellers never see each other: your name, phone number and address stay private and only CyberGaming knows them.'],
     ['Do other members see who I am?', 'No. Every account has an anonymous ID and that is the only name anyone else could ever see. There are no public profiles and no messaging between members: everything goes through CyberGaming.'],
 ];
@@ -45,7 +49,7 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'How store credit wo
 
         <h2>Earn credit</h2>
         <ul class="icon-list">
-            <li><?= Ui::icon('gamepad', 18) ?> <span><strong>Sell us your games.</strong> Get an instant quote, send your request, accept our offer, and hand the games over. After inspection we add the credit to your wallet.</span></li>
+            <li><?= Ui::icon('gamepad', 18) ?> <span><strong>Sell us your games.</strong> Get an instant quote, send your request, accept our offer, and hand the games over (bring them to our hub for free, or have a courier pick them up for a <?= e($pickupFeeText) ?> fee that is deducted from your payout). After inspection we add the credit to your wallet.</span></li>
             <li><?= Ui::icon('tag', 18) ?> <span><strong>Sell to other members.</strong> Members can list games for other customers. When one sells, you can be paid in credit or in cash. We take a <?= e($memberPct) ?>% commission (see below).</span></li>
         </ul>
         <p>For a game we list at <?= e(money($example)) ?> in Good condition, you are offered:</p>
@@ -58,7 +62,7 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'How store credit wo
         <ol class="steps steps-vertical">
             <li><span class="step-num">1</span><div><h3>Shop as usual</h3><p>Add anything in stock to your cart: games, consoles, controllers, accessories.</p></div></li>
             <li><span class="step-num">2</span><div><h3>Tick &ldquo;Pay with my credit&rdquo;</h3><p>At checkout, your credit is taken off the total (delivery fee included).</p></div></li>
-            <li><span class="step-num">3</span><div><h3>Pay any gap in cash</h3><p>If your credit does not cover everything, you pay the rest in cash on delivery. If it does, you pay nothing on delivery.</p></div></li>
+            <li><span class="step-num">3</span><div><h3>Pay any gap</h3><p>If your credit does not cover everything, you pay the rest in cash on delivery in local areas<?= $prepayOn ? ', or first by OMT / Whish in remote areas' : '' ?>. If it does, you pay nothing more.</p></div></li>
         </ol>
 
         <?php if (digital_enabled()): ?>
@@ -67,7 +71,7 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'How store credit wo
 
         <h2>Fees, explained</h2>
         <h3>Delivery</h3>
-        <p>Every delivery has a fee that depends on your area, from <?= e(money($minFee)) ?>. You see the exact amount at checkout before you place the order.</p>
+        <p>Every delivery has a fee that depends on your area, from <?= e(money($minFee)) ?>. You see the exact amount at checkout before you place the order. Local areas are served by our own courier (cash on delivery); remote areas by a third-party courier, so you prepay there<?= $prepayOn ? '' : ' (currently switched off)' ?>.</p>
         <?= Ui::partial('zone-table') ?>
         <h3>Commission on member sales</h3>
         <p>When a member sells a game to another customer, CyberGaming takes a <strong><?= e($memberPct) ?>% commission</strong>. It is added on top of the amount the seller asked for, so the seller receives exactly what they set and the buyer sees one final price. There is no commission when you sell games to us: our offer is what you get.</p>
