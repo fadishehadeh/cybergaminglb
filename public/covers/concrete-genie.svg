@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a3050"/>
+      <stop offset="100%" stop-color="#0a1a2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="900" fill="url(#bg)"/>
+  <line x1="50" y1="527.5999999999999" x2="550" y2="527.5999999999999" stroke="#ff8844" stroke-width="3" opacity="0.7"/>
+  <rect x="0" y="0" width="600" height="4" fill="#ff8844" opacity="0.8"/>
+  <rect x="0" y="896" width="600" height="4" fill="#ff8844" opacity="0.4"/>
+  <text x="300" y="820" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#ff8844" opacity="0.8" letter-spacing="4">PS4</text>
+  <text x="300" y="392.4" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="48" font-weight="900" fill="white" letter-spacing="3">CONCRETE</text>
+    <text x="300" y="450" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="48" font-weight="900" fill="white" letter-spacing="3">GENIE</text>
+</svg>

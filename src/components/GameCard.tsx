@@ -25,11 +25,21 @@ export default function GameCard({ game }: { game: Game }) {
 
   return (
     <div className="group bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-all hover:shadow-lg hover:shadow-emerald-500/5">
-      <div className="aspect-[4/3] bg-zinc-800 flex items-center justify-center relative overflow-hidden">
-        <div className="text-center px-4">
-          <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1">{game.platform}</p>
-          <p className="text-white font-semibold text-sm leading-tight">{game.title}</p>
-        </div>
+      <div className="aspect-[3/4] bg-zinc-800 relative overflow-hidden">
+        {game.image ? (
+          <img
+            src={game.image}
+            alt={game.title}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-center px-4">
+            <div>
+              <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1">{game.platform}</p>
+              <p className="text-white font-semibold text-sm leading-tight">{game.title}</p>
+            </div>
+          </div>
+        )}
         {game.isSteelbook && (
           <div className="absolute top-2 left-2 bg-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
             Steelbook

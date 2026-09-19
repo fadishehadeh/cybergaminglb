@@ -34,6 +34,7 @@ export const games: Game[] = [
   // === STANDARD PS4 GAMES ===
   {
     id: "xcom-2",
+    image: "/covers/xcom-2.jpg",
     title: "XCOM 2",
     platform: "PS4",
     edition: "Standard",
@@ -46,6 +47,7 @@ export const games: Game[] = [
   },
   {
     id: "red-dead-redemption-2",
+    image: "/covers/red-dead-redemption-2.jpg",
     title: "Red Dead Redemption II",
     platform: "PS4",
     edition: "Standard",
@@ -58,6 +60,7 @@ export const games: Game[] = [
   },
   {
     id: "sniper-elite-4",
+    image: "/covers/sniper-elite-4.jpg",
     title: "Sniper Elite 4",
     platform: "PS4",
     edition: "Standard",
@@ -70,6 +73,7 @@ export const games: Game[] = [
   },
   {
     id: "resident-evil-6",
+    image: "/covers/resident-evil-6.jpg",
     title: "Resident Evil 6",
     platform: "PS4",
     edition: "Standard",
@@ -82,6 +86,7 @@ export const games: Game[] = [
   },
   {
     id: "monster-hunter-world",
+    image: "/covers/monster-hunter-world.jpg",
     title: "Monster Hunter: World",
     platform: "PS4",
     edition: "Standard",
@@ -94,6 +99,7 @@ export const games: Game[] = [
   },
   {
     id: "bloodborne",
+    image: "/covers/bloodborne.svg",
     title: "Bloodborne",
     platform: "PS4",
     edition: "Standard",
@@ -106,6 +112,7 @@ export const games: Game[] = [
   },
   {
     id: "rage-2",
+    image: "/covers/rage-2.jpg",
     title: "Rage 2",
     platform: "PS4",
     edition: "Standard",
@@ -118,6 +125,7 @@ export const games: Game[] = [
   },
   {
     id: "death-stranding-std",
+    image: "/covers/death-stranding-std.jpg",
     title: "Death Stranding",
     platform: "PS4",
     edition: "Standard",
@@ -130,6 +138,7 @@ export const games: Game[] = [
   },
   {
     id: "metal-gear-survive",
+    image: "/covers/metal-gear-survive.jpg",
     title: "Metal Gear Survive",
     platform: "PS4",
     edition: "Standard",
@@ -142,6 +151,7 @@ export const games: Game[] = [
   },
   {
     id: "back-to-the-future",
+    image: "/covers/back-to-the-future.svg",
     title: "Back to the Future: 30th Anniversary",
     platform: "PS4",
     edition: "Standard",
@@ -154,6 +164,7 @@ export const games: Game[] = [
   },
   {
     id: "dishonored-death-outsider",
+    image: "/covers/dishonored-death-outsider.jpg",
     title: "Dishonored: Death of the Outsider",
     platform: "PS4",
     edition: "Standard",
@@ -166,6 +177,7 @@ export const games: Game[] = [
   },
   {
     id: "darksiders-2",
+    image: "/covers/darksiders-2.jpg",
     title: "Darksiders II: Deathinitive Edition",
     platform: "PS4",
     edition: "Standard",
@@ -178,6 +190,7 @@ export const games: Game[] = [
   },
   {
     id: "littlebigplanet-3",
+    image: "/covers/littlebigplanet-3.svg",
     title: "LittleBigPlanet 3",
     platform: "PS4",
     edition: "Standard",
@@ -190,6 +203,7 @@ export const games: Game[] = [
   },
   {
     id: "sinking-city",
+    image: "/covers/sinking-city.jpg",
     title: "The Sinking City",
     platform: "PS4",
     edition: "Standard",
@@ -202,6 +216,7 @@ export const games: Game[] = [
   },
   {
     id: "witcher-3",
+    image: "/covers/witcher-3.jpg",
     title: "The Witcher 3: Wild Hunt",
     platform: "PS4",
     edition: "Standard",
@@ -214,6 +229,7 @@ export const games: Game[] = [
   },
   {
     id: "uncharted-4",
+    image: "/covers/uncharted-4.jpg",
     title: "Uncharted 4: A Thief's End",
     platform: "PS4",
     edition: "Standard",
@@ -226,6 +242,7 @@ export const games: Game[] = [
   },
   {
     id: "mgs-v-definitive",
+    image: "/covers/mgs-v-definitive.jpg",
     title: "Metal Gear Solid V: The Definitive Experience",
     platform: "PS4",
     edition: "Standard",
@@ -238,6 +255,7 @@ export const games: Game[] = [
   },
   {
     id: "kingdom-hearts-3",
+    image: "/covers/kingdom-hearts-3.jpg",
     title: "Kingdom Hearts III",
     platform: "PS4",
     edition: "Standard",
@@ -250,6 +268,7 @@ export const games: Game[] = [
   },
   {
     id: "wwe-2k16",
+    image: "/covers/wwe-2k16.svg",
     title: "WWE 2K16",
     platform: "PS4",
     edition: "Standard",
@@ -262,6 +281,7 @@ export const games: Game[] = [
   },
   {
     id: "detroit-become-human",
+    image: "/covers/detroit-become-human.jpg",
     title: "Detroit: Become Human",
     platform: "PS4",
     edition: "Standard",
@@ -274,6 +294,7 @@ export const games: Game[] = [
   },
   {
     id: "ff14-stormblood",
+    image: "/covers/ff14-stormblood.jpg",
     title: "Final Fantasy XIV: Stormblood",
     platform: "PS4",
     edition: "Standard",
@@ -286,6 +307,7 @@ export const games: Game[] = [
   },
   {
     id: "ac-black-flag",
+    image: "/covers/ac-black-flag.jpg",
     title: "Assassin's Creed IV: Black Flag",
     platform: "PS4",
     edition: "Standard",
@@ -298,6 +320,7 @@ export const games: Game[] = [
   },
   {
     id: "gta-trilogy",
+    image: "/covers/gta-trilogy.svg",
     title: "Grand Theft Auto: The Trilogy - Definitive Edition",
     platform: "PS4",
     edition: "Standard",
@@ -310,6 +333,7 @@ export const games: Game[] = [
   },
   {
     id: "ac-odyssey",
+    image: "/covers/ac-odyssey.jpg",
     title: "Assassin's Creed Odyssey",
     platform: "PS4",
     edition: "Standard",
@@ -322,6 +346,7 @@ export const games: Game[] = [
   },
   {
     id: "horizon-forbidden-west",
+    image: "/covers/horizon-forbidden-west.jpg",
     title: "Horizon Forbidden West",
     platform: "PS4",
     edition: "Standard",
@@ -334,6 +359,7 @@ export const games: Game[] = [
   },
   {
     id: "prey",
+    image: "/covers/prey.svg",
     title: "Prey",
     platform: "PS4",
     edition: "Standard",
@@ -346,6 +372,7 @@ export const games: Game[] = [
   },
   {
     id: "project-cars",
+    image: "/covers/project-cars.jpg",
     title: "Project Cars",
     platform: "PS4",
     edition: "Standard",
@@ -358,6 +385,7 @@ export const games: Game[] = [
   },
   {
     id: "dmc-5",
+    image: "/covers/dmc-5.jpg",
     title: "Devil May Cry 5",
     platform: "PS4",
     edition: "Standard",
@@ -370,6 +398,7 @@ export const games: Game[] = [
   },
   {
     id: "last-guardian",
+    image: "/covers/last-guardian.svg",
     title: "The Last Guardian",
     platform: "PS4",
     edition: "Standard",
@@ -382,6 +411,7 @@ export const games: Game[] = [
   },
   {
     id: "dark-souls-remastered",
+    image: "/covers/dark-souls-remastered.jpg",
     title: "Dark Souls Remastered",
     platform: "PS4",
     edition: "Standard",
@@ -394,6 +424,7 @@ export const games: Game[] = [
   },
   {
     id: "uncharted-collection",
+    image: "/covers/uncharted-collection.jpg",
     title: "Uncharted: The Nathan Drake Collection",
     platform: "PS4",
     edition: "Standard",
@@ -406,6 +437,7 @@ export const games: Game[] = [
   },
   {
     id: "re-village",
+    image: "/covers/re-village.jpg",
     title: "Resident Evil Village",
     platform: "PS4",
     edition: "Standard",
@@ -418,6 +450,7 @@ export const games: Game[] = [
   },
   {
     id: "mad-max",
+    image: "/covers/mad-max.jpg",
     title: "Mad Max",
     platform: "PS4",
     edition: "Standard",
@@ -430,6 +463,7 @@ export const games: Game[] = [
   },
   {
     id: "ac-unity",
+    image: "/covers/ac-unity.jpg",
     title: "Assassin's Creed Unity",
     platform: "PS4",
     edition: "Standard",
@@ -442,6 +476,7 @@ export const games: Game[] = [
   },
   {
     id: "ac-origins",
+    image: "/covers/ac-origins.jpg",
     title: "Assassin's Creed Origins",
     platform: "PS4",
     edition: "Standard",
@@ -454,6 +489,7 @@ export const games: Game[] = [
   },
   {
     id: "lego-hobbit",
+    image: "/covers/lego-hobbit.jpg",
     title: "LEGO The Hobbit",
     platform: "PS4",
     edition: "Standard",
@@ -466,6 +502,7 @@ export const games: Game[] = [
   },
   {
     id: "re-revelations",
+    image: "/covers/re-revelations.jpg",
     title: "Resident Evil Revelations",
     platform: "PS4",
     edition: "Standard",
@@ -478,6 +515,7 @@ export const games: Game[] = [
   },
   {
     id: "ac-ezio-collection",
+    image: "/covers/ac-ezio-collection.svg",
     title: "Assassin's Creed: The Ezio Collection",
     platform: "PS4",
     edition: "Standard",
@@ -490,6 +528,7 @@ export const games: Game[] = [
   },
   {
     id: "yooka-laylee",
+    image: "/covers/yooka-laylee.jpg",
     title: "Yooka-Laylee and the Impossible Lair",
     platform: "PS4",
     edition: "Standard",
@@ -502,6 +541,7 @@ export const games: Game[] = [
   },
   {
     id: "destiny",
+    image: "/covers/destiny.jpg",
     title: "Destiny",
     platform: "PS4",
     edition: "Standard",
@@ -514,6 +554,7 @@ export const games: Game[] = [
   },
   {
     id: "cod-modern-warfare-2",
+    image: "/covers/cod-modern-warfare-2.jpg",
     title: "Call of Duty: Modern Warfare II",
     platform: "PS4",
     edition: "Standard",
@@ -526,6 +567,7 @@ export const games: Game[] = [
   },
   {
     id: "dying-light",
+    image: "/covers/dying-light.jpg",
     title: "Dying Light: The Following Enhanced Edition",
     platform: "PS4",
     edition: "Standard",
@@ -538,6 +580,7 @@ export const games: Game[] = [
   },
   {
     id: "infamous-second-son",
+    image: "/covers/infamous-second-son.jpg",
     title: "inFAMOUS Second Son",
     platform: "PS4",
     edition: "Standard",
@@ -550,6 +593,7 @@ export const games: Game[] = [
   },
   {
     id: "titanfall-2",
+    image: "/covers/titanfall-2.jpg",
     title: "Titanfall 2",
     platform: "PS4",
     edition: "Standard",
@@ -562,6 +606,7 @@ export const games: Game[] = [
   },
   {
     id: "just-dance-2017",
+    image: "/covers/just-dance-2017.jpg",
     title: "Just Dance 2017",
     platform: "PS4",
     edition: "Standard",
@@ -574,6 +619,7 @@ export const games: Game[] = [
   },
   {
     id: "watch-dogs-2-std",
+    image: "/covers/watch-dogs-2-std.jpg",
     title: "Watch Dogs 2",
     platform: "PS4",
     edition: "Standard",
@@ -586,6 +632,7 @@ export const games: Game[] = [
   },
   {
     id: "dead-by-daylight",
+    image: "/covers/dead-by-daylight.jpg",
     title: "Dead by Daylight",
     platform: "PS4",
     edition: "Standard",
@@ -598,6 +645,7 @@ export const games: Game[] = [
   },
   {
     id: "marvel-avengers",
+    image: "/covers/marvel-avengers.jpg",
     title: "Marvel's Avengers",
     platform: "PS4",
     edition: "Standard",
@@ -610,6 +658,7 @@ export const games: Game[] = [
   },
   {
     id: "tlou-remastered",
+    image: "/covers/tlou-remastered.jpg",
     title: "The Last of Us Remastered",
     platform: "PS4",
     edition: "Standard",
@@ -622,6 +671,7 @@ export const games: Game[] = [
   },
   {
     id: "mirrors-edge-catalyst",
+    image: "/covers/mirrors-edge-catalyst.jpg",
     title: "Mirror's Edge Catalyst",
     platform: "PS4",
     edition: "Standard",
@@ -634,6 +684,7 @@ export const games: Game[] = [
   },
   {
     id: "nier-automata",
+    image: "/covers/nier-automata.jpg",
     title: "NieR: Automata",
     platform: "PS4",
     edition: "Standard",
@@ -646,6 +697,7 @@ export const games: Game[] = [
   },
   {
     id: "concrete-genie",
+    image: "/covers/concrete-genie.svg",
     title: "Concrete Genie",
     platform: "PS4",
     edition: "Standard",
@@ -658,6 +710,7 @@ export const games: Game[] = [
   },
   {
     id: "watch-dogs-legion",
+    image: "/covers/watch-dogs-legion.jpg",
     title: "Watch Dogs Legion",
     platform: "PS4",
     edition: "Standard",
@@ -670,6 +723,7 @@ export const games: Game[] = [
   },
   {
     id: "mark-mcmorris",
+    image: "/covers/mark-mcmorris.svg",
     title: "Mark McMorris Infinite Air",
     platform: "PS4",
     edition: "Standard",
@@ -682,6 +736,7 @@ export const games: Game[] = [
   },
   {
     id: "vampyr",
+    image: "/covers/vampyr.jpg",
     title: "Vampyr",
     platform: "PS4",
     edition: "Standard",
@@ -694,6 +749,7 @@ export const games: Game[] = [
   },
   {
     id: "dragons-dogma",
+    image: "/covers/dragons-dogma.jpg",
     title: "Dragon's Dogma: Dark Arisen",
     platform: "PS4",
     edition: "Standard",
@@ -706,6 +762,7 @@ export const games: Game[] = [
   },
   {
     id: "cod-bo3-std",
+    image: "/covers/cod-bo3-std.jpg",
     title: "Call of Duty: Black Ops III",
     platform: "PS4",
     edition: "Standard",
@@ -718,6 +775,7 @@ export const games: Game[] = [
   },
   {
     id: "ac-syndicate",
+    image: "/covers/ac-syndicate.jpg",
     title: "Assassin's Creed Syndicate",
     platform: "PS4",
     edition: "Standard",
@@ -730,6 +788,7 @@ export const games: Game[] = [
   },
   {
     id: "lego-ninjago",
+    image: "/covers/lego-ninjago.jpg",
     title: "LEGO Ninjago Movie Videogame",
     platform: "PS4",
     edition: "Standard",
@@ -742,6 +801,7 @@ export const games: Game[] = [
   },
   {
     id: "jedi-fallen-order",
+    image: "/covers/jedi-fallen-order.jpg",
     title: "Star Wars Jedi: Fallen Order",
     platform: "PS4",
     edition: "Standard",
@@ -754,6 +814,7 @@ export const games: Game[] = [
   },
   {
     id: "re-origins-collection",
+    image: "/covers/re-origins-collection.svg",
     title: "Resident Evil Origins Collection",
     platform: "PS4",
     edition: "Standard",
@@ -766,6 +827,7 @@ export const games: Game[] = [
   },
   {
     id: "nioh",
+    image: "/covers/nioh.jpg",
     title: "Nioh",
     platform: "PS4",
     edition: "Standard",
@@ -778,6 +840,7 @@ export const games: Game[] = [
   },
   {
     id: "doom-2016",
+    image: "/covers/doom-2016.jpg",
     title: "DOOM",
     platform: "PS4",
     edition: "Standard",
@@ -790,6 +853,7 @@ export const games: Game[] = [
   },
   {
     id: "re-2-remake",
+    image: "/covers/re-2-remake.jpg",
     title: "Resident Evil 2",
     platform: "PS4",
     edition: "Standard",
@@ -802,6 +866,7 @@ export const games: Game[] = [
   },
   {
     id: "fifa-22",
+    image: "/covers/fifa-22.jpg",
     title: "FIFA 22",
     platform: "PS4",
     edition: "Standard",
@@ -814,6 +879,7 @@ export const games: Game[] = [
   },
   {
     id: "horizon-zero-dawn",
+    image: "/covers/horizon-zero-dawn.jpg",
     title: "Horizon Zero Dawn",
     platform: "PS4",
     edition: "Standard",
@@ -826,6 +892,7 @@ export const games: Game[] = [
   },
   {
     id: "farcry-primal",
+    image: "/covers/farcry-primal.jpg",
     title: "Far Cry Primal",
     platform: "PS4",
     edition: "Standard",
@@ -838,6 +905,7 @@ export const games: Game[] = [
   },
   {
     id: "control",
+    image: "/covers/control.jpg",
     title: "Control",
     platform: "PS4",
     edition: "Standard",
@@ -850,6 +918,7 @@ export const games: Game[] = [
   },
   {
     id: "god-of-war-3",
+    image: "/covers/god-of-war-3.jpg",
     title: "God of War III Remastered",
     platform: "PS4",
     edition: "Standard",
@@ -862,6 +931,7 @@ export const games: Game[] = [
   },
   {
     id: "ghost-recon-breakpoint",
+    image: "/covers/ghost-recon-breakpoint.jpg",
     title: "Tom Clancy's Ghost Recon Breakpoint",
     platform: "PS4",
     edition: "Standard",
@@ -874,6 +944,7 @@ export const games: Game[] = [
   },
   {
     id: "evil-within-2",
+    image: "/covers/evil-within-2.jpg",
     title: "The Evil Within 2",
     platform: "PS4",
     edition: "Standard",
@@ -886,6 +957,7 @@ export const games: Game[] = [
   },
   {
     id: "uncharted-lost-legacy",
+    image: "/covers/uncharted-lost-legacy.jpg",
     title: "Uncharted: The Lost Legacy",
     platform: "PS4",
     edition: "Standard",
@@ -898,6 +970,7 @@ export const games: Game[] = [
   },
   {
     id: "bioshock-collection",
+    image: "/covers/bioshock-collection.jpg",
     title: "BioShock: The Collection",
     platform: "PS4",
     edition: "Standard",
@@ -910,6 +983,7 @@ export const games: Game[] = [
   },
   {
     id: "days-gone",
+    image: "/covers/days-gone.jpg",
     title: "Days Gone",
     platform: "PS4",
     edition: "Standard",
@@ -922,6 +996,7 @@ export const games: Game[] = [
   },
   {
     id: "mafia-3",
+    image: "/covers/mafia-3.jpg",
     title: "Mafia III",
     platform: "PS4",
     edition: "Standard",
@@ -934,6 +1009,7 @@ export const games: Game[] = [
   },
   {
     id: "shadow-of-war",
+    image: "/covers/shadow-of-war.jpg",
     title: "Middle-earth: Shadow of War",
     platform: "PS4",
     edition: "Standard",
@@ -946,6 +1022,7 @@ export const games: Game[] = [
   },
   {
     id: "farcry-4",
+    image: "/covers/farcry-4.jpg",
     title: "Far Cry 4",
     platform: "PS4",
     edition: "Standard",
@@ -958,6 +1035,7 @@ export const games: Game[] = [
   },
   {
     id: "battlefield-1",
+    image: "/covers/battlefield-1.jpg",
     title: "Battlefield 1",
     platform: "PS4",
     edition: "Standard",
@@ -970,6 +1048,7 @@ export const games: Game[] = [
   },
   {
     id: "ghost-of-tsushima",
+    image: "/covers/ghost-of-tsushima.jpg",
     title: "Ghost of Tsushima",
     platform: "PS4",
     edition: "Standard",
@@ -982,6 +1061,7 @@ export const games: Game[] = [
   },
   {
     id: "re-7",
+    image: "/covers/re-7.jpg",
     title: "Resident Evil VII: Biohazard",
     platform: "PS4",
     edition: "Standard",
@@ -994,6 +1074,7 @@ export const games: Game[] = [
   },
   {
     id: "amazing-spiderman-2",
+    image: "/covers/amazing-spiderman-2.svg",
     title: "The Amazing Spider-Man 2",
     platform: "PS4",
     edition: "Standard",
@@ -1006,6 +1087,7 @@ export const games: Game[] = [
   },
   {
     id: "little-nightmares",
+    image: "/covers/little-nightmares.jpg",
     title: "Little Nightmares Complete Edition",
     platform: "PS4",
     edition: "Standard",
@@ -1018,6 +1100,7 @@ export const games: Game[] = [
   },
   {
     id: "battlefield-hardline",
+    image: "/covers/battlefield-hardline.jpg",
     title: "Battlefield Hardline",
     platform: "PS4",
     edition: "Standard",
@@ -1030,6 +1113,7 @@ export const games: Game[] = [
   },
   {
     id: "mortal-kombat-xl",
+    image: "/covers/mortal-kombat-xl.jpg",
     title: "Mortal Kombat XL",
     platform: "PS4",
     edition: "Standard",
@@ -1042,6 +1126,7 @@ export const games: Game[] = [
   },
   {
     id: "wolfenstein-2",
+    image: "/covers/wolfenstein-2.jpg",
     title: "Wolfenstein II: The New Colossus",
     platform: "PS4",
     edition: "Standard",
@@ -1054,6 +1139,7 @@ export const games: Game[] = [
   },
   {
     id: "ratchet-clank",
+    image: "/covers/ratchet-clank.jpg",
     title: "Ratchet & Clank",
     platform: "PS4",
     edition: "Standard",
@@ -1066,6 +1152,7 @@ export const games: Game[] = [
   },
   {
     id: "sniper-ghost-warrior-3",
+    image: "/covers/sniper-ghost-warrior-3.jpg",
     title: "Sniper Ghost Warrior 3",
     platform: "PS4",
     edition: "Standard",
@@ -1078,6 +1165,7 @@ export const games: Game[] = [
   },
   {
     id: "deus-ex",
+    image: "/covers/deus-ex.jpg",
     title: "Deus Ex: Mankind Divided",
     platform: "PS4",
     edition: "Standard",
@@ -1090,6 +1178,7 @@ export const games: Game[] = [
   },
   {
     id: "max-curse-brotherhood",
+    image: "/covers/max-curse-brotherhood.jpg",
     title: "Max: The Curse of Brotherhood",
     platform: "PS4",
     edition: "Standard",
@@ -1102,6 +1191,7 @@ export const games: Game[] = [
   },
   {
     id: "spiderman-ps4",
+    image: "/covers/spiderman-ps4.jpg",
     title: "Marvel's Spider-Man",
     platform: "PS4",
     edition: "Standard",
@@ -1114,6 +1204,7 @@ export const games: Game[] = [
   },
   {
     id: "fifa-20",
+    image: "/covers/fifa-20.jpg",
     title: "FIFA 20",
     platform: "PS4",
     edition: "Standard",
@@ -1126,6 +1217,7 @@ export const games: Game[] = [
   },
   {
     id: "nioh-2",
+    image: "/covers/nioh-2.jpg",
     title: "Nioh 2",
     platform: "PS4",
     edition: "Standard",
@@ -1138,6 +1230,7 @@ export const games: Game[] = [
   },
   {
     id: "until-dawn",
+    image: "/covers/until-dawn.jpg",
     title: "Until Dawn",
     platform: "PS4",
     edition: "Standard",
@@ -1150,6 +1243,7 @@ export const games: Game[] = [
   },
   {
     id: "darksiders-3",
+    image: "/covers/darksiders-3.jpg",
     title: "Darksiders III",
     platform: "PS4",
     edition: "Standard",
@@ -1162,6 +1256,7 @@ export const games: Game[] = [
   },
   {
     id: "inside-limbo",
+    image: "/covers/inside-limbo.jpg",
     title: "Inside + Limbo",
     platform: "PS4",
     edition: "Standard",
@@ -1174,6 +1269,7 @@ export const games: Game[] = [
   },
   {
     id: "cod-ww2",
+    image: "/covers/cod-ww2.jpg",
     title: "Call of Duty: WWII",
     platform: "PS4",
     edition: "Standard",
@@ -1186,6 +1282,7 @@ export const games: Game[] = [
   },
   {
     id: "ace-combat-7",
+    image: "/covers/ace-combat-7.jpg",
     title: "Ace Combat 7: Skies Unknown",
     platform: "PS4",
     edition: "Standard",
@@ -1198,6 +1295,7 @@ export const games: Game[] = [
   },
   {
     id: "nfs-payback",
+    image: "/covers/nfs-payback.jpg",
     title: "Need for Speed Payback",
     platform: "PS4",
     edition: "Standard",
@@ -1211,6 +1309,7 @@ export const games: Game[] = [
   // === STEELBOOK EDITIONS ===
   {
     id: "death-stranding-steel",
+    image: "/covers/death-stranding-steel.jpg",
     title: "Death Stranding",
     platform: "PS4",
     edition: "Steelbook",
@@ -1223,6 +1322,7 @@ export const games: Game[] = [
   },
   {
     id: "ff15-deluxe-steel",
+    image: "/covers/ff15-deluxe-steel.jpg",
     title: "Final Fantasy XV Deluxe Edition",
     platform: "PS4",
     edition: "Deluxe",
@@ -1235,6 +1335,7 @@ export const games: Game[] = [
   },
   {
     id: "dark-souls-3-steel",
+    image: "/covers/dark-souls-3-steel.jpg",
     title: "Dark Souls III",
     platform: "PS4",
     edition: "Steelbook",
@@ -1248,6 +1349,7 @@ export const games: Game[] = [
   },
   {
     id: "watch-dogs-2-steel",
+    image: "/covers/watch-dogs-2-steel.jpg",
     title: "Watch Dogs 2",
     platform: "PS4",
     edition: "Steelbook",
@@ -1260,6 +1362,7 @@ export const games: Game[] = [
   },
   {
     id: "borderlands-3-steel",
+    image: "/covers/borderlands-3-steel.jpg",
     title: "Borderlands 3 Super Deluxe Edition",
     platform: "PS4",
     edition: "Deluxe",
@@ -1272,6 +1375,7 @@ export const games: Game[] = [
   },
   {
     id: "fallout-76-steel",
+    image: "/covers/fallout-76-steel.jpg",
     title: "Fallout 76",
     platform: "PS4",
     edition: "Steelbook",
@@ -1285,6 +1389,7 @@ export const games: Game[] = [
   },
   {
     id: "cyberpunk-2077-steel",
+    image: "/covers/cyberpunk-2077-steel.jpg",
     title: "Cyberpunk 2077",
     platform: "PS4",
     edition: "Steelbook",
@@ -1297,6 +1402,7 @@ export const games: Game[] = [
   },
   {
     id: "mhw-iceborne-steel",
+    image: "/covers/mhw-iceborne-steel.jpg",
     title: "Monster Hunter World: Iceborne",
     platform: "PS4",
     edition: "Steelbook",
@@ -1310,6 +1416,7 @@ export const games: Game[] = [
   },
   {
     id: "watch-dogs-steel",
+    image: "/covers/watch-dogs-steel.jpg",
     title: "Watch Dogs",
     platform: "PS4",
     edition: "Steelbook",
@@ -1323,6 +1430,7 @@ export const games: Game[] = [
   },
   {
     id: "tomb-raider-steel",
+    image: "/covers/tomb-raider-steel.jpg",
     title: "Rise of the Tomb Raider: 20 Year Celebration",
     platform: "PS4",
     edition: "Steelbook",
@@ -1335,6 +1443,7 @@ export const games: Game[] = [
   },
   {
     id: "mlb-show-20-steel",
+    image: "/covers/mlb-show-20-steel.svg",
     title: "MLB The Show 20",
     platform: "PS4",
     edition: "Steelbook",
@@ -1347,6 +1456,7 @@ export const games: Game[] = [
   },
   {
     id: "rdr2-steel",
+    image: "/covers/rdr2-steel.jpg",
     title: "Red Dead Redemption II",
     platform: "PS4",
     edition: "Steelbook",
@@ -1360,6 +1470,7 @@ export const games: Game[] = [
   },
   {
     id: "cod-bo3-steel",
+    image: "/covers/cod-bo3-steel.jpg",
     title: "Call of Duty: Black Ops III",
     platform: "PS4",
     edition: "Steelbook",
@@ -1373,6 +1484,7 @@ export const games: Game[] = [
   },
   {
     id: "tlou2-steel",
+    image: "/covers/tlou2-steel.jpg",
     title: "The Last of Us Part II",
     platform: "PS4",
     edition: "Steelbook",
@@ -1386,6 +1498,7 @@ export const games: Game[] = [
   },
   {
     id: "fallout-4-steel",
+    image: "/covers/fallout-4-steel.jpg",
     title: "Fallout 4",
     platform: "PS4",
     edition: "Steelbook",
@@ -1398,6 +1511,7 @@ export const games: Game[] = [
   },
   {
     id: "hitman-steel",
+    image: "/covers/hitman-steel.jpg",
     title: "Hitman: The Complete First Season",
     platform: "PS4",
     edition: "Steelbook",
@@ -1410,6 +1524,7 @@ export const games: Game[] = [
   },
   {
     id: "cod-ghosts-steel",
+    image: "/covers/cod-ghosts-steel.jpg",
     title: "Call of Duty: Ghosts",
     platform: "PS4",
     edition: "Steelbook",
@@ -1423,6 +1538,7 @@ export const games: Game[] = [
   },
   {
     id: "dissidia-ff-steel",
+    image: "/covers/dissidia-ff-steel.jpg",
     title: "Dissidia Final Fantasy NT",
     platform: "PS4",
     edition: "Steelbook",
