@@ -40,4 +40,4 @@ jobs:
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -p ${DEPLOY_PORT:-21098} -o StrictHostKeyChecking=accept-new" \
             out/ \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:~/public_html/"
+            "${DEPLOY_USER}@${DEPLOY_HOST}:~/cybergaminglb.com/"
