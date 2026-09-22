@@ -1,6 +1,7 @@
 <?php
 use App\Modules\Storefront\Quoter;
 use App\Modules\Storefront\Rules;
+use App\Modules\Storefront\Seo;
 use App\Modules\Storefront\Ui;
 use App\Support\Pricing;
 
@@ -34,11 +35,20 @@ $faqs = [
     ...Rules::sellFaqs(),
     ['Do other customers see my name or number?', 'Never. Your details are used only by CyberGaming to contact you about your request, and buyers and sellers never see each other.'],
 ];
-$meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
-    static fn (array $f): array => ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]],
-    $faqs
-)];
+// the numbered steps shown below; the same list feeds the HowTo structured data
+$steps = [
+    ['Get your instant quote', 'Enter your games above. Matching titles get a price in cash and in credit immediately, and anything we do not recognise is priced by our team.'],
+    ['Send your request', 'Create a free account (or sign in) and send it. It takes a minute, and your quote is waiting for you afterwards.'],
+    ['Get our offer and accept', 'We review your list and post an offer in your account. Pick cash or credit and accept it.'],
+    ['Hand over and we inspect', 'Bring your games to our hub (free), or have them picked up: our own courier checks them on the spot in local areas, and elsewhere a courier ships them to our hub. We check discs, cases and codes.'],
+    ['Get paid in cash or credit', 'If the condition matches your description, you get the offered amount: cash, or credit added to your wallet, minus the courier pickup fee if you chose a pickup.'],
+];
+$meta['title'] = 'Sell Your Used Games in Lebanon: Instant Quote | CyberGaming';
+$meta['jsonld'][] = Seo::webPage('WebPage', 'Sell your used games in Lebanon', (string) ($meta['canonical'] ?? url('/sell')), (string) ($meta['description'] ?? ''));
+$meta['jsonld'][] = Seo::howTo('How to sell your used games to CyberGaming', 'Get an instant quote for your games, send your request, accept our offer, hand the games over for inspection and get paid in cash or store credit.', $steps);
+$meta['jsonld'][] = Seo::faqLd($faqs);
 echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Sell your used games in Lebanon', 'lead' => 'Get an instant quote for your PS4, PS5, Switch and Xbox games in cash or in store credit' . ($creditBetter ? ' (credit is worth more)' : '') . '. Send your request, get our offer, hand them over and get paid.']);
+echo Seo::quickAnswerHtml('sell');
 ?>
 <div class="container">
     <?= Ui::partial('flow-nav', ['active' => 'sell']) ?>
@@ -77,11 +87,9 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Sell your used game
     <article class="prose">
         <h2>How selling to CyberGaming works</h2>
         <ol class="steps steps-vertical">
-            <li><span class="step-num">1</span><div><h3>Get your instant quote</h3><p>Enter your games above. Matching titles get a price in cash and in credit immediately, and anything we do not recognise is priced by our team.</p></div></li>
-            <li><span class="step-num">2</span><div><h3>Send your request</h3><p>Create a free account (or sign in) and send it. It takes a minute, and your quote is waiting for you afterwards.</p></div></li>
-            <li><span class="step-num">3</span><div><h3>Get our offer and accept</h3><p>We review your list and post an offer in your account. Pick cash or credit and accept it.</p></div></li>
-            <li><span class="step-num">4</span><div><h3>Hand over and we inspect</h3><p>Bring your games to our hub (free), or have them picked up: our own courier checks them on the spot in local areas, and elsewhere a courier ships them to our hub. We check discs, cases and codes.</p></div></li>
-            <li><span class="step-num">5</span><div><h3>Get paid in cash or credit</h3><p>If the condition matches your description, you get the offered amount: cash, or credit added to your wallet, minus the courier pickup fee if you chose a pickup.</p></div></li>
+            <?php foreach ($steps as $i => [$stepName, $stepText]): ?>
+            <li><span class="step-num"><?= $i + 1 ?></span><div><h3><?= e($stepName) ?></h3><p><?= e($stepText) ?></p></div></li>
+            <?php endforeach; ?>
         </ol>
 
         <h2>Cash versus store credit</h2>
@@ -137,7 +145,7 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Sell your used game
         </ul>
     </article>
 
-    <?= Ui::partial('faq', ['faqs' => $faqs]) ?>
+    <?= Seo::faqHtml($faqs) ?>
 
     <section class="card-box seller-cta">
         <h2>Own a shop or sell in volume?</h2>

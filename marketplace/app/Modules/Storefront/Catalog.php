@@ -16,9 +16,17 @@ final class Catalog
     /** Public product columns (no seller data). */
     private const COLS = 'p.id, p.slug, p.title, p.description, p.item_condition, p.includes_box, p.includes_cover_art, p.includes_manual,
         p.edition, p.is_steelbook, p.year, p.genres,
-        p.price, p.stock, p.image, p.status, p.created_at, p.updated_at, p.category_id, p.platform_id,
-        p.is_digital, p.digital_kind, p.digital_region,
-        pl.name AS platform_name, pl.slug AS platform_slug, c.name AS category_name, c.slug AS category_slug';
+        p.price, p.stock,
+        IF(c.kind = \'hardware\' AND (p.image IS NULL OR p.image = \'\'),
+           (SELECT pi.path FROM product_images pi WHERE pi.product_id = p.id
+             ORDER BY FIELD(pi.kind, \'unit_front\', \'powered_on\', \'box_accessories\', \'unit_back\', \'extra\'), pi.sort_order, pi.id LIMIT 1),
+           p.image) AS image,
+        p.status, p.created_at, p.updated_at, p.category_id, p.platform_id,
+        p.is_digital, p.digital_kind, p.digital_region, p.brand, p.model, p.warranty_months,
+        pl.name AS platform_name, pl.slug AS platform_slug, c.name AS category_name, c.slug AS category_slug, c.kind AS category_kind';
+
+    /** Extra columns only the product page needs. serial_number is admin-only and is deliberately never selectable here. */
+    private const COLS_DETAIL = ', p.specs, p.included_items';
 
     private const FROM = 'FROM products p
         JOIN categories c ON c.id = p.category_id
@@ -35,16 +43,21 @@ final class Catalog
     ];
 
     /**
-     * THE digital-goods gate. Every storefront query that reads `products` (alias `p`) must append this fragment.
-     * With the master switch off (default) digital products and everything in the gift-cards category do not exist
-     * for the public site; with it on it adds nothing.
+     * THE storefront gate. Every storefront query that reads `products` (alias `p`) must append this fragment.
+     * It hides products of disabled categories and platforms, and, with the digital master switch off (default),
+     * digital products and everything in the gift-cards category: for the public site they do not exist.
      */
     public static function gate(): string
     {
+        // A disabled category or platform (is_active = 0) removes every product in it from the public site: listings, search,
+        // home, related items, sitemap, cart, checkout, trade/sell references and the product page itself (404).
+        // A product without a platform (PC peripherals) is only subject to its category.
+        $sql = ' AND EXISTS (SELECT 1 FROM categories gate_c WHERE gate_c.id = p.category_id AND gate_c.is_active = 1)'
+            . ' AND (p.platform_id IS NULL OR EXISTS (SELECT 1 FROM platforms gate_pl WHERE gate_pl.id = p.platform_id AND gate_pl.is_active = 1))';
         if (digital_enabled()) {
-            return '';
+            return $sql;
         }
-        return " AND p.is_digital = 0 AND p.category_id NOT IN (SELECT gc.id FROM categories gc WHERE gc.slug = '" . self::GIFT_SLUG . "')";
+        return $sql . " AND p.is_digital = 0 AND p.category_id NOT IN (SELECT gc.id FROM categories gc WHERE gc.slug = '" . self::GIFT_SLUG . "')";
     }
 
     /** Products a customer can buy right now (active, in stock, digital gate applied). Alias `p`. */
@@ -72,10 +85,48 @@ final class Catalog
     public static function categories(): array
     {
         return self::$categories ??= db()->fetchAll(
-            "SELECT c.id, c.slug, c.name, c.seo_title, c.seo_description, c.intro_text,
+            "SELECT c.id, c.slug, c.kind, c.name, c.seo_title, c.seo_description, c.intro_text,
                     (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id AND " . self::visible() . ") AS product_count
                FROM categories c WHERE c.is_active = 1" . (digital_enabled() ? '' : " AND c.slug <> '" . self::GIFT_SLUG . "'") . " ORDER BY c.sort_order, c.name"
         );
+    }
+
+    /** Active platforms that have purchasable products in one category (the platform filter of a category page). */
+    public static function platformsIn(int $categoryId): array
+    {
+        return db()->fetchAll(
+            'SELECT pl.id, pl.slug, pl.name, COUNT(*) AS product_count
+               FROM products p JOIN platforms pl ON pl.id = p.platform_id
+              WHERE pl.is_active = 1 AND p.category_id = :c AND ' . self::visible() . '
+              GROUP BY pl.id, pl.slug, pl.name, pl.sort_order ORDER BY pl.sort_order, pl.name',
+            ['c' => $categoryId]
+        );
+    }
+
+    /** Active categories that have purchasable products on one platform. */
+    public static function categoriesOn(int $platformId): array
+    {
+        return db()->fetchAll(
+            'SELECT c.id, c.slug, c.name, COUNT(*) AS product_count
+               FROM products p JOIN categories c ON c.id = p.category_id
+              WHERE c.is_active = 1 AND p.platform_id = :pl AND ' . self::visible() . '
+              GROUP BY c.id, c.slug, c.name, c.sort_order ORDER BY c.sort_order, c.name',
+            ['pl' => $platformId]
+        );
+    }
+
+    /**
+     * Brands among purchasable products in the given scope (facet for hardware categories), most stock first.
+     * @return array<int,array{brand:string,n:int}>
+     */
+    public static function brands(?int $platformId = null, ?int $categoryId = null): array
+    {
+        [$where, $params] = self::scope($platformId, $categoryId);
+        $rows = db()->fetchAll(
+            "SELECT p.brand, COUNT(*) AS n FROM products p WHERE $where AND p.brand IS NOT NULL AND p.brand <> '' GROUP BY p.brand ORDER BY n DESC, p.brand",
+            $params
+        );
+        return array_map(static fn (array $r): array => ['brand' => (string) $r['brand'], 'n' => (int) $r['n']], $rows);
     }
 
     public static function platformBySlug(string $slug): ?array
@@ -124,8 +175,9 @@ final class Catalog
         $q = trim((string) ($f['q'] ?? ''));
         if ($q !== '') {
             foreach (array_slice(preg_split('/\s+/u', $q) ?: [], 0, 5) as $i => $word) {
-                $where .= " AND p.title LIKE :q$i";
-                $params["q$i"] = '%' . addcslashes($word, '%_\\') . '%';
+                // hardware is also found by brand or model ("logitech", "g502")
+                $where .= " AND (p.title LIKE :q$i OR p.brand LIKE :qb$i OR p.model LIKE :qm$i)";
+                $params["q$i"] = $params["qb$i"] = $params["qm$i"] = '%' . addcslashes($word, '%_\\') . '%';
             }
         }
         if (($f['genre'] ?? '') !== '') {
@@ -133,6 +185,10 @@ final class Catalog
             $params['genre'] = $f['genre'];
         }
         $cond = (string) ($f['cond'] ?? '');
+        if (($f['brand'] ?? '') !== '') {
+            $where .= ' AND p.brand = :brand';
+            $params['brand'] = $f['brand'];
+        }
         if ($cond === 'new') {
             $where .= " AND p.item_condition = 'New'";
         } elseif ($cond === 'used') {
@@ -205,7 +261,7 @@ final class Catalog
     public static function product(string $slug): ?array
     {
         return db()->fetch(
-            'SELECT ' . self::COLS . ' ' . self::FROM . " WHERE p.slug = :slug AND p.status IN ('active','sold')" . self::gate(),
+            'SELECT ' . self::COLS . self::COLS_DETAIL . ' ' . self::FROM . " WHERE p.slug = :slug AND p.status IN ('active','sold')" . self::gate(),
             ['slug' => $slug]
         );
     }

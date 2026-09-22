@@ -13,7 +13,29 @@ namespace App\Support;
  */
 final class ProductPhotos
 {
+    /** Games: the disc, the box from outside, the box from inside. */
     public const LABELS = ['disc' => 'Disc', 'box_outside' => 'Box, outside', 'box_inside' => 'Box, inside'];
+    /** Hardware: the unit from the front, the back with its ports, and everything in the box. "powered_on" is optional. */
+    public const LABELS_HARDWARE = ['unit_front' => 'Unit, front', 'unit_back' => 'Unit, back and ports', 'box_accessories' => 'Box and accessories'];
+    public const OPTIONAL_HARDWARE = ['powered_on' => 'Powered on'];
+    private const ORDER = ['disc', 'box_outside', 'box_inside', 'unit_front', 'unit_back', 'box_accessories', 'powered_on', 'extra'];
+
+    /** Required photo kinds and labels for a listing type: 'game' (default), 'hardware'. Digital items need none. */
+    public static function labels(string $type = 'game'): array
+    {
+        return match ($type) {
+            'hardware' => self::LABELS_HARDWARE,
+            'digital'  => [],
+            default    => self::LABELS,
+        };
+    }
+
+    /** Listing type of a category: game | hardware | digital (categories.kind). */
+    public static function typeForCategory(int $categoryId): string
+    {
+        $kind = db()->fetchValue('SELECT kind FROM categories WHERE id = ?', [$categoryId]);
+        return in_array($kind, ['game', 'hardware', 'digital'], true) ? (string) $kind : 'game';
+    }
     private const MAX_BYTES = 10485760;
     private const MAX_EXTRA = 3;
     private const MAX_SIDE = 1600;
@@ -29,12 +51,25 @@ final class ProductPhotos
      * @param bool $required demand the three kinds (unless already stored)
      * @return array{errors: string[], staged: array<int, array{kind: string, path: string}>}
      */
-    public static function stage(array $files, array $existingKinds = [], bool $required = true): array
+    public static function stage(array $files, array $existingKinds = [], bool $required = true, string $type = 'game'): array
     {
         $errors = [];
         $staged = [];
 
-        foreach (self::LABELS as $kind => $label) {
+        $labels = self::labels($type);
+        $optional = $type === 'hardware' ? self::OPTIONAL_HARDWARE : [];
+        foreach ($optional as $kind => $label) {
+            $f = $files['photo_' . $kind] ?? null;
+            if (is_array($f) && (int) ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                [$path, $err] = self::processOne($f);
+                if ($err !== null) {
+                    $errors[] = "{$label}: {$err}";
+                } elseif ($path !== null) {
+                    $staged[] = ['kind' => $kind, 'path' => $path];
+                }
+            }
+        }
+        foreach ($labels as $kind => $label) {
             $f = $files['photo_' . $kind] ?? null;
             $has = is_array($f) && (int) ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
             if (!$has) {
@@ -113,7 +148,7 @@ final class ProductPhotos
                     db()->execute('DELETE FROM product_images WHERE id = ?', [$old['id']]);
                 }
             }
-            $order = $s['kind'] === 'extra' ? 10 : (int) array_search($s['kind'], array_keys(self::LABELS), true);
+            $order = $s['kind'] === 'extra' ? 10 : (int) array_search($s['kind'], self::ORDER, true);
             db()->execute('INSERT INTO product_images (product_id, path, kind, sort_order) VALUES (?, ?, ?, ?)', [$productId, $s['path'], $s['kind'], $order]);
             $saved[] = $s['path'];
         }
@@ -124,15 +159,15 @@ final class ProductPhotos
     public static function forProduct(int $productId): array
     {
         return db()->fetchAll(
-            "SELECT id, path, kind FROM product_images WHERE product_id = ? ORDER BY FIELD(kind,'disc','box_outside','box_inside','extra'), sort_order, id",
+            "SELECT id, path, kind FROM product_images WHERE product_id = ? ORDER BY FIELD(kind,'disc','box_outside','box_inside','unit_front','unit_back','box_accessories','powered_on','extra'), sort_order, id",
             [$productId]
         );
     }
 
     /** @return string[] required kinds this product does not have yet */
-    public static function missingKinds(int $productId): array
+    public static function missingKinds(int $productId, string $type = 'game'): array
     {
-        return array_values(array_diff(array_keys(self::LABELS), self::existingKinds($productId)));
+        return array_values(array_diff(array_keys(self::labels($type)), self::existingKinds($productId)));
     }
 
     public static function deleteForProduct(int $productId): void
@@ -156,6 +191,9 @@ final class ProductPhotos
         $file = PUBLIC_PATH . '/uploads/' . ltrim($relative, '/');
         if (str_starts_with($relative, 'products/') && is_file($file)) {
             @unlink($file);
+            if (class_exists(\App\Support\ImageVariants::class)) {
+                \App\Support\ImageVariants::delete($file); // its WebP siblings
+            }
         }
     }
 
@@ -226,9 +264,11 @@ final class ProductPhotos
         if (max($w, $h) > self::MAX_SIDE) {
             $nw = $w >= $h ? self::MAX_SIDE : (int) round($w * self::MAX_SIDE / $h);
             $nh = $w >= $h ? (int) round($h * self::MAX_SIDE / $w) : self::MAX_SIDE;
-            $scaled = imagescale($img, $nw, $nh);
-            if ($scaled) {
-                $img = $scaled;
+            // imagescale() is unreliable across GD builds (fails on some servers regardless of the mode argument);
+            // imagecopyresampled has no such quirk.
+            $resized = imagecreatetruecolor($nw, $nh);
+            if ($resized && imagecopyresampled($resized, $img, 0, 0, 0, 0, $nw, $nh, $w, $h)) {
+                $img = $resized;
             }
         }
         $dir = PUBLIC_PATH . '/uploads/products';
@@ -238,6 +278,10 @@ final class ProductPhotos
         $name = bin2hex(random_bytes(12)) . '.jpg';
         if (!imagejpeg($img, $dir . '/' . $name, 82)) {
             return [null, 'could not save the photo.'];
+        }
+        // WebP siblings (-w300, -w600, full) for the storefront's <picture>; failure is harmless (the JPEG is served)
+        if (class_exists(\App\Support\ImageVariants::class)) {
+            \App\Support\ImageVariants::generate($dir . '/' . $name);
         }
         return ['products/' . $name, null];
     }

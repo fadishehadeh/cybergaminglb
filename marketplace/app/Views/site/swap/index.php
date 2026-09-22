@@ -1,4 +1,5 @@
 <?php
+use App\Modules\Storefront\Seo;
 use App\Modules\Storefront\Ui;
 
 /** @var array $platforms @var ?array $platform @var array $listings @var int $total @var int $page @var int $pages @var array $query @var array $areas @var string $fee @var array $crumbs @var array $meta */
@@ -10,11 +11,10 @@ $faqs = [
     ['Why is my listing not on the board yet?', 'New listings are reviewed by our team before they are published. Once approved, your listing appears on the board and we contact you when someone is interested.'],
     ['Why can I not put my phone number or Instagram in the listing?', 'Listings are public, and swaps run through our hub to keep everyone safe. Leave your number in the private details field only; we connect you when there is a match.'],
 ];
-$meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
-    static fn (array $f): array => ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]],
-    $faqs
-)];
+$meta['jsonld'][] = Seo::webPage('WebPage', 'Swap games with other players in Lebanon', (string) ($meta['canonical'] ?? url('/swap')), (string) ($meta['description'] ?? ''));
+$meta['jsonld'][] = Seo::faqLd($faqs);
 echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Swap games with other players in Lebanon', 'lead' => "Trade a game you have for one you want, with another gamer. We stay in the middle so nobody shares a phone number. Flat $fee fee per side."]);
+echo Seo::quickAnswerHtml('swap');
 ?>
 <div class="container">
     <?= Ui::partial('flow-nav', ['active' => 'swap']) ?>
@@ -111,6 +111,6 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Swap games with oth
 </div>
 
 <div class="container prose-wrap">
-    <?= Ui::partial('faq', ['faqs' => $faqs]) ?>
+    <?= Seo::faqHtml($faqs) ?>
     <p class="see-also">Would you rather sell? See <a href="<?= e(url('/sell')) ?>">selling for cash</a> or <a href="<?= e(url('/trade')) ?>">trading in for credit</a>.</p>
 </div>

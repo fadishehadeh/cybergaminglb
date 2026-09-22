@@ -16,9 +16,21 @@ final class Cart
         return is_array($cart) ? $cart : [];
     }
 
+    /** Items in the cart badge: only lines that can still be bought (a hidden category / platform / digital line does not count). */
     public static function count(): int
     {
-        return (int) array_sum(self::raw());
+        $cart = self::raw();
+        if (!$cart) {
+            return 0;
+        }
+        $products = Catalog::purchasable(array_keys($cart));
+        $n = 0;
+        foreach ($cart as $id => $qty) {
+            if (isset($products[(int) $id])) {
+                $n += max(1, min((int) $qty, (int) $products[(int) $id]['stock'], self::MAX_LINE_QTY));
+            }
+        }
+        return $n;
     }
 
     private static function save(array $cart): void

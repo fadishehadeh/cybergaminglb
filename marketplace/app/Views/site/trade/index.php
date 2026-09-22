@@ -1,6 +1,7 @@
 <?php
 use App\Modules\Storefront\Quoter;
 use App\Modules\Storefront\Rules;
+use App\Modules\Storefront\Seo;
 use App\Modules\Storefront\Ui;
 use App\Support\Pricing;
 
@@ -24,11 +25,18 @@ $faqs = [
     ...Rules::sellFaqs(),
     ['Can I trade in a game that is not in your catalogue?', 'Yes. Games we cannot price automatically are flagged, and our team prices them when they review your request.'],
 ];
-$meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
-    static fn (array $f): array => ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]],
-    $faqs
-)];
+// the numbered steps shown below; the same list feeds the HowTo structured data
+$steps = [
+    ['Use the calculator', 'List what you have and what you want. You see your balance straight away.'],
+    ['Send your request', 'Sign in to your free account (or create one) and send it. We review it and post an offer in your account, and nothing moves until you accept.'],
+    ['Hand over and we inspect', 'Bring your games to our hub for free, or have a courier pick them up (' . money(Rules::pickupFee()) . ' fee, deducted from your credit or cash). We inspect them, and your credit is added to your wallet, ready to spend on the items you want. If an item is not acceptable you choose: a revised offer, send it back (' . money(Rules::returnFee()) . ' in cash on delivery) or a free recycle.'],
+];
+$meta['jsonld'][] = Seo::webPage('WebPage', 'Trade in your games for store credit', (string) ($meta['canonical'] ?? url('/trade')), (string) ($meta['description'] ?? ''));
+$meta['jsonld'][] = Seo::howTo('How to trade in your games for store credit', 'Use the trade-in calculator, send your request, hand your games over for inspection and spend the store credit on items in the shop.', $steps);
+$meta['jsonld'][] = Seo::faqLd($faqs);
 echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Trade in your games for store credit', 'lead' => "Get $tradein% of resale value as CyberGaming store credit (or $buyback% in cash) and spend it on any game, steelbook or accessory in the shop. See your balance instantly."]);
+$meta['title'] = 'Trade In Games for Store Credit in Lebanon | CyberGaming';
+echo Seo::quickAnswerHtml('trade');
 ?>
 <div class="container">
     <?= Ui::partial('flow-nav', ['active' => 'trade']) ?>
@@ -77,12 +85,12 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Trade in your games
 
         <h2>How trading in works</h2>
         <ol class="steps steps-vertical">
-            <li><span class="step-num">1</span><div><h3>Use the calculator</h3><p>List what you have and what you want. You see your balance straight away.</p></div></li>
-            <li><span class="step-num">2</span><div><h3>Send your request</h3><p>Sign in to your free account (or create one) and send it. We review it and post an offer in your account, and nothing moves until you accept.</p></div></li>
-            <li><span class="step-num">3</span><div><h3>Hand over and we inspect</h3><p>Bring your games to our hub for free, or have a courier pick them up (<?= e(money(Rules::pickupFee())) ?> fee, deducted from your credit or cash). We inspect them, and your credit is added to your wallet, ready to spend on the items you want. If an item is not acceptable you choose: a revised offer, send it back (<?= e(money(Rules::returnFee())) ?> in cash on delivery) or a free recycle.</p></div></li>
+            <?php foreach ($steps as $i => [$stepName, $stepText]): ?>
+            <li><span class="step-num"><?= $i + 1 ?></span><div><h3><?= e($stepName) ?></h3><p><?= e($stepText) ?></p></div></li>
+            <?php endforeach; ?>
         </ol>
     </article>
 
-    <?= Ui::partial('faq', ['faqs' => $faqs]) ?>
+    <?= Seo::faqHtml($faqs) ?>
     <p class="see-also">Just want cash? See <a href="<?= e(url('/sell')) ?>">selling your games</a>. New to the wallet? Read <a href="<?= e(url('/credit')) ?>">how store credit works</a>. Browse what you could spend your credit on in the <a href="<?= e(url('/shop')) ?>">shop</a>, or <a href="<?= e(url('/swap')) ?>">swap</a> with another player.</p>
 </div>

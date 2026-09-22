@@ -1,5 +1,6 @@
 <?php
 use App\Modules\Storefront\Rules;
+use App\Modules\Storefront\Seo;
 use App\Modules\Storefront\Shipping;
 use App\Modules\Storefront\Ui;
 use App\Support\Pricing;
@@ -21,8 +22,8 @@ $zoneText = implode(', ', array_map(static fn (array $z): string => $z['name'] .
 
 $faqs = [
     ['What is CyberGaming store credit?', 'Store credit is money in your CyberGaming wallet that you can only spend in our shop. 1 credit is always worth 1 US dollar, and it never expires.'],
-    ['How do I earn credit?', 'Sell us your used games: we send you an offer, you accept it, we inspect the games and add the credit to your wallet. Members who sell games to other customers through CyberGaming can also be paid in credit when their item sells.'],
-    ['How do I spend credit?', 'At checkout, tick "Pay with my credit". It is taken off your order, and if it does not cover everything you pay the rest in cash on delivery. If your credit covers the whole order, you pay nothing on delivery.'],
+    ['How do I earn credit?', 'Sell us your used games: we send you an offer, you accept it, we inspect the games and add the credit to your wallet. Members who sell games to other customers through CyberGaming can also be paid in credit when their item sells. Start on the [[/sell|sell page]] or the [[/trade|trade-in calculator]].'],
+    ['How do I spend credit?', 'At checkout, tick "Pay with my credit". It is taken off your order, and if it does not cover everything you pay the rest in cash on delivery. If your credit covers the whole order, you pay nothing on delivery. See [[/delivery-and-payment|delivery and payment]].'],
     ['Does credit expire?', 'No. Credit never expires and stays in your wallet until you spend it.'],
     ['Can I take cash instead of credit?', "Yes. When you sell us games you can choose cash or credit. Credit is worth more ($tradein% of the shop price against $buyback% in cash), but the choice is yours."],
     ['Is there a fee for using credit?', "No fee for earning or spending credit. Delivery is charged by area ($zoneText" . ($freeOver > 0 ? '; free over ' . money($freeOver) : '') . "), and members who sell to other customers pay a $memberPct% commission. If you sell us games and a courier picks them up, a $pickupFeeText pickup fee is deducted from your payout; bringing them to our hub is free."],
@@ -33,11 +34,10 @@ $faqs = [
 if (digital_enabled()) {
     $faqs[] = ['Can I use store credit on gift cards?', 'No. Store credit works on physical items and delivery only. Gift cards and other digital codes are prepaid by OMT or Whish.'];
 }
-$meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
-    static fn (array $f): array => ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]],
-    $faqs
-)];
+$meta['jsonld'][] = Seo::webPage('WebPage', 'How store credit works', (string) ($meta['canonical'] ?? url('/credit')), (string) ($meta['description'] ?? ''));
+$meta['jsonld'][] = Seo::faqLd($faqs);
 echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'How store credit works', 'lead' => 'Sell your games, get credit, spend it in the shop. 1 credit = $1, and it never expires.']);
+echo Seo::quickAnswerHtml('credit');
 ?>
 <div class="container prose-wrap">
     <article class="prose">
@@ -84,7 +84,7 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'How store credit wo
         </ul>
     </article>
 
-    <?= Ui::partial('faq', ['faqs' => $faqs]) ?>
+    <?= Seo::faqHtml($faqs) ?>
 
     <section class="cta-block cta-inline">
         <div>

@@ -37,6 +37,7 @@ final class DashboardController extends AdminController
             'house_units'   => (int) $house['units'],
             'pending_products' => (int) db()->fetchValue("SELECT COUNT(*) FROM products WHERE status = 'pending'"),
             'missing_photos'   => (int) db()->fetchValue('SELECT COUNT(*) FROM products p WHERE ' . ListingRules::missingSql('p')),
+            'articles_draft'   => (int) db()->fetchValue('SELECT COUNT(*) FROM articles WHERE is_published = 0'),
             'pending_sellers'  => (int) db()->fetchValue("SELECT COUNT(*) FROM sellers WHERE status = 'pending'"),
             'payouts_owed'  => (float) db()->fetchValue("SELECT COALESCE(SUM(amount), 0) FROM payouts WHERE status = 'pending'"),
             'requests_new'  => (int) db()->fetchValue("SELECT COUNT(*) FROM buyback_requests WHERE status = 'new'")
@@ -112,7 +113,7 @@ final class DashboardController extends AdminController
             "SELECT id, code, buyer_name, buyer_area, total, created_at FROM orders WHERE status = 'new' ORDER BY created_at ASC LIMIT 8"
         );
         $pendingProducts = db()->fetchAll(
-            "SELECT p.id, p.title, p.seller_price, p.price, p.item_condition, p.is_digital, s.code AS seller_code, pl.name AS platform,
+            "SELECT p.id, p.title, p.seller_price, p.price, p.item_condition, p.is_digital, p.category_id, s.code AS seller_code, pl.name AS platform,
                     " . ListingRules::photoCountSql('p') . " AS photo_count
                FROM products p
                LEFT JOIN sellers s ON s.id = p.seller_id

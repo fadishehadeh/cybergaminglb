@@ -24,7 +24,8 @@ final class SwapController extends Controller
         $platform = $slug !== '' ? Catalog::platformBySlug($slug) : null;
         $page = max(1, (int) $request->query('page', 1));
 
-        $where = "s.is_public = 1 AND s.status = 'listed'";
+        $where = "s.is_public = 1 AND s.status = 'listed'"
+            . ' AND (s.platform_id IS NULL OR EXISTS (SELECT 1 FROM platforms sp WHERE sp.id = s.platform_id AND sp.is_active = 1))';
         $params = [];
         if ($platform) {
             $where .= ' AND s.platform_id = :plat';

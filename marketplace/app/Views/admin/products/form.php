@@ -22,6 +22,14 @@ if (old('_form')) {
 }
 $digitalKind = (string) Forms::val('digital_kind', $p['digital_kind'] ?? '');
 
+// Which field set applies: the category's kind (game / hardware), or digital when the box is ticked. JS keeps it in sync; this is the no-JS start state.
+$kindById = array_column($categories, 'kind', 'id');
+$slugById = array_column($categories, 'slug', 'id');
+$curCat   = (string) Forms::val('category_id', $p['category_id'] ?? '');
+$mode     = $isDigital ? 'digital' : (($kindById[(int) $curCat] ?? 'game') === 'hardware' ? 'hardware' : 'game');
+$specExample = implode("\n",\App\Modules\Admin\Hardware::specExample((string) ($slugById[(int) $curCat] ?? '')));
+$kindNames = ['game' => 'Games', 'hardware' => 'Hardware', 'digital' => 'Digital'];
+
 $curSeller = (string) Forms::val('seller_id', isset($p['seller_id']) && $p['seller_id'] !== null ? (string) $p['seller_id'] : ($isEdit ? '' : ($preselect ? (string) $preselect : '')));
 $curPrice  = Forms::val('seller_price', isset($p['seller_price']) ? (string) $p['seller_price'] : '');
 if ($isEdit && !old('_form') && $curSeller === '') {
@@ -54,7 +62,7 @@ $previewBuy = $priceNum > 0 ? \App\Support\Pricing::buyerPrice($priceNum, $pct) 
     <div class="alert alert-warn"><strong>Waiting for approval.</strong> <a href="<?= e(url('/admin/products/' . $p['id'] . '/review')) ?>">Open the review page</a> to check the condition, included items and photos before you approve it.</div>
 <?php endif; ?>
 
-<noscript><style>[data-digital-only][hidden], [data-physical-only][hidden] { display: block !important; }</style></noscript>
+<noscript><style>[data-digital-only][hidden], [data-physical-only][hidden], [data-kind][hidden] { display: block !important; }</style></noscript>
 <form method="post" action="<?= e(url($action)) ?>" enctype="multipart/form-data" class="product-form">
     <?= csrf_field() ?>
     <input type="hidden" name="_form" value="1">
@@ -99,33 +107,45 @@ $previewBuy = $priceNum > 0 ? \App\Support\Pricing::buyerPrice($priceNum, $pct) 
                     <label for="category_id">Category *</label>
                     <select id="category_id" name="category_id" required>
                         <option value="">Choose...</option>
-                        <?php foreach ($categories as $c): ?><option value="<?= (int) $c['id'] ?>" data-slug="<?= e($c['slug']) ?>" <?= (string) $f('category_id') === (string) $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?>
+                        <?php foreach ($kindNames as $kindKey => $kindLabel): ?>
+                            <?php $inKind = array_filter($categories, static fn (array $c): bool => $c['kind'] === $kindKey); if (!$inKind) { continue; } ?>
+                            <optgroup label="<?= e($kindLabel) ?>">
+                                <?php foreach ($inKind as $c): ?>
+                                    <option value="<?= (int) $c['id'] ?>" data-slug="<?= e($c['slug']) ?>" data-kind="<?= e($c['kind']) ?>"
+                                        data-example="<?= e(implode('|', \App\Modules\Admin\Hardware::specExample($c['slug']))) ?>"
+                                        <?= in_array($c['slug'], \App\Modules\Admin\Hardware::PERIPHERAL_SLUGS, true) ? 'data-default-platform="pc"' : '' ?>
+                                        <?= $curCat === (string) $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?><?= (int) $c['is_active'] ? '' : ' (disabled)' ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endforeach; ?>
                     </select>
+                    <small class="hint">The category decides which fields you see: games, hardware (brand, specs, warranty) or digital.</small>
                 </div>
                 <div class="field">
                     <label for="platform_id">Platform</label>
                     <select id="platform_id" name="platform_id">
                         <option value="">None / not platform specific</option>
-                        <?php foreach ($platforms as $pl): ?><option value="<?= (int) $pl['id'] ?>" <?= (string) $f('platform_id') === (string) $pl['id'] ? 'selected' : '' ?>><?= e($pl['name']) ?></option><?php endforeach; ?>
+                        <?php foreach ($platforms as $pl): ?><option value="<?= (int) $pl['id'] ?>" data-slug="<?= e($pl['slug']) ?>" <?= (string) $f('platform_id') === (string) $pl['id'] ? 'selected' : '' ?>><?= e($pl['name']) ?></option><?php endforeach; ?>
                     </select>
                 </div>
                 <?php require __DIR__ . '/_condition.php'; ?>
-                <div class="field" data-physical-only <?= $isDigital ? 'hidden' : '' ?>>
+                <div class="field" data-kind="game" <?= $mode === 'game' ? '' : 'hidden' ?>>
                     <label for="edition">Edition</label>
                     <input type="text" id="edition" name="edition" value="<?= e($f('edition', 'Standard')) ?>" maxlength="30" placeholder="Standard, Deluxe, GOTY...">
                 </div>
-                <div class="field" data-physical-only <?= $isDigital ? 'hidden' : '' ?>>
+                <div class="field" data-kind="game" <?= $mode === 'game' ? '' : 'hidden' ?>>
                     <label for="year">Release year</label>
                     <input type="number" id="year" name="year" value="<?= e($f('year')) ?>" min="1970" max="<?= (int) date('Y') + 1 ?>" placeholder="2019">
                 </div>
-                <div class="field field-check" data-physical-only <?= $isDigital ? 'hidden' : '' ?>>
+                <div class="field field-check" data-kind="game" <?= $mode === 'game' ? '' : 'hidden' ?>>
                     <label class="check"><input type="checkbox" name="is_steelbook" value="1" <?= Forms::checked('is_steelbook', !empty($p['is_steelbook'])) ? 'checked' : '' ?>> Steelbook edition</label>
                 </div>
-                <div class="field span-2" data-physical-only <?= $isDigital ? 'hidden' : '' ?>>
+                <div class="field span-2" data-kind="game" <?= $mode === 'game' ? '' : 'hidden' ?>>
                     <label for="genres">Genres</label>
                     <input type="text" id="genres" name="genres" value="<?= e($f('genres')) ?>" maxlength="255" placeholder="Action, RPG, Open World">
                     <small class="hint">Comma separated.</small>
                 </div>
+                <?php require __DIR__ . '/_hardware.php'; ?>
                 <div class="field span-2" data-digital-only <?= $isDigital ? '' : 'hidden' ?>>
                     <small class="hint">Digital items are always <strong>New</strong>, edition Standard, no steelbook, year or genres. Platform is optional (leave it empty for cards that work on several consoles).</small>
                 </div>
@@ -191,7 +211,7 @@ $previewBuy = $priceNum > 0 ? \App\Support\Pricing::buyerPrice($priceNum, $pct) 
                     <div class="field">
                         <label for="image"><?= $isEdit && $p['image'] ? 'Replace image' : 'Upload image' ?></label>
                         <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp">
-                        <small class="hint">JPG, PNG or WebP, up to 3 MB.<span data-digital-only <?= $isDigital ? '' : 'hidden' ?>> Optional for digital items.</span></small>
+                        <small class="hint">JPG, PNG or WebP, up to 3 MB. Optional: when empty, the box photo (games) or the front photo (hardware) is used.<span data-digital-only <?= $isDigital ? '' : 'hidden' ?>> Optional for digital items.</span></small>
                     </div>
                 </div>
             </section>
@@ -199,6 +219,7 @@ $previewBuy = $priceNum > 0 ? \App\Support\Pricing::buyerPrice($priceNum, $pct) 
     </div>
 
     <?php require __DIR__ . '/_photos.php'; ?>
+    <?php require __DIR__ . '/_photos_hardware.php'; ?>
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary btn-lg"><?= $isEdit ? 'Save changes' : 'Create product' ?></button>

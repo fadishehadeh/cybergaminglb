@@ -1,5 +1,7 @@
 <?php
 use App\Modules\Storefront\Rules;
+use App\Modules\Storefront\Seo;
+use App\Modules\Storefront\SeoCatalog;
 use App\Modules\Storefront\Shipping;
 use App\Modules\Storefront\Ui;
 
@@ -40,11 +42,11 @@ $faqs = [
 if (digital_enabled()) {
     $faqs[] = ['How do gift cards and digital codes work?', 'Pay by OMT or Whish first (no cash on delivery for digital items). We send your code on WhatsApp once we confirm the payment, usually within minutes during opening hours. There is no delivery fee for digital-only orders, store credit can not be used on them, and all digital sales are final once the code is delivered.'];
 }
-$meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
-    static fn (array $f): array => ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]],
-    $faqs
-)];
+$meta['jsonld'][] = Seo::webPage('WebPage', 'Delivery and payment in Lebanon', (string) ($meta['canonical'] ?? url('/delivery-and-payment')), (string) ($meta['description'] ?? ''));
+$meta['jsonld'][] = Seo::faqLd($faqs);
+$zonePages = SeoCatalog::zones();
 echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Delivery & payment', 'lead' => 'Delivery across Lebanon from ' . money($minFee) . '. Local areas: our own courier and cash on delivery. Other areas: a third-party courier, so you prepay by OMT or Whish. No online card payment.']);
+echo Seo::quickAnswerHtml('delivery');
 ?>
 <div class="container prose-wrap">
     <article class="prose">
@@ -63,6 +65,12 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Delivery & payment'
         <h3>Delivery fee and type by area</h3>
         <?= Ui::partial('zone-table') ?>
         <p>You choose your area at checkout and see the exact fee and how you pay before you place the order.</p>
+
+        <h3>Delivery pages by area</h3>
+        <ul class="chip-list">
+            <?php foreach ($zonePages as $zp): ?><li><a href="<?= e(url('/delivery-to/' . $zp['slug'])) ?>"><?= e($zp['short']) ?> <span><?= e(money($zp['fee'])) ?></span></a></li><?php endforeach; ?>
+        </ul>
+        <p><strong>The rest of Lebanon.</strong> Every town belongs to one of the areas above. Pick the area that contains your town at checkout. If you are not sure which one it is, message us on WhatsApp before you order and we will tell you the fee.</p>
         <ul class="icon-list">
             <li><?= Ui::icon('pin', 18) ?> Or meet us at our pickup point (<?= e((string) setting('hub_address', 'Lebanon')) ?>). We share the exact spot when we confirm your order.</li>
             <li><?= Ui::icon('chat', 18) ?> We confirm delivery time with you on WhatsApp before we ship.</li>
@@ -95,5 +103,5 @@ echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'Delivery & payment'
         <h2>Buyer protection</h2>
         <p>Every item is inspected before sale, and every order is confirmed by a person on WhatsApp. If something is not as described, tell us and we will make it right.</p>
     </article>
-    <?= Ui::partial('faq', ['faqs' => $faqs]) ?>
+    <?= Seo::faqHtml($faqs) ?>
 </div>

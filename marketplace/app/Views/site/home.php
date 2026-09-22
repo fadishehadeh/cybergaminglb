@@ -1,10 +1,35 @@
 <?php
+use App\Modules\Storefront\Collections;
+use App\Modules\Storefront\Guides;
+use App\Modules\Storefront\Rules;
+use App\Modules\Storefront\Seo;
+use App\Modules\Storefront\SeoCatalog;
 use App\Modules\Storefront\Ui;
 
 /** @var array $stats @var array $platforms @var array $categories @var array $steelbooks @var array $latest @var array $giftCards */
 $giftCards = $giftCards ?? [];
 $hero = array_slice(array_values(array_filter($latest, static fn (array $h): bool => !empty($h['image']))), 0, 3);
 $wa = wa_link('Hi CyberGaming, I want to sell my games: ');
+
+$buyPct = rtrim(rtrim(number_format((float) setting('buyback_pct', 45), 1), '0'), '.');
+$tradePct = rtrim(rtrim(number_format((float) setting('tradein_pct', 50), 1), '0'), '.');
+$rejected = array_values(array_filter(Rules::sellFaqs(), static fn (array $f): bool => str_starts_with($f[0], 'What happens if')));
+$homeFaqs = [
+    ['What is CyberGaming Lebanon?', 'CyberGaming Lebanon is an online marketplace in Lebanon to buy, sell, trade and swap used and new video games and gaming gear. Every item is inspected, prices are in US dollars, and we deliver across Lebanon. See [[/about|about us]] and [[/how-it-works|how it works]].'],
+    ['How much do you pay for used PS4 games?', "We pay $buyPct% of our shop price in cash or $tradePct% as store credit, adjusted for the condition of your copy. The exact amount depends on the title, so add your games to the [[/sell|sell page]] to see an instant quote."],
+    ['Do you deliver outside Beirut?', 'Yes, we deliver across Lebanon. Local areas (' . Rules::nameList(Rules::names('local')) . ') are served by our own courier, and other areas by a third-party courier. Fees start at ' . money(SeoCatalog::cheapestFee()) . '. See [[/delivery-and-payment|delivery and payment]].'],
+    ['Can I pay cash on delivery?', 'Yes, in local areas: our own courier lets you check the item and you pay cash on delivery. Remote areas are prepaid by OMT or Whish' . (Rules::prepayOn() && Rules::codAfter() > 0 ? ', and cash on delivery unlocks there after ' . Rules::codAfter() . ' delivered orders' : '') . '. You can also pay with store credit.'],
+    ...$rejected,
+    ['How does store credit work?', 'Store credit is money in your wallet that you spend in the shop: 1 credit is always worth $1 and it never expires. You earn it by selling or trading in games, and apply it at checkout. Read [[/credit|how store credit works]].'],
+    ['Is my identity shared with buyers or sellers?', 'No. Buyers and sellers never see each other. Only an anonymous ID is ever visible, and your name, phone number and address are known only to you and to CyberGaming. See [[/how-it-works#anonymous|how we keep you anonymous]].'],
+];
+$meta['description'] = Seo::clip('Buy, sell and trade used PS4, PS5, Switch and Xbox games in Lebanon. ' . ($stats['items'] > 0 ? $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', ' : '') . 'delivery across Lebanon, pay cash, OMT or Whish.');
+$meta['jsonld'][] = Seo::webPage('WebPage', 'CyberGaming Lebanon: buy, sell and trade games and gaming gear', url('/'), (string) $meta['description']);
+$meta['jsonld'][] = Seo::faqLd($homeFaqs);
+$priceLinks = Collections::activeIn('price');
+$genreLinks = Collections::activeIn('genre');
+$homeGuides = Guides::latest(3);
+$homeZones = SeoCatalog::zones();
 ?>
 <section class="hero">
     <div class="container hero-grid">
@@ -31,6 +56,8 @@ $wa = wa_link('Hi CyberGaming, I want to sell my games: ');
         <?php endif; ?>
     </div>
 </section>
+
+<?= Seo::quickAnswerHtml('home') ?>
 
 <section class="container stats" aria-label="Store at a glance">
     <div class="stat"><strong><?= number_format($stats['items']) ?></strong><span>items in stock</span></div>
@@ -114,6 +141,34 @@ $wa = wa_link('Hi CyberGaming, I want to sell my games: ');
     </ul>
 </section>
 
+<section class="section container home-links" aria-label="More ways to browse">
+    <?php if ($priceLinks): ?>
+    <div>
+        <h2>Browse by price</h2>
+        <ul class="link-list"><?php foreach ($priceLinks as $slug => $c): ?><li><a href="<?= e(url('/collections/' . $slug)) ?>"><?= e($c['title']) ?></a> <span><?= (int) $c['n'] ?></span></li><?php endforeach; ?></ul>
+    </div>
+    <?php endif; ?>
+    <?php if ($genreLinks): ?>
+    <div>
+        <h2>Browse by genre</h2>
+        <ul class="link-list"><?php foreach ($genreLinks as $slug => $c): ?><li><a href="<?= e(url('/collections/' . $slug)) ?>"><?= e($c['title']) ?></a> <span><?= (int) $c['n'] ?></span></li><?php endforeach; ?></ul>
+    </div>
+    <?php endif; ?>
+    <?php if ($homeGuides): ?>
+    <div>
+        <h2>Latest guides</h2>
+        <ul class="link-list"><?php foreach ($homeGuides as $g): ?><li><a href="<?= e(url('/guides/' . $g['slug'])) ?>"><?= e(Guides::text($g['title'])) ?></a></li><?php endforeach; ?>
+            <li><a class="link-more" href="<?= e(url('/guides')) ?>">All guides &rarr;</a></li></ul>
+    </div>
+    <?php endif; ?>
+    <?php if ($homeZones): ?>
+    <div>
+        <h2>Delivery areas</h2>
+        <ul class="link-list"><?php foreach ($homeZones as $z): ?><li><a href="<?= e(url('/delivery-to/' . $z['slug'])) ?>"><?= e($z['short']) ?></a> <span><?= e(money($z['fee'])) ?></span></li><?php endforeach; ?></ul>
+    </div>
+    <?php endif; ?>
+</section>
+
 <section class="section how">
     <div class="container">
         <div class="section-head"><h2>How it works</h2><a class="link-more" href="<?= e(url('/how-it-works')) ?>">The full story &rarr;</a></div>
@@ -125,6 +180,8 @@ $wa = wa_link('Hi CyberGaming, I want to sell my games: ');
         </ol>
     </div>
 </section>
+
+<div class="container home-faq"><?= Seo::faqHtml($homeFaqs) ?></div>
 
 <section class="container section">
     <div class="cta-block">

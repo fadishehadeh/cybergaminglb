@@ -202,6 +202,9 @@ final class Forms
             return;
         }
         $file = PUBLIC_PATH . '/uploads/' . $path;
+        if (class_exists(\App\Support\ImageVariants::class)) {
+            \App\Support\ImageVariants::delete($file); // its WebP siblings
+        }
         if (is_file($file)) {
             @unlink($file);
         }

@@ -44,19 +44,36 @@ final class CatalogController extends Controller
     {
         $platformId = $platform ? (int) $platform['id'] : null;
         $categoryId = $category ? (int) $category['id'] : null;
-        $genres = Catalog::genres($platformId, $categoryId);
+        $isHardware = $category !== null && ($category['kind'] ?? '') === 'hardware';
+
+        // Category pages (not already narrowed to a platform) offer a platform filter; hardware also gets a brand filter.
+        // Both facets are built from the data: only platforms / brands that have purchasable products in this scope.
+        $platformChoices = $category && !$platform && $isHardware ? Catalog::platformsIn((int) $category['id']) : [];
+        $platformParam = self::str($request->query('platform'));
+        $filterPlatform = null;
+        foreach ($platformChoices as $pc) {
+            if ($pc['slug'] === $platformParam) {
+                $filterPlatform = $pc;
+            }
+        }
+        $scopePlatformId = $platformId ?? ($filterPlatform ? (int) $filterPlatform['id'] : null);
+        $brands = $isHardware ? Catalog::brands($scopePlatformId, $categoryId) : [];
+        $brandNames = array_column($brands, 'brand');
+        $genres = $isHardware ? [] : Catalog::genres($platformId, $categoryId);
 
         $filters = [
             'q'       => self::str($request->query('q')),
             'genre'   => in_array(self::str($request->query('genre')), $genres, true) ? self::str($request->query('genre')) : '',
             'edition' => self::str($request->query('edition')) === 'steelbook' ? 'steelbook' : '',
             'cond'    => in_array(self::str($request->query('cond')), ['new', 'used'], true) ? self::str($request->query('cond')) : '',
+            'brand'   => in_array(self::str($request->query('brand')), $brandNames, true) ? self::str($request->query('brand')) : '',
+            'platform' => $filterPlatform ? (string) $filterPlatform['slug'] : '',
             'sort'    => array_key_exists(self::str($request->query('sort')), Catalog::SORTS) ? self::str($request->query('sort')) : 'newest',
         ];
         $rawPage = $request->query('page', 1);
         $page = is_string($rawPage) && ctype_digit($rawPage) ? max(1, (int) $rawPage) : 1;
 
-        $result = Catalog::listing($platformId, $categoryId, $filters, $page, self::PER_PAGE);
+        $result = Catalog::listing($scopePlatformId, $categoryId, $filters, $page, self::PER_PAGE);
         if ($page > 1 && $page > $result['pages']) {
             Response::abort(404);
         }
@@ -75,12 +92,13 @@ final class CatalogController extends Controller
             $basePath = '/shop';
         }
         $summary = Catalog::summary($platformId, $categoryId);
-        $copy = $isGift ? $this->giftCopy($platform, $category, $short, $summary) : $this->copy($platform, $category, $short, $isGames, $summary);
+        $copy = $isGift ? $this->giftCopy($platform, $category, $short, $summary) : $this->copy($platform, $category, $short, $isGames, $summary, $isHardware);
 
-        $filtered = $filters['q'] !== '' || $filters['genre'] !== '' || $filters['edition'] !== '' || $filters['cond'] !== '';
+        $filtered = $filters['q'] !== '' || $filters['genre'] !== '' || $filters['edition'] !== '' || $filters['cond'] !== ''
+            || $filters['brand'] !== '' || $filters['platform'] !== '';
         $noindex = $filtered || $result['total'] === 0;
         $activeQuery = array_filter(
-            ['q' => $filters['q'], 'genre' => $filters['genre'], 'edition' => $filters['edition'], 'cond' => $filters['cond'], 'sort' => $filters['sort'] !== 'newest' ? $filters['sort'] : ''],
+            ['q' => $filters['q'], 'genre' => $filters['genre'], 'edition' => $filters['edition'], 'cond' => $filters['cond'], 'brand' => $filters['brand'], 'platform' => $filters['platform'], 'sort' => $filters['sort'] !== 'newest' ? $filters['sort'] : ''],
             static fn (string $v): bool => $v !== ''
         );
 
@@ -136,6 +154,12 @@ final class CatalogController extends Controller
             'category'   => $category,
             'platforms'  => Catalog::platforms(),
             'categories' => Catalog::categories(),
+            // navigation pills only offer combinations that have stock (no dead-end empty pages)
+            'pillPlatforms'  => $platform ? [] : ($category ? Catalog::platformsIn((int) $category['id']) : Catalog::platforms()),
+            'pillCategories' => $category ? [] : ($platform ? Catalog::categoriesOn((int) $platform['id']) : Catalog::categories()),
+            'isHardware' => $isHardware,
+            'brands'     => $brands,
+            'platformChoices' => $platformChoices,
             'perPage'    => self::PER_PAGE,
             'isGift'     => $isGift,
         ]);
@@ -177,13 +201,33 @@ final class CatalogController extends Controller
         ];
     }
 
+    /** SEO text blocks for hardware categories (keyboards, mice, ...). */
+    private static function hardwareBlock(string $name): array
+    {
+        $cat = strtolower($name);
+        return [
+            "Buying $cat in Lebanon" => 'Every used item is tested by us before delivery, and new items come sealed. Prices are in US dollars, and we ship across Lebanon: pay cash on delivery, by OMT or by Whish.',
+            'Brand, condition and warranty' => 'Filter by brand and condition. Used items are graded Like New, Good or Fair, and any warranty is shown on the product page.',
+        ];
+    }
+
     /** @return array{h1:string,title:string,description:string,intro:string,block:array} */
-    private function copy(?array $platform, ?array $category, string $short, bool $isGames, array $summary): array
+    private function copy(?array $platform, ?array $category, string $short, bool $isGames, array $summary, bool $isHw = false): array
     {
         $n = (int) $summary['n'];
         $from = $summary['min_price'] !== null ? ' from ' . money($summary['min_price']) : '';
         $delivery = ' Delivery across Lebanon, pay cash on delivery, OMT or Whish.';
 
+        if ($platform && $category && $isHw) {
+            $cat = strtolower($category['name']);
+            return [
+                'h1'          => "$short {$category['name']} in Lebanon",
+                'title'       => "$short {$category['name']} in Lebanon",
+                'description' => "Buy $short $cat in Lebanon from CyberGaming: $n tested " . ($n === 1 ? 'item' : 'items') . " in stock$from." . $delivery,
+                'intro'       => "Browse $n $short $cat in stock, new and used, each one tested before delivery. Prices are in US dollars, and we confirm every order on WhatsApp.",
+                'block'       => self::hardwareBlock($category['name']),
+            ];
+        }
         if ($platform && $category) {
             $what = $isGames ? "used $short games" : "$short " . strtolower($category['name']);
             $title = $isGames ? "Used $short Games in Lebanon" : "$short {$category['name']} in Lebanon";
@@ -216,7 +260,7 @@ final class CatalogController extends Controller
                 'title'       => (string) ($category['seo_title'] ?: $category['name'] . ' in Lebanon'),
                 'description' => $desc !== '' ? $desc : "Buy {$category['name']} in Lebanon from CyberGaming: $n items in stock$from." . $delivery,
                 'intro'       => trim((string) ($category['intro_text'] ?? '')),
-                'block'       => [],
+                'block'       => $isHw ? self::hardwareBlock($category['name']) : [],
             ];
         }
         return [

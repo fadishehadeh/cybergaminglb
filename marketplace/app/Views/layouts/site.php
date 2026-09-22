@@ -3,15 +3,19 @@ declare(strict_types=1);
 
 use App\Modules\Storefront\Cart;
 use App\Modules\Storefront\Catalog;
+use App\Modules\Storefront\Collections;
+use App\Modules\Storefront\Guides;
+use App\Modules\Storefront\Seo;
+use App\Modules\Storefront\SeoCatalog;
 use App\Modules\Storefront\Ui;
 
 /** @var string $content rendered view (provided by View::render) */
 $meta = isset($meta) && is_array($meta) ? $meta : [];
 $siteName = (string) setting('site_name', 'CyberGaming Lebanon');
-$pageTitle = (string) ($meta['title'] ?? $siteName);
+$pageTitle = Seo::fitTitle((string) ($meta['title'] ?? $siteName));
 $pageDesc = (string) ($meta['description'] ?? setting('tagline', 'Buy, sell & trade games and gaming gear in Lebanon'));
 $canonical = $meta['canonical'] ?? null;
-$ogImage = (string) ($meta['image'] ?? asset('img/logo.jpg'));
+$ogImage = (string) ($meta['image'] ?? Seo::defaultImage());
 $noindex = !empty($meta['noindex']);
 $activeNav = isset($nav) && is_string($nav) ? $nav : '';
 $cartCount = Cart::count();
@@ -27,32 +31,31 @@ $acctFirst = $customer ? (explode(' ', trim((string) $customer['name']))[0] ?: '
 $acctCredit = $customer ? '$' . number_format((float) $customer['credit_balance'], 2) : '';
 $searchValue = is_string(request()->query('q')) ? (string) request()->query('q') : '';
 
-$orgLd = [
-    '@context' => 'https://schema.org',
-    '@type'    => 'Organization',
-    'name'     => $siteName,
-    'url'      => url('/'),
-    'logo'     => asset('img/logo.jpg'),
-    'areaServed' => ['@type' => 'Country', 'name' => 'Lebanon'],
-    'sameAs'   => array_values(array_filter([$igUrl])),
-];
-$siteLd = [
-    '@context' => 'https://schema.org',
-    '@type'    => 'WebSite',
-    'name'     => $siteName,
-    'url'      => url('/'),
-    'potentialAction' => [
-        '@type'       => 'SearchAction',
-        'target'      => ['@type' => 'EntryPoint', 'urlTemplate' => url('/shop') . '?q={search_term_string}'],
-        'query-input' => 'required name=search_term_string',
-    ],
-];
-$jsonld = array_merge([$orgLd, $siteLd], $meta['jsonld'] ?? []);
-$twitterCard = isset($meta['image']) ? 'summary_large_image' : 'summary';
+$metaLd = is_array($meta['jsonld'] ?? null) ? $meta['jsonld'] : [];
+// Category / platform / shop listings (the catalogue view exposes $result and $basePath): CollectionPage + ItemList unless the controller already supplied one.
+if (isset($result, $basePath) && is_array($result) && !empty($result['items']) && !$noindex && empty($meta['no_listing_ld'])) {
+    $hasList = false;
+    foreach ($metaLd as $node) {
+        if (is_array($node) && in_array($node['@type'] ?? '', ['CollectionPage', 'ItemList'], true)) {
+            $hasList = true;
+        }
+    }
+    if (!$hasList) {
+        $metaLd[] = Seo::listingLd(isset($h1) && is_string($h1) ? $h1 : $pageTitle, (string) $canonical, $pageDesc, $result['items'], (int) ($result['page'] ?? 1), (int) ($perPage ?? 24));
+    }
+}
+$jsonld = array_merge([Seo::organization(), Seo::website()], $metaLd);
+$twitterCard = isset($meta['image']) || trim((string) setting('seo_default_og_image', '')) !== '' ? 'summary_large_image' : 'summary';
+$googleVerify = trim((string) setting('seo_google_verification', ''));
+$bingVerify = trim((string) setting('seo_bing_verification', ''));
+$footerGuides = Guides::latest(4);
+$footerCollections = array_slice(Collections::active(), 0, 6, true);
+$footerZones = SeoCatalog::zones();
 
 $primaryNav = [
     'how-it-works' => ['How it works', '/how-it-works'],
     'credit'       => ['Store credit', '/credit'],
+    'guides'       => ['Guides', '/guides'],
     'about'        => ['About', '/about'],
 ];
 $sellNav = ['sell' => ['Sell your games', '/sell'], 'trade' => ['Trade in for credit', '/trade'], 'swap' => ['Swap board', '/swap']];
@@ -65,9 +68,15 @@ $sellActive = isset($sellNav[$activeNav]);
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($pageTitle) ?></title>
 <meta name="description" content="<?= e($pageDesc) ?>">
-<meta name="robots" content="<?= $noindex ? 'noindex,follow' : 'index,follow,max-image-preview:large' ?>">
+<meta name="robots" content="<?= $noindex ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' ?>">
+<?php if ($googleVerify !== ''): ?><meta name="google-site-verification" content="<?= e($googleVerify) ?>">
+<?php endif; ?>
+<?php if ($bingVerify !== ''): ?><meta name="msvalidate.01" content="<?= e($bingVerify) ?>">
+<?php endif; ?>
 <?php if ($canonical): ?><link rel="canonical" href="<?= e($canonical) ?>">
 <?php endif; ?>
+<link rel="alternate" type="application/rss+xml" title="<?= e($siteName) ?> products (Merchant Center feed)" href="<?= e(url('/feeds/products.xml')) ?>">
+<link rel="alternate" type="application/json" title="<?= e($siteName) ?> products (JSON feed)" href="<?= e(url('/feeds/products.json')) ?>">
 <?php if (!empty($meta['prev'])): ?><link rel="prev" href="<?= e($meta['prev']) ?>">
 <?php endif; ?>
 <?php if (!empty($meta['next'])): ?><link rel="next" href="<?= e($meta['next']) ?>">
@@ -91,6 +100,7 @@ $sellActive = isset($sellNav[$activeNav]);
 <meta name="twitter:description" content="<?= e($pageDesc) ?>">
 <meta name="twitter:image" content="<?= e($ogImage) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/seo.css')) ?>">
 <?php foreach ($jsonld as $ld): ?>
 <script type="application/ld+json"><?= json_encode($ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <?php endforeach; ?>
@@ -218,6 +228,37 @@ $sellActive = isset($sellNav[$activeNav]);
                 <li><a href="<?= e(url('/about')) ?>">About us</a></li>
                 <li><a href="<?= e(url('/contact')) ?>">Contact</a></li>
                 <?php if ($email !== ''): ?><li><a href="mailto:<?= e($email) ?>"><?= e($email) ?></a></li><?php endif; ?>
+            </ul>
+        </nav>
+    </div>
+    <div class="container footer-seo">
+        <nav aria-label="Guides">
+            <h2>Guides</h2>
+            <ul>
+                <?php foreach ($footerGuides as $g): ?><li><a href="<?= e(url('/guides/' . $g['slug'])) ?>"><?= e(Guides::text($g['title'])) ?></a></li><?php endforeach; ?>
+                <li><a href="<?= e(url('/guides')) ?>">All guides</a></li>
+            </ul>
+        </nav>
+        <nav aria-label="Collections">
+            <h2>Collections</h2>
+            <ul>
+                <?php foreach ($footerCollections as $slug => $c): ?><li><a href="<?= e(url('/collections/' . $slug)) ?>"><?= e($c['title']) ?></a></li><?php endforeach; ?>
+                <?php if ($footerCollections): ?><li><a href="<?= e(url('/collections')) ?>">All collections</a></li><?php endif; ?>
+            </ul>
+        </nav>
+        <nav aria-label="Delivery areas" class="footer-zones">
+            <h2>Delivery areas</h2>
+            <ul>
+                <?php foreach ($footerZones as $z): ?><li><a href="<?= e(url('/delivery-to/' . $z['slug'])) ?>"><?= e($z['short']) ?></a></li><?php endforeach; ?>
+            </ul>
+        </nav>
+        <nav aria-label="For AI assistants">
+            <h2>For AI assistants</h2>
+            <ul>
+                <li><a href="<?= e(url('/llms.txt')) ?>">llms.txt</a></li>
+                <li><a href="<?= e(url('/llms-full.txt')) ?>">llms-full.txt</a></li>
+                <li><a href="<?= e(url('/feeds/products.json')) ?>">Product feed (JSON)</a></li>
+                <li><a href="<?= e(url('/sitemap.xml')) ?>">Sitemap</a></li>
             </ul>
         </nav>
     </div>

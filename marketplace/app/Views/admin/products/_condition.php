@@ -11,16 +11,16 @@ $curCond = (string) ($p['item_condition'] ?? '');
 $type    = (string) Forms::val('condition_type', $isEdit ? ($curCond === 'New' ? 'new' : 'used') : '');
 $grade   = (string) Forms::val('used_grade', in_array($curCond, ListingCondition::GRADES, true) ? $curCond : '');
 ?>
-<div class="cond field span-2" data-cond data-physical-only <?= !empty($isDigital) ? 'hidden' : '' ?>>
+<div class="cond field span-2" data-cond data-kind="game" <?= ($mode ?? 'game') === 'game' ? '' : 'hidden' ?>>
     <fieldset class="cond-set">
         <legend>Is the game new or used? *</legend>
         <div class="cond-choices">
             <label class="cond-choice">
-                <input type="radio" name="condition_type" value="new" data-cond-type <?= $type === 'new' ? 'checked' : '' ?>>
+                <input type="radio" name="condition_type" value="new" data-cond-type="game" <?= $type === 'new' ? 'checked' : '' ?>>
                 <span><strong>New (sealed)</strong><small>Unopened. Everything is included; photos are optional.</small></span>
             </label>
             <label class="cond-choice">
-                <input type="radio" name="condition_type" value="used" data-cond-type <?= $type === 'used' ? 'checked' : '' ?>>
+                <input type="radio" name="condition_type" value="used" data-cond-type="game" <?= $type === 'used' ? 'checked' : '' ?>>
                 <span><strong>Used</strong><small>Needs a grade, the included items and three photos.</small></span>
             </label>
         </div>

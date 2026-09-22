@@ -64,14 +64,14 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
 <?php endif; ?>
 
 <?php if ($missingCount > 0 && $filters['missing'] !== '1'): ?>
-    <div class="alert alert-warn missing-strip"><strong><?= (int) $missingCount ?> used listing<?= $missingCount === 1 ? '' : 's' ?> without all three photos</strong> (disc, box outside, box inside).
+    <div class="alert alert-warn missing-strip"><strong><?= (int) $missingCount ?> used listing<?= $missingCount === 1 ? '' : 's' ?> without all three photos</strong> (games: disc, box outside, box inside; hardware: product front, product back, box and accessories).
         <a href="<?= e(url('/admin/products?missing=1')) ?>">Show them</a></div>
 <?php endif; ?>
 
 <form method="get" action="<?= e(url('/admin/products')) ?>" class="card filters">
     <div class="field grow-2">
         <label for="q">Search</label>
-        <input type="search" id="q" name="q" value="<?= e($filters['q']) ?>" placeholder="Title or slug">
+        <input type="search" id="q" name="q" value="<?= e($filters['q']) ?>" placeholder="Title, slug, brand, model or serial">
     </div>
     <div class="field">
         <label for="f-status">Status</label>
@@ -81,7 +81,7 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
         <label for="f-category">Category</label>
         <select id="f-category" name="category">
             <option value="">All</option>
-            <?php foreach ($categories as $c): ?><option value="<?= (int) $c['id'] ?>" <?= $filters['category'] === (int) $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?>
+            <?php foreach ($categories as $c): ?><option value="<?= (int) $c['id'] ?>" <?= $filters['category'] === (int) $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?> (<?= e(ucfirst((string) $c['kind'])) ?>)<?= (int) $c['is_active'] ? '' : ' - disabled' ?></option><?php endforeach; ?>
         </select>
     </div>
     <div class="field">
@@ -100,8 +100,8 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
         </select>
     </div>
     <div class="field">
-        <label for="f-kind">Type</label>
-        <select id="f-kind" name="kind"><?= Forms::options(['' => 'All', 'physical' => 'Physical', 'digital' => 'Digital'], $filters['kind']) ?></select>
+        <label for="f-kind">Kind</label>
+        <select id="f-kind" name="kind"><?= Forms::options(['' => 'All', 'game' => 'Game', 'hardware' => 'Hardware', 'digital' => 'Digital', 'physical' => 'Physical (game + hardware)'], $filters['kind']) ?></select>
     </div>
     <div class="field">
         <label for="f-steelbook">Steelbook</label>
@@ -110,6 +110,10 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
     <div class="field">
         <label for="f-condition">Condition</label>
         <select id="f-condition" name="condition"><?= Forms::options(['' => 'All', 'new' => 'New (sealed)', 'used' => 'Used'], $filters['cond']) ?></select>
+    </div>
+    <div class="field">
+        <label for="f-seo">SEO check</label>
+        <select id="f-seo" name="seo"><?= Forms::options(['' => 'All', 'nodesc' => 'Live, no description', 'shortdesc' => 'Live, short description', 'noimage' => 'Live, no main image'], $filters['seo']) ?></select>
     </div>
     <div class="field">
         <label for="f-missing">Photos</label>
@@ -132,13 +136,14 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
         <div class="table-wrap">
             <table class="data">
                 <thead>
-                <tr><th></th><th>Title</th><th>Platform</th><th>Seller</th><th class="num">Seller price &rarr; Buyer price</th><th class="num">Stock</th><th>Status</th><th class="num">Actions</th></tr>
+                <tr><th></th><th>Title</th><th>Brand / model</th><th>Platform</th><th>Seller</th><th class="num">Seller price &rarr; Buyer price</th><th class="num">Stock</th><th>Status</th><th class="num">Actions</th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($products as $p): ?>
                     <tr>
                         <td class="thumb-cell"><?php if ($p['image']): ?><img class="thumb" src="<?= e(media($p['image'])) ?>" alt="" loading="lazy"><?php else: ?><span class="thumb thumb-empty"></span><?php endif; ?></td>
-                        <td><a href="<?= e(url('/admin/products/' . $p['id'] . '/edit')) ?>"><strong><?= e($p['title']) ?></strong></a><?= $p['is_steelbook'] ? ' <span class="tag tag-steel">Steelbook</span>' : '' ?> <?= ListingRules::conditionTag($p) ?> <?= ListingRules::photoTag($p, (int) $p['photo_count']) ?><?= (int) $p['is_digital'] === 1 ? ' <span class="tag tag-digital" title="Digital item: prepaid, code sent on WhatsApp">Digital' . ($p['digital_kind'] ? ' &middot; ' . e(Digital::kindLabel($p['digital_kind'])) : '') . ($p['digital_region'] ? ' &middot; ' . e($p['digital_region']) : '') . '</span>' : '' ?><?= $p['seller_id'] && (\App\Support\ContactFilter::containsContact((string) $p['title']) || \App\Support\ContactFilter::containsContact((string) ($p['description'] ?? ''))) ? ' <span class="tag" title="Title or description looks like it contains contact details">contact info?</span>' : '' ?><br><small class="muted"><?= e($p['category'] ?? '') ?></small><?= (int) $p['is_digital'] === 1 && !$digitalOn ? '<br><small class="text-warn">hidden: digital goods switch is off</small>' : '' ?></td>
+                        <td><a href="<?= e(url('/admin/products/' . $p['id'] . '/edit')) ?>"><strong><?= e($p['title']) ?></strong></a><?= $p['is_steelbook'] ? ' <span class="tag tag-steel">Steelbook</span>' : '' ?> <?= ListingRules::conditionTag($p) ?> <?= ListingRules::photoTag($p, (int) $p['photo_count']) ?><?= (int) $p['is_digital'] === 1 ? ' <span class="tag tag-digital" title="Digital item: prepaid, code sent on WhatsApp">Digital' . ($p['digital_kind'] ? ' &middot; ' . e(Digital::kindLabel($p['digital_kind'])) : '') . ($p['digital_region'] ? ' &middot; ' . e($p['digital_region']) : '') . '</span>' : '' ?><?= $p['seller_id'] && (\App\Support\ContactFilter::containsContact((string) $p['title']) || \App\Support\ContactFilter::containsContact((string) ($p['description'] ?? ''))) ? ' <span class="tag" title="Title or description looks like it contains contact details">contact info?</span>' : '' ?><?= $p['category_kind'] === 'hardware' && (int) $p['is_digital'] === 0 ? ' <span class="tag tag-hw" title="Hardware item">Hardware</span>' : '' ?><br><small class="muted"><?= e($p['category'] ?? '') ?></small><?= $p['serial_number'] ? '<br><small class="muted" title="Private: only visible in the admin">S/N ' . e($p['serial_number']) . '</small>' : '' ?><?= (int) $p['is_digital'] === 1 && !$digitalOn ? '<br><small class="text-warn">hidden: digital goods switch is off</small>' : '' ?></td>
+                        <td><?= $p['brand'] || $p['model'] ? '<strong>' . e((string) $p['brand']) . '</strong>' . ($p['model'] ? '<br><small class="muted">' . e($p['model']) . '</small>' : '') : '<span class="muted">-</span>' ?></td>
                         <td><?= e($p['platform'] ?? '-') ?></td>
                         <td><?= $p['seller_code'] ? '<a href="' . e(url('/admin/sellers/' . $p['seller_id'])) . '">' . e($p['seller_code']) . '</a>' : '<span class="tag">House</span>' ?></td>
                         <td class="num">

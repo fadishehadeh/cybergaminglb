@@ -19,6 +19,7 @@ final class ProductController extends Controller
         $short = Ui::shortPlatform($p['platform_slug'], $p['platform_name']);
         $isDigital = Digital::is($p);
         $isGames = $p['category_slug'] === 'games';
+        $isHardware = Ui::isHardware($p);
         $path = '/product/' . $p['slug'];
 
         $crumbs = [['Home', '/']];
@@ -45,14 +46,14 @@ final class ProductController extends Controller
             $descBase = $p['title'] . ($short !== '' ? " for $short" : '') . ' in Lebanon: ' . (Ui::isUsed($p) ? 'used, ' . $p['item_condition'] . ' condition' : 'new and sealed')
                 . ($p['is_steelbook'] ? ', steelbook edition' : '') . ', ' . money($p['price']) . '.';
             $description = $available
-                ? Seo::clip($descBase . ' Inspected before sale, delivery across Lebanon, pay cash, OMT or Whish.')
+                ? Seo::clip($descBase . ($isHardware ? ' Tested before delivery, delivery across Lebanon, pay cash, OMT or Whish.' : ' Inspected before sale, delivery across Lebanon, pay cash, OMT or Whish.'))
                 : Seo::clip('Sold out: ' . $p['title'] . ($short !== '' ? " ($short)" : '') . '. See similar titles in stock at CyberGaming Lebanon.');
             $title = $available
                 ? 'Buy ' . $p['title'] . ($short !== '' ? " ($short)" : '') . ' in Lebanon – ' . money($p['price'])
                 : $p['title'] . ($short !== '' ? " ($short)" : '') . ' – Sold out';
         }
 
-        // Real photos of this exact copy (disc, box outside, box inside, extras). Digital goods never have any.
+        // Real photos of this exact copy (games: disc, box outside, box inside; hardware: unit front, unit back, box and accessories, powered on; extras). Digital goods never have any.
         $photos = $isDigital ? [] : ProductPhotos::forProduct((int) $p['id']);
 
         $this->render('site/product', [
@@ -60,6 +61,7 @@ final class ProductController extends Controller
             'available' => $available,
             'short'     => $short,
             'what'      => $what,
+            'isHardware' => $isHardware,
             'crumbs'    => $crumbs,
             'photos'    => $photos,
             'related'   => Catalog::related($p, 4),

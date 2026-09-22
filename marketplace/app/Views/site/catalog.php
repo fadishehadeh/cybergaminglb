@@ -10,6 +10,9 @@ $from = $total === 0 ? 0 : ($result['page'] - 1) * $perPage + 1;
 $to = min($total, $result['page'] * $perPage);
 $hasFilters = $filtered || $filters['sort'] !== 'newest';
 $isGift = !empty($isGift);
+$isHardware = !empty($isHardware);
+$brands = $brands ?? [];
+$platformChoices = $platformChoices ?? [];
 ?>
 <div class="container page-head">
     <?= Ui::breadcrumbs($crumbs) ?>
@@ -21,12 +24,12 @@ $isGift = !empty($isGift);
     <?php if (!$platform || !$category): ?>
     <nav class="pill-nav" aria-label="Browse by platform and category">
         <?php if (!$platform): ?>
-            <?php foreach ($platforms as $pl): if ((int) $pl['product_count'] === 0) { continue; } ?>
+            <?php foreach ($pillPlatforms as $pl): if ((int) $pl['product_count'] === 0) { continue; } ?>
                 <a class="pill" href="<?= e(url('/platform/' . $pl['slug'] . ($category ? '/' . $category['slug'] : ''))) ?>"><?= e(Ui::shortPlatform($pl['slug'], $pl['name'])) ?></a>
             <?php endforeach; ?>
         <?php endif; ?>
         <?php if (!$category): ?>
-            <?php foreach ($categories as $c): if ((int) $c['product_count'] === 0) { continue; } ?>
+            <?php foreach ($pillCategories as $c): if ((int) $c['product_count'] === 0) { continue; } ?>
                 <a class="pill" href="<?= e(url(($platform ? '/platform/' . $platform['slug'] . '/' : '/shop/') . $c['slug'])) ?>"><?= e($c['name']) ?></a>
             <?php endforeach; ?>
         <?php endif; ?>
@@ -47,7 +50,25 @@ $isGift = !empty($isGift);
             </select>
         </div>
         <?php endif; ?>
-        <?php if (!$isGift): ?>
+        <?php if ($isHardware && $brands): ?>
+        <div class="field">
+            <label for="f-brand">Brand</label>
+            <select id="f-brand" name="brand" data-autosubmit>
+                <option value="">All brands</option>
+                <?php foreach ($brands as $b): ?><option value="<?= e($b['brand']) ?>"<?= $filters['brand'] === $b['brand'] ? ' selected' : '' ?>><?= e($b['brand']) ?> (<?= (int) $b['n'] ?>)</option><?php endforeach; ?>
+            </select>
+        </div>
+        <?php endif; ?>
+        <?php if ($platformChoices): ?>
+        <div class="field">
+            <label for="f-platform">Platform</label>
+            <select id="f-platform" name="platform" data-autosubmit>
+                <option value="">All platforms</option>
+                <?php foreach ($platformChoices as $pc): ?><option value="<?= e($pc['slug']) ?>"<?= $filters['platform'] === $pc['slug'] ? ' selected' : '' ?>><?= e($pc['name']) ?></option><?php endforeach; ?>
+            </select>
+        </div>
+        <?php endif; ?>
+        <?php if (!$isGift && !$isHardware): ?>
         <div class="field">
             <label for="f-edition">Edition</label>
             <select id="f-edition" name="edition">
@@ -55,6 +76,8 @@ $isGift = !empty($isGift);
                 <option value="steelbook"<?= $filters['edition'] === 'steelbook' ? ' selected' : '' ?>>Steelbook only</option>
             </select>
         </div>
+        <?php endif; ?>
+        <?php if (!$isGift): ?>
         <div class="field">
             <label for="f-cond">Condition</label>
             <select id="f-cond" name="cond" data-autosubmit>

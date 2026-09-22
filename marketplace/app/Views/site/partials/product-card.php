@@ -7,24 +7,27 @@ $eager = $eager ?? false;
 $level = $level ?? 'h3';
 $short = Ui::shortPlatform($p['platform_slug'] ?? null, $p['platform_name'] ?? null);
 $isDigital = Digital::is($p);
+$isHardware = Ui::isHardware($p);
 $region = $isDigital ? Digital::region($p) : '';
-$genres = $isDigital ? [] : array_slice(Ui::genres((string) ($p['genres'] ?? '')), 0, 2);
+$genres = $isDigital || $isHardware ? [] : array_slice(Ui::genres((string) ($p['genres'] ?? '')), 0, 2);
 $meta = $isDigital
     ? array_values(array_filter([Digital::kindLabel($p['digital_kind'] ?? null), $short]))
-    : array_values(array_filter([$short, $p['year'] ?: null]));
+    : array_values(array_filter([$short, $isHardware ? null : ($p['year'] ?: null)]));
+$brandModel = $isHardware ? Ui::brandModel($p) : '';
 $condBadge = Ui::conditionBadge($p);
-$complete = Ui::isComplete($p);
+$complete = !$isHardware && Ui::isComplete($p);
 ?>
-<article class="card">
+<article class="card<?= $isHardware ? ' card-hw' : '' ?>">
     <div class="card-media">
-        <?= Ui::cover($p, $p['title'] . ($short !== '' ? ' – ' . $short : '') . ($isDigital ? '' : ' cover'), 300, 400, $eager ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"') ?>
+        <?= Ui::cover($p, $p['title'] . ($short !== '' ? ' – ' . $short : '') . ($isDigital || $isHardware ? '' : ' cover'), 300, $isHardware ? 300 : 400, $eager ? 'fetchpriority="high"' : 'loading="lazy"') ?>
         <span class="price-tag"><?= e(money($p['price'])) ?></span>
         <?php if ($isDigital): ?><span class="badge badge-digital">Digital</span><?php elseif ((int) $p['is_steelbook'] === 1): ?><span class="badge badge-steel">Steelbook</span><?php endif; ?>
         <?php if ($condBadge !== ''): ?><span class="badge badge-cond <?= $condBadge === 'New' ? 'is-new' : 'is-used' ?>"><?= e($condBadge) ?></span><?php endif; ?>
     </div>
     <div class="card-body">
         <<?= $level ?> class="card-title"><a href="<?= e(url('/product/' . $p['slug'])) ?>"><?= e($p['title']) ?></a></<?= $level ?>>
-        <p class="card-meta"><?= e(implode(' · ', $meta)) ?></p>
+        <?php if ($brandModel !== ''): ?><p class="card-brand"><?= e($brandModel) ?></p><?php endif; ?>
+        <?php if ($meta): ?><p class="card-meta"><?= e(implode(' · ', $meta)) ?></p><?php endif; ?>
         <?php if ($complete): ?><p class="card-complete"><?= Ui::icon('check', 14) ?> Complete: box &middot; cover &middot; manual</p><?php endif; ?>
         <?php if ($region !== ''): ?>
             <ul class="chips" aria-label="Region"><li class="chip-region">Region: <?= e($region) ?></li></ul>

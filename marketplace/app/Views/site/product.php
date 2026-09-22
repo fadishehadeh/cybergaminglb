@@ -12,18 +12,24 @@ $maxQty = max(1, min((int) $p['stock'], Cart::MAX_LINE_QTY));
 $inCart = (int) (Cart::raw()[(int) $p['id']] ?? 0);
 $isUsed = Ui::isUsed($p);
 $grade = (string) $p['item_condition'];
-$included = Ui::includes($p);
-// Real photos of this exact copy, capped at 12 (the CSS-only gallery has 12 slots).
+$isHardware = Ui::isHardware($p);
+$gradeNote = $isHardware ? (Ui::GRADE_NOTES_HARDWARE[$grade] ?? '') : (Ui::GRADE_NOTES[$grade] ?? '');
+$included = $isHardware ? [] : Ui::includes($p);
+$boxItems = $isHardware ? Ui::lines((string) ($p['included_items'] ?? '')) : [];
+$brand = trim((string) ($p['brand'] ?? ''));
+$model = trim((string) ($p['model'] ?? ''));
+$warranty = (int) ($p['warranty_months'] ?? 0);
+// Real photos of this exact item, capped at 12 (the CSS-only gallery has 12 slots).
 $gallery = [];
 foreach (array_slice($photos, 0, 12) as $ph) {
-    $kind = isset(Ui::PHOTO_LABELS[$ph['kind']]) ? $ph['kind'] : 'extra';
+    $pk = isset(Ui::PHOTO_LABELS[$ph['kind']]) ? $ph['kind'] : 'extra';
     $n = 0;
-    foreach ($gallery as $g) { if ($g['kind'] === $kind) { $n++; } }
+    foreach ($gallery as $g) { if ($g['kind'] === $pk) { $n++; } }
     $gallery[] = [
         'path'  => (string) $ph['path'],
-        'kind'  => $kind,
-        'label' => Ui::PHOTO_LABELS[$kind],
-        'alt'   => $p['title'] . ' — ' . strtolower(Ui::PHOTO_LABELS[$kind]) . ($kind === 'extra' && $n > 0 ? ' ' . ($n + 1) : ''),
+        'kind'  => $pk,
+        'label' => Ui::PHOTO_LABELS[$pk],
+        'alt'   => $p['title'] . ' — ' . strtolower(Ui::PHOTO_LABELS[$pk]) . ($pk === 'extra' && $n > 0 ? ' ' . ($n + 1) : ''),
     ];
 }
 $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($short !== '' ? " ($short)" : '') . ': ' . url('/product/' . $p['slug']));
@@ -37,14 +43,14 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
         <?php $badges = ($isDigital ? '<span class="badge badge-digital">Digital</span>' : ((int) $p['is_steelbook'] === 1 ? '<span class="badge badge-steel">Steelbook</span>' : ''))
             . (!$available ? '<span class="badge badge-sold">' . ($isDigital ? 'Unavailable' : 'Sold out') . '</span>' : ''); ?>
         <?php if ($gallery): ?>
-        <div class="gallery" role="group" aria-label="Photos of this copy">
+        <div class="gallery" role="group" aria-label="Photos of this <?= $isHardware ? 'item' : 'copy' ?>">
             <?php foreach ($gallery as $i => $g): ?>
                 <input class="gal-radio" type="radio" name="gal" id="gal-<?= $i ?>" value="<?= $i ?>"<?= $i === 0 ? ' checked' : '' ?> aria-label="<?= e($g['label']) ?>">
             <?php endforeach; ?>
-            <div class="product-cover gal-main">
+            <div class="product-cover gal-main<?= $isHardware ? ' is-hw' : '' ?>">
                 <?php foreach ($gallery as $i => $g): ?>
                     <figure class="gal-slide gal-s<?= $i ?>">
-                        <img src="<?= e(media($g['path'])) ?>" alt="<?= e($g['alt']) ?>" width="800" height="800" <?= $i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"' ?>>
+                        <?= Ui::picture($g['path'], $g['alt'], Ui::SIZES_MAIN, 800, 800, $i > 1, $i === 0) ?>
                         <figcaption><?= e($g['label']) ?></figcaption>
                     </figure>
                 <?php endforeach; ?>
@@ -53,17 +59,17 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
             <?php if (count($gallery) > 1): ?>
             <ul class="thumbs gal-thumbs" aria-label="Choose a photo">
                 <?php foreach ($gallery as $i => $g): ?>
-                    <li><label for="gal-<?= $i ?>"><img src="<?= e(media($g['path'])) ?>" alt="<?= e($g['alt']) ?>" width="72" height="72" loading="<?= $i < 4 ? 'eager' : 'lazy' ?>" decoding="async"><span><?= e($g['label']) ?></span></label></li>
+                    <li><label for="gal-<?= $i ?>"><?= Ui::picture($g['path'], $g['alt'], '72px', 72, 72, $i >= 4) ?><span><?= e($g['label']) ?></span></label></li>
                 <?php endforeach; ?>
             </ul>
             <?php endif; ?>
         </div>
         <?php else: ?>
-        <div class="product-cover">
+        <div class="product-cover<?= $isHardware ? ' is-hw' : '' ?>">
             <?= Ui::cover($p, $p['title'] . ($short !== '' ? ' – ' . $short : '') . ($isDigital ? '' : ' cover'), 600, 800, 'fetchpriority="high"', 'product-main-img') ?>
             <?= $badges ?>
         </div>
-        <?php if (!$isDigital): ?><p class="gal-caption"><?= Ui::icon('camera', 16) ?> Cover art shown &mdash; photos of this exact copy on request</p><?php endif; ?>
+        <?php if (!$isDigital): ?><p class="gal-caption"><?= Ui::icon('camera', 16) ?> <?= $isHardware ? 'Photos of this exact item on request' : 'Cover art shown &mdash; photos of this exact copy on request' ?></p><?php endif; ?>
         <?php endif; ?>
     </div>
 
@@ -74,6 +80,7 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
             <a href="<?= e(url('/shop/' . $p['category_slug'])) ?>"><?= e($p['category_name']) ?></a>
         </p>
         <h1><?= e($p['title']) ?></h1>
+        <?php if ($isHardware && Ui::brandModel($p) !== ''): ?><p class="product-brand"><?= e(Ui::brandModel($p)) ?></p><?php endif; ?>
         <?php if ($isDigital && $region !== ''): ?>
             <ul class="chips chips-region" aria-label="Region"><li class="chip-region">Region: <?= e($region) ?></li></ul>
         <?php endif; ?>
@@ -90,7 +97,15 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
         <?php if (!$isDigital): ?>
         <section class="cond-block <?= $isUsed ? 'is-used' : 'is-new' ?>" aria-labelledby="cond-h">
             <h2 id="cond-h" class="cond-title"><span class="cond-pill"><?= $isUsed ? 'Used &mdash; ' . e($grade) : 'New &mdash; sealed' ?></span></h2>
-            <p class="cond-note"><?= $isUsed ? e(Ui::GRADE_NOTES[$grade] ?? '') : 'Brand new, factory sealed and never opened.' ?></p>
+            <p class="cond-note"><?= $isUsed ? e($gradeNote) : 'Brand new, factory sealed and never opened.' ?></p>
+            <?php if ($isHardware && $isUsed): ?>
+                <details class="grade-key">
+                    <summary>What do the grades mean?</summary>
+                    <ul>
+                        <?php foreach (Ui::GRADE_NOTES_HARDWARE as $gName => $gNote): ?><li<?= $gName === $grade ? ' class="is-current"' : '' ?>><?= e($gNote) ?></li><?php endforeach; ?>
+                    </ul>
+                </details>
+            <?php endif; ?>
             <?php if ($included): ?>
                 <h3 class="incl-h">What&rsquo;s included</h3>
                 <ul class="incl-list">
@@ -99,7 +114,11 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
-            <?php if ($isUsed): ?><p class="cond-trust"><?= Ui::icon('shield', 18) ?> <span>Every used game is inspected by us before delivery.</span></p><?php endif; ?>
+            <?php if ($isHardware): ?>
+                <p class="cond-trust"><?= Ui::icon('shield', 18) ?> <span>Every used peripheral and accessory is tested by us before delivery.</span></p>
+            <?php elseif ($isUsed): ?>
+                <p class="cond-trust"><?= Ui::icon('shield', 18) ?> <span>Every used game is inspected by us before delivery.</span></p>
+            <?php endif; ?>
         </section>
         <?php endif; ?>
         <?php if ($isDigital && $region !== ''): ?>
@@ -142,6 +161,31 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
                 <?php if ($region !== ''): ?><div><dt>Region</dt><dd><?= e($region) ?></dd></div><?php endif; ?>
                 <div><dt>Delivery</dt><dd>Code sent on WhatsApp</dd></div>
             </dl>
+        <?php elseif ($isHardware): ?>
+            <?php
+            $facts = [];
+            if ($brand !== '') { $facts['Brand'] = $brand; }
+            if ($model !== '') { $facts['Model'] = $model; }
+            if ($p['platform_name']) { $facts['Platform'] = (string) $p['platform_name']; }
+            $facts['Condition'] = $isUsed ? 'Used, ' . $grade : 'New (sealed)';
+            if ($warranty > 0) { $facts['Warranty'] = $warranty . '-month warranty'; }
+            $facts['Availability'] = $available ? ((int) $p['stock'] <= 3 ? 'In stock, only ' . (int) $p['stock'] . ' left' : 'In stock') : 'Sold out';
+            $taken = array_map('strtolower', array_keys($facts));
+            $extraFacts = array_values(array_filter(Ui::specRows((string) ($p['specs'] ?? '')), static fn (array $r): bool => !in_array(strtolower($r[0]), $taken, true)));
+            ?>
+            <section class="quick-facts" aria-labelledby="qf-h">
+                <h2 id="qf-h">Quick facts</h2>
+                <dl class="specs specs-hw">
+                    <?php foreach ($facts as $label => $value): ?><div><dt><?= e($label) ?></dt><dd><?= e($value) ?></dd></div><?php endforeach; ?>
+                    <?php foreach ($extraFacts as [$label, $value]): ?><div><dt><?= e($label) ?></dt><dd><?= e($value) ?></dd></div><?php endforeach; ?>
+                </dl>
+            </section>
+            <?php if ($boxItems): ?>
+            <section class="box-block" aria-labelledby="box-h">
+                <h2 id="box-h">What&rsquo;s in the box</h2>
+                <ul class="incl-list"><?php foreach ($boxItems as $item): ?><li class="is-yes"><?= Ui::icon('check', 18) ?> <span><?= e($item) ?></span></li><?php endforeach; ?></ul>
+            </section>
+            <?php endif; ?>
         <?php else: ?>
             <dl class="specs">
                 <?php if ($p['platform_name']): ?><div><dt>Platform</dt><dd><?= e($p['platform_name']) ?></dd></div><?php endif; ?>
@@ -185,9 +229,9 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
         </section>
         <?php else: ?>
         <aside class="trust" aria-label="Buying with CyberGaming">
-            <h2>Sold by CyberGaming &ndash; inspected before sale</h2>
+            <h2>Sold by CyberGaming &ndash; <?= $isHardware ? 'tested before delivery' : 'inspected before sale' ?></h2>
             <ul>
-                <li><?= Ui::icon('shield', 22) ?><div><strong>Inspected &amp; protected</strong><span>We check every item and confirm your order on WhatsApp before anything ships.</span></div></li>
+                <li><?= Ui::icon('shield', 22) ?><div><strong><?= $isHardware ? 'Tested &amp; protected' : 'Inspected &amp; protected' ?></strong><span>We check every item and confirm your order on WhatsApp before anything ships.</span></div></li>
                 <li><?= Ui::icon('truck', 22) ?><div><strong>Delivery across Lebanon</strong><span>Fee by area, shown at checkout. Or meet us at our pickup point.</span></div></li>
                 <li><?= Ui::icon('wallet', 22) ?><div><strong>Credit, cash, OMT or Whish</strong><span>Use store credit, pay the rest on delivery. No card details needed.</span></div></li>
             </ul>

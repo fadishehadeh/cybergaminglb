@@ -1,5 +1,6 @@
 <?php
 use App\Modules\Storefront\Rules;
+use App\Modules\Storefront\Seo;
 use App\Modules\Storefront\Shipping;
 use App\Modules\Storefront\Ui;
 
@@ -17,11 +18,16 @@ $faqs = [
     ['Can members message each other?', 'No. There are no public profiles and no messaging between members. Every trade, sale and swap goes through CyberGaming, so nobody ever has to deal with a stranger.'],
     ['Why can I not put my phone number in a listing?', 'Listings are public, so contact details such as phone numbers, emails, links and social handles are blocked. Leave your details in the private fields; only our team sees them.'],
 ];
-$meta['jsonld'][] = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(
-    static fn (array $f): array => ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]],
-    $faqs
-)];
+array_unshift(
+    $faqs,
+    ['How do I buy a game on CyberGaming?', 'Add items to your cart, enter your name, phone and delivery area, and place the order. A person confirms it with you on WhatsApp, then we deliver or you collect it. Guests are welcome and a free account is optional. See the [[/shop|shop]].'],
+    ['How do I sell my games?', 'Enter your games on the [[/sell|sell page]] to get an instant quote in cash or store credit, send your request, accept our offer, hand the games over and get paid after inspection. You can also [[/trade|trade in]] for shop items or [[/swap|swap]] with another player.'],
+    ['Is everything inspected?', 'Yes. Every item is inspected by our team before it is listed and before it is delivered. Used items show a condition grade and photos of the exact copy.']
+);
+$meta['jsonld'][] = Seo::webPage('WebPage', 'How CyberGaming works', (string) ($meta['canonical'] ?? url('/how-it-works')), (string) ($meta['description'] ?? ''));
+$meta['jsonld'][] = Seo::faqLd($faqs);
 echo Ui::partial('page-head', ['crumbs' => $crumbs, 'h1' => 'How CyberGaming works', 'lead' => 'Simple for buyers, simple for sellers, and private for everyone.']);
+echo Seo::quickAnswerHtml('how');
 $minFee = Shipping::minFee();
 ?>
 <div class="container prose-wrap">
@@ -67,5 +73,5 @@ $minFee = Shipping::minFee();
             <li><strong>Problems get fixed.</strong> If something is not as described, tell us on WhatsApp straight away and we will make it right.</li>
         </ul>
     </article>
-    <?= Ui::partial('faq', ['faqs' => $faqs]) ?>
+    <?= Seo::faqHtml($faqs) ?>
 </div>

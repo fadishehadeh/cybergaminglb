@@ -18,16 +18,44 @@ final class ListingRules
 {
     public const REQUIRED = ['disc', 'box_outside', 'box_inside'];
 
-    /** SQL: (subquery) number of distinct required photo kinds a product has. */
-    public static function photoCountSql(string $alias = 'p'): string
+    /** Required photo kinds per listing type: game = disc + box; hardware = unit front/back + box and accessories. */
+    public static function requiredKinds(string $type): array
     {
-        return "(SELECT COUNT(DISTINCT pi.kind) FROM product_images pi WHERE pi.product_id = {$alias}.id AND pi.kind IN ('disc','box_outside','box_inside'))";
+        return array_keys(ProductPhotos::labels($type));
     }
 
-    /** SQL predicate: a used, physical listing with fewer than three required photos. */
+    private static function kindSql(string $alias): string
+    {
+        return "(SELECT ck.kind FROM categories ck WHERE ck.id = {$alias}.category_id)";
+    }
+
+    /** SQL: (subquery) number of distinct required photo kinds a product has (game kinds, or hardware kinds in a hardware category). */
+    public static function photoCountSql(string $alias = 'p'): string
+    {
+        $k = self::kindSql($alias);
+        return "(SELECT COUNT(DISTINCT pi.kind) FROM product_images pi WHERE pi.product_id = {$alias}.id AND ("
+            . "(pi.kind IN ('disc','box_outside','box_inside') AND COALESCE({$k}, 'game') <> 'hardware')"
+            . " OR (pi.kind IN ('unit_front','unit_back','box_accessories') AND {$k} = 'hardware')))";
+    }
+
+    /** SQL predicate: a used, physical listing (game or hardware) with fewer than three required photos. */
     public static function missingSql(string $alias = 'p'): string
     {
-        return "({$alias}.is_digital = 0 AND {$alias}.item_condition <> 'New' AND " . self::photoCountSql($alias) . ' < 3)';
+        return "({$alias}.is_digital = 0 AND {$alias}.item_condition <> 'New' AND COALESCE(" . self::kindSql($alias) . ", 'game') <> 'digital' AND " . self::photoCountSql($alias) . ' < 3)';
+    }
+
+    /** Listing type of a product row: digital | hardware | game (needs category_id; defaults to game). */
+    public static function typeOf(array $product): string
+    {
+        static $cache = [];
+        if ((int) ($product['is_digital'] ?? 0) === 1) {
+            return 'digital';
+        }
+        $cat = (int) ($product['category_id'] ?? 0);
+        if ($cat < 1) {
+            return 'game';
+        }
+        return $cache[$cat] ??= ProductPhotos::typeForCategory($cat);
     }
 
     public static function isNew(array $product): bool
@@ -35,10 +63,10 @@ final class ListingRules
         return (string) ($product['item_condition'] ?? '') === 'New';
     }
 
-    /** Does this product row have to carry the three photos? */
+    /** Does this product row have to carry the three photos? (used game or used hardware; New and digital are exempt) */
     public static function needsPhotos(array $product): bool
     {
-        return (int) ($product['is_digital'] ?? 0) === 0 && (string) ($product['item_condition'] ?? 'New') !== 'New';
+        return self::typeOf($product) !== 'digital' && (string) ($product['item_condition'] ?? 'New') !== 'New';
     }
 
     /** @return string[] required kinds the product still lacks (always [] for New / digital items) */
@@ -47,13 +75,16 @@ final class ListingRules
         if (!self::needsPhotos($product)) {
             return [];
         }
-        return ProductPhotos::missingKinds((int) $product['id']);
+        return ProductPhotos::missingKinds((int) $product['id'], self::typeOf($product));
     }
 
     /** "disc, box outside and box inside" style list for messages. */
     public static function kindList(array $kinds): string
     {
-        $labels = array_map(static fn (string $k): string => str_replace(', ', ' ', mb_strtolower(ProductPhotos::LABELS[$k] ?? $k)), array_values($kinds));
+        $labels = array_map(
+            static fn (string $k): string => str_replace([', ', ' / '], ' ', mb_strtolower(ProductPhotos::LABELS[$k] ?? Hardware::CAPTIONS[$k] ?? $k)),
+            array_values($kinds)
+        );
         $last = array_pop($labels);
         return $labels ? implode(', ', $labels) . ' and ' . $last : (string) $last;
     }
@@ -88,8 +119,11 @@ final class ListingRules
             return '';
         }
         $used = self::needsPhotos($p);
+        $hw   = self::typeOf($p) === 'hardware';
         $cls  = $count >= 3 ? 'tag-photos-ok' : ($used ? 'tag-photos-low' : 'tag-photos-opt');
-        $tip  = $used ? ($count >= 3 ? 'All three required photos are there' : 'A used game needs disc, box outside and box inside photos') : 'Photos are optional for new sealed games';
+        $tip  = $used
+            ? ($count >= 3 ? 'All three required photos are there' : ($hw ? 'A used item needs product front, product back and box and accessories photos' : 'A used game needs disc, box outside and box inside photos'))
+            : ($hw ? 'Photos are optional for new sealed items' : 'Photos are optional for new sealed games');
         return '<span class="tag ' . $cls . '" title="' . e($tip) . '">Photos ' . $count . '/3</span>';
     }
 

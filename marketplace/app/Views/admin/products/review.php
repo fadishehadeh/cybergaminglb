@@ -14,6 +14,12 @@ $nav       = 'products';
 $id        = (int) $p['id'];
 $isDigital = (int) $p['is_digital'] === 1;
 $isUsed    = ListingRules::needsPhotos($p);
+$isHw      = ListingRules::typeOf($p) === 'hardware';
+$slotLabels = $isHw ? \App\Modules\Admin\Hardware::CAPTIONS : ProductPhotos::LABELS;
+if ($isHw) {
+    unset($slotLabels['powered_on']);
+}
+$noun      = $isHw ? 'item' : 'game';
 $canPublish = in_array($p['status'], ['pending', 'hidden'], true);
 $commission = round((float) $p['price'] - (float) $p['seller_price'], 2);
 
@@ -46,21 +52,21 @@ $reviewNext = $next;
 <?php if ($missing): ?>
     <div class="alert alert-warn review-block">
         <strong>Approval is blocked: missing photos.</strong>
-        This used game has no <?= e(ListingRules::kindList($missing)) ?> photo<?= count($missing) === 1 ? '' : 's' ?>.
-        A used listing needs the disc, box outside and box inside photos before it can go live.
+        This used <?= $noun ?> has no <?= e(ListingRules::kindList($missing)) ?> photo<?= count($missing) === 1 ? '' : 's' ?>.
+        A used listing needs its <?= $isHw ? 'product front, product back and box and accessories' : 'disc, box outside and box inside' ?> photos before it can go live.
         <a href="<?= e(url('/admin/products/' . $id . '/edit')) ?>">Add the missing photos</a>, or publish it as old stock with the tick box below.
     </div>
 <?php endif; ?>
 
 <div class="cols-form review-cols">
     <section class="card">
-        <div class="card-head"><h2>Photos (<?= count($photos) ?>)</h2><?php if (!$isDigital): ?><?= ListingRules::photoTag($p, count(array_intersect(array_keys($byKind), ListingRules::REQUIRED))) ?><?php endif; ?></div>
+        <div class="card-head"><h2>Photos (<?= count($photos) ?>)</h2><?php if (!$isDigital): ?><?= ListingRules::photoTag($p, count(array_intersect(array_keys($byKind), ListingRules::requiredKinds($isHw ? 'hardware' : 'game')))) ?><?php endif; ?></div>
         <div class="card-body">
             <?php if ($isDigital): ?>
                 <p class="muted">Digital item: no photos needed.</p>
             <?php else: ?>
                 <div class="rv-photos">
-                    <?php foreach (ProductPhotos::LABELS as $kind => $label): $cur = $byKind[$kind] ?? null; ?>
+                    <?php foreach ($slotLabels as $kind => $label): $cur = $byKind[$kind] ?? null; ?>
                         <figure class="rv-photo<?= $cur ? '' : ' rv-missing' ?>">
                             <?php if ($cur): ?>
                                 <a href="<?= e(media($cur['path'])) ?>" target="_blank" rel="noopener" title="Open the full photo in a new tab"><img src="<?= e(media($cur['path'])) ?>" alt="<?= e($label) ?>" loading="lazy"></a>
@@ -93,12 +99,20 @@ $reviewNext = $next;
                     <dt>Type</dt><dd><span class="tag tag-digital">Digital</span></dd>
                 <?php else: ?>
                     <dt>Condition</dt><dd><?= ListingRules::conditionTag($p) ?> <?= (string) $p['item_condition'] !== 'New' ? '<small class="muted">' . e((string) (ListingCondition::GRADE_HELP[$p['item_condition']] ?? '')) . '</small>' : '' ?></dd>
+                    <?php if ($isHw): ?>
+                        <dt>Brand / model</dt><dd><?= e(trim((string) $p['brand'] . ' ' . (string) $p['model'])) ?: '-' ?></dd>
+                        <dt>Warranty</dt><dd><?= $p['warranty_months'] !== null ? (int) $p['warranty_months'] . ' month' . ((int) $p['warranty_months'] === 1 ? '' : 's') : 'Not stated' ?></dd>
+                        <dt>In the box</dt><dd><?= $p['included_items'] ? nl2br(e($p['included_items'])) : 'Not stated' ?></dd>
+                        <dt>Specs</dt><dd><?= $p['specs'] ? nl2br(e($p['specs'])) : 'Not stated' ?></dd>
+                        <dt>Serial number</dt><dd><?= $p['serial_number'] ? e($p['serial_number']) . ' <small class="muted">(private)</small>' : '-' ?></dd>
+                    <?php else: ?>
                     <?php foreach (ListingCondition::INCLUDES as $col => $label): ?>
                         <dt><?= e($label) ?></dt>
                         <dd><span class="inc <?= e(ListingRules::includeClass($p[$col])) ?>"><?= ListingRules::includeText($p[$col]) === 'Yes' ? '&#10003; Yes' : (ListingRules::includeText($p[$col]) === 'No' ? '&#10007; No' : 'Not stated') ?></span></dd>
                     <?php endforeach; ?>
+                    <?php endif; ?>
                 <?php endif; ?>
-                <dt>Edition</dt><dd><?= e($p['edition']) ?><?= $p['is_steelbook'] ? ' <span class="tag tag-steel">Steelbook</span>' : '' ?></dd>
+                <?php if (!$isHw): ?><dt>Edition</dt><dd><?= e($p['edition']) ?><?= $p['is_steelbook'] ? ' <span class="tag tag-steel">Steelbook</span>' : '' ?></dd><?php endif; ?>
                 <dt>Stock</dt><dd><?= (int) $p['stock'] ?></dd>
             </dl>
         </section>

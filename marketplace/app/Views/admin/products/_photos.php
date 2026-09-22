@@ -20,13 +20,13 @@ foreach ($photos as $ph) {
 }
 $isUsed = (string) Forms::val('condition_type', $isEdit ? (($p['item_condition'] ?? '') === 'New' ? 'new' : 'used') : '') === 'used';
 ?>
-<section class="card photos-card" data-physical-only <?= !empty($isDigital) ? 'hidden' : '' ?>>
+<section class="card photos-card" data-kind="game" <?= ($mode ?? 'game') === 'game' ? '' : 'hidden' ?>>
     <div class="card-head"><h2>Photos</h2></div>
     <div class="card-body">
         <p class="hint ph-intro">A <strong>used</strong> game needs the three photos below before it can go live (you can still save it as Hidden or Pending without them).
             For <strong>new sealed</strong> games photos are optional. Photos are compressed and location data is removed. JPG, PNG or WebP, up to 10 MB each, at least 400 px.</p>
 
-        <?php if ($isEdit && $missing): ?>
+        <?php if ($isEdit && $missing && ListingRules::typeOf($p) !== 'hardware'): ?>
             <div class="alert alert-warn" data-used-only <?= $isUsed ? '' : 'hidden' ?>>
                 <strong>Missing photos:</strong> <?= e(ListingRules::kindList($missing)) ?>.
                 <?= $alreadyLive ? 'This used game is live without them (old stock). Add them when you can.' : 'This used game cannot go live until they are added.' ?>

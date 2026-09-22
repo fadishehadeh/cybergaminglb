@@ -9,10 +9,12 @@ use App\Modules\Admin\CustomerController;
 use App\Modules\Admin\DeliveryController;
 use App\Modules\Admin\WalletController;
 use App\Modules\Admin\DashboardController;
+use App\Modules\Admin\GuideController;
 use App\Modules\Admin\OrderController;
 use App\Modules\Admin\PayoutController;
 use App\Modules\Admin\ProductController;
 use App\Modules\Admin\RequestController;
+use App\Modules\Admin\SeoController;
 use App\Modules\Admin\SellerController;
 use App\Modules\Admin\SettingsController;
 
@@ -116,6 +118,23 @@ $router->get('/admin/wallet', [WalletController::class, 'index'], $admin);
 // Categories & platforms
 $router->get('/admin/catalog', [CatalogController::class, 'index'], $admin);
 $router->post('/admin/catalog', [CatalogController::class, 'update'], $admin);
+// Enable / disable is its own POST so it can ask for confirmation with the product count.
+$router->post('/admin/catalog/category/{id}/toggle', [CatalogController::class, 'toggleCategory'], $admin);
+$router->post('/admin/catalog/platform/{id}/toggle', [CatalogController::class, 'togglePlatform'], $admin);
+
+// SEO & AI search
+$router->get('/admin/seo', [SeoController::class, 'index'], $admin);
+$router->post('/admin/seo', [SeoController::class, 'update'], $admin);
+
+// Guides (articles) CMS. "create" is registered before the {id} routes.
+$router->get('/admin/guides', [GuideController::class, 'index'], $admin);
+$router->get('/admin/guides/create', [GuideController::class, 'create'], $admin);
+$router->post('/admin/guides/create', [GuideController::class, 'store'], $admin);
+$router->get('/admin/guides/{id}/edit', [GuideController::class, 'edit'], $admin);
+$router->post('/admin/guides/{id}/edit', [GuideController::class, 'update'], $admin);
+$router->post('/admin/guides/{id}/publish', [GuideController::class, 'publish'], $admin);
+$router->post('/admin/guides/{id}/unpublish', [GuideController::class, 'unpublish'], $admin);
+$router->post('/admin/guides/{id}/delete', [GuideController::class, 'delete'], $admin);
 
 // Account
 $router->get('/admin/account', [AccountController::class, 'index'], $admin);

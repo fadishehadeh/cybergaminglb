@@ -25,5 +25,6 @@ require BASE_PATH . '/routes/admin.php';
 require BASE_PATH . '/routes/seller.php';
 require BASE_PATH . '/routes/account.php';
 require BASE_PATH . '/routes/account_listings.php';
+require BASE_PATH . '/routes/seo.php';
 
 $app->run();

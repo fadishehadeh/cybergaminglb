@@ -48,9 +48,71 @@ final class Ui
             . (self::ICONS[$name] ?? '') . '</svg>';
     }
 
+    /** `sizes` for a product card in the listing grid (2 columns on phones, 3 on tablets, 4 on desktop). */
+    public const SIZES_CARD = '(min-width: 1024px) 280px, (min-width: 768px) 31vw, 47vw';
+    /** `sizes` for the large image on the product page. */
+    public const SIZES_MAIN = '(min-width: 900px) 460px, 92vw';
+
+    /** @var array<string,array{0:int,1:array<int,string>}> per-request cache: relative path => [source width, [variant width => relative path]] */
+    private static array $variantCache = [];
+
     /**
-     * Product cover: the uploaded image, or (digital goods without one) a neutral tile so no cover art is required.
-     * $attrs is appended to the <img> tag (loading / fetchpriority ...).
+     * Responsive image. When WebP variants exist (ImageVariants) it outputs
+     *   <picture><source type="image/webp" srcset="x-w300.webp 300w, x-w600.webp 600w, x.webp 1200w" sizes="..."><img src="x.jpg" ...></picture>
+     * with the original as the fallback <img>; without variants (SVG placeholders, files not optimised yet, no GD) a plain <img>.
+     * $w x $h are the intrinsic size attributes (they reserve the space, so there is no layout shift).
+     * $lazy: below-the-fold images. $priority: the LCP image (eager + fetchpriority="high"). Neither: eager.
+     * $relativePath is relative to /uploads (covers/x.jpg, products/abc.jpg); '' gives the neutral placeholder.
+     */
+    public static function picture(?string $relativePath, string $alt, string $sizes, int $w, int $h, bool $lazy = true, bool $priority = false, string $id = ''): string
+    {
+        $relativePath = (string) $relativePath;
+        $idAttr = $id !== '' ? ' id="' . e($id) . '"' : '';
+        $load = $priority ? ' fetchpriority="high" decoding="async"' : ($lazy ? ' loading="lazy" decoding="async"' : ' decoding="async"');
+        $img = '<img' . $idAttr . ' src="' . e(media($relativePath)) . '" alt="' . e($alt) . '" width="' . $w . '" height="' . $h . '"' . $load . '>';
+
+        $variants = self::variantsFor($relativePath);
+        if (!$variants) {
+            return $img;
+        }
+        $set = [];
+        foreach ($variants as $width => $rel) {
+            $set[] = e(media($rel)) . ' ' . $width . 'w';
+        }
+        return '<picture><source type="image/webp" srcset="' . implode(', ', $set) . '" sizes="' . e($sizes) . '">' . $img . '</picture>';
+    }
+
+    /** @return array<int,string> existing WebP variants of an upload keyed by pixel width (relative to /uploads), smallest first */
+    private static function variantsFor(string $relativePath): array
+    {
+        if (isset(self::$variantCache[$relativePath])) {
+            return self::$variantCache[$relativePath];
+        }
+        $variants = [];
+        if ($relativePath !== '' && class_exists(\App\Support\ImageVariants::class) && \App\Support\ImageVariants::isSource($relativePath)
+            && !str_contains($relativePath, '..')) {
+            $root = PUBLIC_PATH . '/uploads/';
+            $file = $root . ltrim($relativePath, '/');
+            $found = \App\Support\ImageVariants::existing($file);
+            if ($found) {
+                $info = @getimagesize($file);
+                $srcW = $info ? (int) $info[0] : 0;
+                foreach ($found as $width => $abs) {
+                    $key = $width > 0 ? $width : $srcW; // 0 = the full-size WebP: it is as wide as the source
+                    if ($key > 0) {
+                        $variants[$key] = substr($abs, strlen($root));
+                    }
+                }
+                ksort($variants);
+            }
+        }
+        return self::$variantCache[$relativePath] = $variants;
+    }
+
+    /**
+     * Product cover: the uploaded image (a <picture> with WebP variants when they exist), or (digital goods without one)
+     * a neutral tile so no cover art is required. $attrs is the legacy attribute string: 'loading="lazy"' = lazy,
+     * 'fetchpriority="high"' = the LCP image (eager + high priority), anything else = eager.
      */
     public static function cover(array $p, string $alt, int $w, int $h, string $attrs = '', string $id = ''): string
     {
@@ -63,7 +125,8 @@ final class Ui
                 . ($region !== '' ? '<span class="cover-tile-region">' . e($region) . '</span>' : '')
                 . '</span>';
         }
-        return '<img' . ($id !== '' ? ' id="' . e($id) . '"' : '') . ' src="' . e(media($image)) . '" alt="' . e($alt) . '" width="' . $w . '" height="' . $h . '" ' . $attrs . '>';
+        $sizes = $w >= 500 ? self::SIZES_MAIN : ($w >= 200 ? self::SIZES_CARD : $w . 'px');
+        return self::picture($image, $alt, $sizes, $w, $h, str_contains($attrs, 'lazy'), str_contains($attrs, 'fetchpriority="high"'), $id);
     }
 
     /** One-line meaning of each used grade (shown on the product page). */
@@ -72,6 +135,56 @@ final class Ui
         'Good'     => 'Good: light wear, plays perfectly.',
         'Fair'     => 'Fair: visible wear, but it plays.',
     ];
+
+    /** Same grades for hardware: a working device rather than a "played" game. */
+    public const GRADE_NOTES_HARDWARE = [
+        'Like New' => 'Like New: looks unused.',
+        'Good'     => 'Good: light wear, works perfectly.',
+        'Fair'     => 'Fair: visible wear, works.',
+    ];
+
+    /** Hardware = a product in a category of kind "hardware" (keyboards, mice, mousepads, headsets, consoles, controllers, accessories). */
+    public static function isHardware(array $p): bool
+    {
+        return (string) ($p['category_kind'] ?? '') === 'hardware' && (int) ($p['is_digital'] ?? 0) !== 1;
+    }
+
+    /** "Logitech G502 X" line for hardware cards: brand and model, either may be missing. */
+    public static function brandModel(array $p): string
+    {
+        return trim(implode(' ', array_filter([trim((string) ($p['brand'] ?? '')), trim((string) ($p['model'] ?? ''))], static fn (string $v): bool => $v !== '')));
+    }
+
+    /**
+     * Spec table rows from a "Label: value" per line text. A line without a colon becomes a "Feature" row.
+     * @return array<int,array{0:string,1:string}>
+     */
+    public static function specRows(?string $specs): array
+    {
+        $rows = [];
+        foreach (self::lines($specs) as $line) {
+            $pos = strpos($line, ':');
+            if ($pos !== false && $pos > 0 && $pos < 60 && trim(substr($line, $pos + 1)) !== '') {
+                $rows[] = [trim(substr($line, 0, $pos)), trim(substr($line, $pos + 1))];
+            } else {
+                $rows[] = ['Feature', $line];
+            }
+        }
+        return $rows;
+    }
+
+    /** Non-empty trimmed lines of a multi-line text field (included items, specs). @return string[] */
+    public static function lines(?string $text): array
+    {
+        $out = [];
+        foreach (preg_split('/\R/u', (string) $text) ?: [] as $line) {
+            $line = trim($line);
+            if ($line !== '') {
+                $out[] = mb_substr($line, 0, 200);
+            }
+        }
+        return array_slice($out, 0, 40);
+    }
 
     /** Physical item that is not sealed-new (Like New / Good / Fair). Digital goods are never "used". */
     public static function isUsed(array $p): bool
@@ -122,7 +235,11 @@ final class Ui
     }
 
     /** Photo kinds shown to buyers. */
-    public const PHOTO_LABELS = ['disc' => 'Disc', 'box_outside' => 'Box outside', 'box_inside' => 'Box inside', 'extra' => 'More'];
+    public const PHOTO_LABELS = [
+        'disc' => 'Disc', 'box_outside' => 'Box outside', 'box_inside' => 'Box inside',
+        'unit_front' => 'Unit front', 'unit_back' => 'Unit back and ports', 'box_accessories' => 'Box and accessories', 'powered_on' => 'Powered on',
+        'extra' => 'More',
+    ];
 
     public static function genres(string $csv): array
     {

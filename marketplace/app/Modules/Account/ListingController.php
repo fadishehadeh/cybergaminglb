@@ -223,7 +223,7 @@ final class ListingController extends ListingBase
             'seller'     => $seller,
             'product'    => $product,
             'commission' => $this->commission($seller),
-            'categories' => db()->fetchAll('SELECT id, name FROM categories WHERE is_active = 1 ORDER BY sort_order, name'),
+            'categories' => db()->fetchAll('SELECT id, name FROM categories WHERE is_active = 1 AND member_listing = 1 AND kind = "game" ORDER BY sort_order, name'),
             'platforms'  => db()->fetchAll('SELECT id, name FROM platforms WHERE is_active = 1 ORDER BY sort_order, name'),
             'hasOrders'  => $product !== null && (int) db()->fetchValue('SELECT COUNT(*) FROM order_items WHERE product_id = ?', [$product['id']]) > 0,
             'photos'     => $product !== null ? ProductPhotos::forProduct((int) $product['id']) : [],
@@ -252,7 +252,7 @@ final class ListingController extends ListingBase
             $errors[] = 'Title is required (max 190 characters).';
         }
 
-        $category = db()->fetch('SELECT id FROM categories WHERE id = ? AND is_active = 1', [Forms::int($request->input('category_id')) ?? 0]);
+        $category = db()->fetch('SELECT id FROM categories WHERE id = ? AND is_active = 1 AND member_listing = 1 AND kind = "game"', [Forms::int($request->input('category_id')) ?? 0]);
         if (!$category) {
             $errors[] = 'Choose a category.';
         }

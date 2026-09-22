@@ -726,3 +726,23 @@ abbr[title] { text-decoration: none; color: var(--danger); }
 .ship-rules ul { margin: 6px 0 6px 1.1em; }
 .ship-rules p { margin: .5em 0; }
 .pay-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700; background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+
+/* ---------- responsive images (<picture> with WebP) ---------- */
+picture { display: contents; }
+
+/* ---------- hardware: cards, quick facts, box contents ---------- */
+.card-brand { margin: 0; color: var(--navy); font-size: .85rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.card-hw .card-media img { aspect-ratio: 1 / 1; object-fit: contain; }
+.product-cover.is-hw img { aspect-ratio: 1 / 1; object-fit: contain; }
+.product-brand { margin: -4px 0 10px; color: var(--muted); font-weight: 650; }
+.quick-facts h2, .box-block h2 { margin: 18px 0 8px; font-size: 1.1rem; }
+.quick-facts .specs { margin-top: 0; }
+.specs-hw dt { flex: 0 0 120px; }
+.specs-hw dd { min-width: 0; overflow-wrap: anywhere; }
+.box-block .incl-list { margin-bottom: 14px; }
+.box-block .incl-list li { align-items: flex-start; }
+.grade-key { margin: 0 0 8px; font-size: .92rem; }
+.grade-key summary { cursor: pointer; color: var(--cyan-dark); font-weight: 650; }
+.grade-key ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; color: var(--muted); }
+.grade-key .is-current { color: var(--navy); font-weight: 700; }
+@media (max-width: 420px) { .specs-hw dt { flex-basis: 96px; } }

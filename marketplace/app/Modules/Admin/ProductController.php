@@ -28,8 +28,12 @@ final class ProductController extends AdminController
             $steelbook = '';
         }
         $kind = Forms::text($request->query('kind'));
-        if (!in_array($kind, ['physical', 'digital'], true)) {
+        if (!in_array($kind, ['game', 'hardware', 'digital', 'physical'], true)) {
             $kind = '';
+        }
+        $seo = Forms::text($request->query('seo'));
+        if (!in_array($seo, ['nodesc', 'shortdesc', 'noimage'], true)) {
+            $seo = '';
         }
         $cond = Forms::text($request->query('condition'));
         if (!in_array($cond, ['new', 'used'], true)) {
@@ -41,9 +45,8 @@ final class ProductController extends AdminController
         $params = [];
         if ($q !== '') {
             $like = '%' . addcslashes($q, '%_\\') . '%';
-            $where[]  = '(p.title LIKE ? OR p.slug LIKE ?)';
-            $params[] = $like;
-            $params[] = $like;
+            $where[]  = '(p.title LIKE ? OR p.slug LIKE ? OR p.brand LIKE ? OR p.model LIKE ? OR p.serial_number LIKE ?)';
+            array_push($params, $like, $like, $like, $like, $like);
         }
         if (in_array($status, self::STATUSES, true)) {
             $where[]  = 'p.status = ?';
@@ -61,9 +64,20 @@ final class ProductController extends AdminController
             $where[]  = 'p.is_steelbook = ?';
             $params[] = (int) $steelbook;
         }
-        if ($kind !== '') {
-            $where[]  = 'p.is_digital = ?';
-            $params[] = $kind === 'digital' ? 1 : 0;
+        if ($kind === 'digital') {
+            $where[] = 'p.is_digital = 1';
+        } elseif ($kind === 'physical') {
+            $where[] = 'p.is_digital = 0';
+        } elseif ($kind !== '') {
+            $where[]  = "p.is_digital = 0 AND c.kind = ?";
+            $params[] = $kind;
+        }
+        if ($seo === 'nodesc') {
+            $where[] = "p.status = 'active' AND (p.description IS NULL OR TRIM(p.description) = '')";
+        } elseif ($seo === 'shortdesc') {
+            $where[] = "p.status = 'active' AND p.description IS NOT NULL AND TRIM(p.description) <> '' AND CHAR_LENGTH(TRIM(p.description)) < 60";
+        } elseif ($seo === 'noimage') {
+            $where[] = "p.status = 'active' AND (p.image IS NULL OR p.image = '')";
         }
         if ($cond !== '') {
             $where[] = $cond === 'new' ? "p.item_condition = 'New'" : "p.item_condition <> 'New'";
@@ -79,14 +93,15 @@ final class ProductController extends AdminController
         }
         $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
-        $total = (int) db()->fetchValue('SELECT COUNT(*) FROM products p' . $whereSql, $params);
+        $total = (int) db()->fetchValue('SELECT COUNT(*) FROM products p LEFT JOIN categories c ON c.id = p.category_id' . $whereSql, $params);
         $pager = Pagination::fromRequest($request, $total, 25);
 
         $products = db()->fetchAll(
             'SELECT p.id, p.title, p.description, p.image, p.seller_id, p.seller_price, p.price, p.commission_pct, p.stock, p.status, p.is_steelbook,
                     p.is_digital, p.digital_kind, p.digital_region, p.item_condition, p.includes_box, p.includes_cover_art, p.includes_manual,
+                    p.category_id, p.brand, p.model, p.serial_number,
                     ' . ListingRules::photoCountSql('p') . ' AS photo_count,
-                    pl.name AS platform, c.name AS category, s.code AS seller_code
+                    pl.name AS platform, c.name AS category, c.kind AS category_kind, s.code AS seller_code
                FROM products p
                LEFT JOIN platforms pl ON pl.id = p.platform_id
                LEFT JOIN categories c ON c.id = p.category_id
@@ -98,10 +113,10 @@ final class ProductController extends AdminController
         $this->view('products/index', [
             'products'   => $products,
             'pager'      => $pager,
-            'filters'    => compact('q', 'status', 'category', 'platform', 'seller', 'steelbook', 'kind', 'cond', 'missing'),
+            'filters'    => compact('q', 'status', 'category', 'platform', 'seller', 'steelbook', 'kind', 'cond', 'missing', 'seo'),
             'missingCount' => (int) db()->fetchValue('SELECT COUNT(*) FROM products p WHERE ' . ListingRules::missingSql('p')),
             'digital'    => Digital::counts(),
-            'categories' => db()->fetchAll('SELECT id, name FROM categories ORDER BY sort_order, name'),
+            'categories' => db()->fetchAll('SELECT id, name, kind, is_active FROM categories ORDER BY sort_order, name'),
             'platforms'  => db()->fetchAll('SELECT id, name FROM platforms ORDER BY sort_order, name'),
             'sellers'    => db()->fetchAll('SELECT id, code, name FROM sellers ORDER BY code'),
             'pendingCount' => (int) db()->fetchValue("SELECT COUNT(*) FROM products WHERE status = 'pending'"),
@@ -167,7 +182,7 @@ final class ProductController extends AdminController
         if ($missing && $request->input('legacy_ok') !== '1') {
             $this->back(
                 '/admin/products/' . $product['id'] . '/review',
-                '"' . $product['title'] . '" is a used game and is missing the ' . ListingRules::kindList($missing) . ' photo' . (count($missing) === 1 ? '' : 's')
+                '"' . $product['title'] . '" is a used ' . (ListingRules::typeOf($product) === 'hardware' ? 'item' : 'game') . ' and is missing the ' . ListingRules::kindList($missing) . ' photo' . (count($missing) === 1 ? '' : 's')
                 . '. It cannot be published yet. Add the photos, or tick "Publish without photos (legacy stock)" below if this is old stock.'
             );
         }
@@ -264,8 +279,9 @@ final class ProductController extends AdminController
             'alreadyLive' => $product !== null && $product['status'] === 'active' && ListingRules::needsPhotos($product),
             'preselect'  => $preselectSeller,
             'sellers'    => $sellers,
-            'categories' => db()->fetchAll('SELECT id, name, slug FROM categories ORDER BY sort_order, name'),
-            'platforms'  => db()->fetchAll('SELECT id, name FROM platforms ORDER BY sort_order, name'),
+            'categories' => db()->fetchAll('SELECT id, name, slug, kind, is_active FROM categories ORDER BY sort_order, name'),
+            'platforms'  => db()->fetchAll('SELECT id, name, slug FROM platforms ORDER BY sort_order, name'),
+            'brands'     => Hardware::brands(),
         ]);
     }
 
@@ -306,12 +322,18 @@ final class ProductController extends AdminController
             }
         }
 
-        $category = db()->fetch('SELECT id FROM categories WHERE id = ?', [Forms::int($request->input('category_id')) ?? 0]);
+        $category = db()->fetch('SELECT id, kind FROM categories WHERE id = ?', [Forms::int($request->input('category_id')) ?? 0]);
         if (!$category && $isDigital) {
-            $category = db()->fetch('SELECT id FROM categories WHERE slug = ?', [Digital::CATEGORY_SLUG]);
+            $category = db()->fetch('SELECT id, kind FROM categories WHERE slug = ?', [Digital::CATEGORY_SLUG]);
         }
         if (!$category) {
             $errors[] = 'Choose a category.';
+        }
+        // The category's kind decides which fields apply: game (genres, year, box/cover/manual), hardware (brand, specs, warranty...) or digital.
+        $catKind    = $category['kind'] ?? 'game';
+        $isHardware = !$isDigital && $catKind === 'hardware';
+        if ($category && $catKind === 'digital' && !$isDigital) {
+            $errors[] = 'That category is for digital items: tick "Digital item" and fill in its kind and region, or choose another category.';
         }
 
         $platform   = null;
@@ -324,18 +346,57 @@ final class ProductController extends AdminController
         }
 
         // Physical items: New (sealed) or Used + grade, and what is included. Digital items are always New, nothing included.
-        $cond      = $isDigital ? null : ListingRules::read($request, $product, $errors);
+        // Hardware asks New / Used + grade only: the box / cover art / manual answers stay NULL.
+        $nullIncludes = array_fill_keys(array_keys(ListingCondition::INCLUDES), null);
+        if ($isDigital) {
+            $cond = null;
+        } elseif ($isHardware) {
+            $cond = Hardware::readCondition($request, $errors) + ['includes' => $nullIncludes];
+        } else {
+            $cond = ListingRules::read($request, $product, $errors);
+        }
         $condition = $isDigital ? 'New' : ($cond['condition'] !== '' ? $cond['condition'] : 'Good');
-        $includes  = $isDigital ? array_fill_keys(array_keys(ListingCondition::INCLUDES), null) : $cond['includes'];
+        $includes  = $isDigital ? $nullIncludes : $cond['includes'];
         $usedPhysical = !$isDigital && $cond['used'];
+        $gameFields   = !$isDigital && !$isHardware; // edition, year, genres, steelbook: games only
 
-        $edition = $isDigital ? 'Standard' : ($this->str($request, 'edition') ?: 'Standard');
+        // Hardware-only fields. Ignored (stored empty) for games and digital items.
+        $brand = $model = $specs = $included = $warranty = $serial = null;
+        if ($isHardware) {
+            $brand = $this->str($request, 'brand');
+            if ($brand === '' || mb_strlen($brand) > 60) {
+                $errors[] = 'Brand is required (max 60 characters), e.g. Logitech.';
+                $brand = mb_substr($brand, 0, 60);
+            }
+            $model = $this->str($request, 'model');
+            if (mb_strlen($model) > 120) {
+                $errors[] = 'Model can be at most 120 characters.';
+            }
+            $specs = Hardware::lines((string) $request->input('specs', ''), 'specs', Hardware::MAX_SPEC_LINES, Hardware::MAX_SPEC_CHARS, true, $errors);
+            $included = Hardware::lines((string) $request->input('included_items', ''), 'what is in the box', Hardware::MAX_INCLUDED_LINES, Hardware::MAX_INCLUDED_CHARS, false, $errors);
+            $warrantyIn = $this->str($request, 'warranty_months');
+            if ($warrantyIn !== '') {
+                $warranty = Forms::int($warrantyIn);
+                if ($warranty === null || $warranty < 0 || $warranty > Hardware::MAX_WARRANTY) {
+                    $errors[] = 'Warranty must be a whole number of months from 0 to ' . Hardware::MAX_WARRANTY . ' (leave empty for none stated).';
+                    $warranty = null;
+                }
+            }
+            $serial = $this->str($request, 'serial_number');
+            if (mb_strlen($serial) > 80) {
+                $errors[] = 'Serial number can be at most 80 characters.';
+            }
+            $model  = $model !== '' ? $model : null;
+            $serial = $serial !== '' ? $serial : null;
+        }
+
+        $edition = !$gameFields ? 'Standard' : ($this->str($request, 'edition') ?: 'Standard');
         if (mb_strlen($edition) > 30) {
             $errors[] = 'Edition can be at most 30 characters.';
         }
 
         $year    = null;
-        $yearRaw = $isDigital ? '' : $this->str($request, 'year');
+        $yearRaw = $gameFields ? $this->str($request, 'year') : '';
         if ($yearRaw !== '') {
             $year = Forms::int($yearRaw);
             if ($year === null || $year < 1970 || $year > (int) date('Y') + 1) {
@@ -345,7 +406,7 @@ final class ProductController extends AdminController
         }
 
         $genres = [];
-        foreach (explode(',', $isDigital ? '' : $this->str($request, 'genres')) as $g) {
+        foreach (explode(',', $gameFields ? $this->str($request, 'genres') : '') as $g) {
             $g = trim(preg_replace('/\s+/', ' ', $g) ?? '');
             if ($g !== '' && !isset($genres[mb_strtolower($g)])) {
                 $genres[mb_strtolower($g)] = $g;
@@ -398,17 +459,20 @@ final class ProductController extends AdminController
         $legacyOk    = $request->input('legacy_ok') === '1';
         $publishedNoPhotos = false;
         if (!$isDigital) {
-            $photoData = ListingCondition::photos($request, $product, false, $errors);
+            $photoData = $isHardware
+                ? Hardware::photos($request, $product, $errors)
+                : ListingCondition::photos($request, $product, false, $errors);
             if ($usedPhysical && $liveStatus === 'active' && !$errors) {
                 $have    = array_unique(array_merge($existing, array_column($photoData['staged'], 'kind')));
-                $lacking = array_values(array_diff(ListingRules::REQUIRED, $have));
+                $lacking = array_values(array_diff(ListingRules::requiredKinds($isHardware ? 'hardware' : 'game'), $have));
                 if ($lacking) {
+                    $noun = $isHardware ? 'item' : 'game';
                     // Listings that are already live as used stock keep their status when edited (old stock without photos).
                     $alreadyLive = $isEdit && $product['status'] === 'active' && !ListingRules::isNew($product) && (int) $product['is_digital'] === 0;
                     if (!$isEdit) {
-                        $errors[] = 'A used game needs all three photos before it can go live. Missing: ' . ListingRules::kindList($lacking) . '. Add them, or save it as Hidden or Pending to finish later.';
+                        $errors[] = 'A used ' . $noun . ' needs all three photos before it can go live. Missing: ' . ListingRules::kindList($lacking) . '. Add them, or save it as Hidden or Pending to finish later.';
                     } elseif (!$alreadyLive && !$legacyOk) {
-                        $errors[] = 'This used game cannot go live yet. Missing photos: ' . ListingRules::kindList($lacking) . '. Add them, save it as Hidden or Pending, or tick "Publish without photos (legacy stock)".';
+                        $errors[] = 'This used ' . $noun . ' cannot go live yet. Missing photos: ' . ListingRules::kindList($lacking) . '. Add them, save it as Hidden or Pending, or tick "Publish without photos (legacy stock)".';
                     } else {
                         $publishedNoPhotos = true;
                     }
@@ -458,19 +522,21 @@ final class ProductController extends AdminController
         $fields = [
             $seller['id'] ?? null, (int) $category['id'], $platform['id'] ?? null, $title, $description !== '' ? $description : null,
             $condition, $includes['includes_box'], $includes['includes_cover_art'], $includes['includes_manual'],
-            $edition, !$isDigital && $request->input('is_steelbook') ? 1 : 0, $isDigital ? 1 : 0, $digitalKind, $digitalRegion,
+            $edition, $gameFields && $request->input('is_steelbook') ? 1 : 0, $isDigital ? 1 : 0, $digitalKind, $digitalRegion,
             $year, $genres !== '' ? $genres : null,
             $sellerPrice, $commission, $price, $stock, $image, $status,
+            $brand, $model, $specs, $included, $warranty, $serial,
         ];
 
         try {
-            $id = db()->transaction(function () use ($isEdit, $product, $fields, $title, $platform, $photoData, $image): int {
+            $id = db()->transaction(function () use ($isEdit, $product, $fields, $title, $platform, $photoData, $image, $isHardware): int {
                 if ($isEdit) {
                     db()->execute(
                         'UPDATE products SET seller_id = ?, category_id = ?, platform_id = ?, title = ?, description = ?, item_condition = ?,
                                 includes_box = ?, includes_cover_art = ?, includes_manual = ?,
                                 edition = ?, is_steelbook = ?, is_digital = ?, digital_kind = ?, digital_region = ?, year = ?, genres = ?, seller_price = ?, commission_pct = ?, price = ?,
-                                stock = ?, image = ?, status = ? WHERE id = ?',
+                                stock = ?, image = ?, status = ?,
+                                brand = ?, model = ?, specs = ?, included_items = ?, warranty_months = ?, serial_number = ? WHERE id = ?',
                         [...$fields, $product['id']]
                     );
                     $id = (int) $product['id'];
@@ -478,13 +544,16 @@ final class ProductController extends AdminController
                     $slug = $this->uniqueSlug(slugify($title . ' ' . ($platform['slug'] ?? '')), 0);
                     $id = db()->insert(
                         'INSERT INTO products (seller_id, category_id, platform_id, title, description, item_condition, includes_box, includes_cover_art, includes_manual,
-                                edition, is_steelbook, is_digital, digital_kind, digital_region, year, genres, seller_price, commission_pct, price, stock, image, status, slug)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                                edition, is_steelbook, is_digital, digital_kind, digital_region, year, genres, seller_price, commission_pct, price, stock, image, status,
+                                brand, model, specs, included_items, warranty_months, serial_number, slug)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                         [...$fields, $slug]
                     );
                 }
                 // Photos: replace-per-slot, delete ticked extras; a product without a main image uses the "box outside" photo.
-                ListingCondition::commit($id, $photoData['staged'], $photoData['deleteExtra'], $image);
+                $isHardware
+                    ? Hardware::commit($id, $photoData['staged'], $photoData['deleteExtra'], $image)
+                    : ListingCondition::commit($id, $photoData['staged'], $photoData['deleteExtra'], $image);
                 return $id;
             });
         } catch (\Throwable $e) {
@@ -507,7 +576,7 @@ final class ProductController extends AdminController
         $msg .= '.';
         if ($usedPhysical && $publishedNoPhotos) {
             $msg .= ' Published without photos (legacy stock).';
-        } elseif ($usedPhysical && ($lack = ListingRules::missing(['id' => $id, 'is_digital' => 0, 'item_condition' => $condition]))) {
+        } elseif ($usedPhysical && ($lack = ListingRules::missing(['id' => $id, 'is_digital' => 0, 'item_condition' => $condition, 'category_id' => (int) $category['id']]))) {
             $msg .= ' Photos still missing: ' . ListingRules::kindList($lack) . '.' . ($status === 'active' ? '' : ' It cannot go live until all three are added.');
         }
         if ($isDigital && !digital_enabled() && $status === 'active') {
@@ -535,35 +604,7 @@ final class ProductController extends AdminController
     /** @return array{tmp:string, ext:string}|null */
     private function checkImage(?array $file, array &$errors): ?array
     {
-        if ($file === null || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-            return null;
-        }
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $errors[] = in_array($file['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)
-                ? 'The image is too large (max 3 MB).'
-                : 'The image upload failed. Please try again.';
-            return null;
-        }
-        if (!is_uploaded_file($file['tmp_name'])) {
-            $errors[] = 'Invalid upload.';
-            return null;
-        }
-        if ($file['size'] > self::MAX_IMAGE) {
-            $errors[] = 'The image is too large (max 3 MB).';
-            return null;
-        }
-        $info = @getimagesize($file['tmp_name']);
-        $map  = [IMAGETYPE_JPEG => ['image/jpeg', 'jpg'], IMAGETYPE_PNG => ['image/png', 'png'], IMAGETYPE_WEBP => ['image/webp', 'webp']];
-        if ($info === false || !isset($map[$info[2]])) {
-            $errors[] = 'The image must be a JPG, PNG or WebP file.';
-            return null;
-        }
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        if ($finfo->file($file['tmp_name']) !== $map[$info[2]][0]) {
-            $errors[] = 'The image file type does not match its contents.';
-            return null;
-        }
-        return ['tmp' => $file['tmp_name'], 'ext' => $map[$info[2]][1]];
+        return Uploads::check($file, $errors, self::MAX_IMAGE);
     }
 
     private function storeImage(array $upload): ?string

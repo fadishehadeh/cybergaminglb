@@ -16,7 +16,8 @@ final class HomeController extends Controller
         $this->render('site/home', [
             'stats'      => $stats,
             'platforms'  => Catalog::platforms(),
-            'categories' => Catalog::categories(),
+            // empty categories stay out of the home tiles too (the nav and the sitemap already skip them)
+            'categories' => array_values(array_filter(Catalog::categories(), static fn (array $c): bool => (int) $c['product_count'] > 0)),
             'steelbooks' => Catalog::steelbooks(4),
             'latest'     => Catalog::latest(8),
             'giftCards'  => Catalog::giftCards(4),
