@@ -30,21 +30,8 @@ $mode     = $isDigital ? 'digital' : (($kindById[(int) $curCat] ?? 'game') === '
 $specExample = implode("\n",\App\Modules\Admin\Hardware::specExample((string) ($slugById[(int) $curCat] ?? '')));
 $kindNames = ['game' => 'Games', 'hardware' => 'Hardware', 'digital' => 'Digital'];
 
-$curSeller = (string) Forms::val('seller_id', isset($p['seller_id']) && $p['seller_id'] !== null ? (string) $p['seller_id'] : ($isEdit ? '' : ($preselect ? (string) $preselect : '')));
-$curPrice  = Forms::val('seller_price', isset($p['seller_price']) ? (string) $p['seller_price'] : '');
-if ($isEdit && !old('_form') && $curSeller === '') {
-    $curPrice = (string) $p['price'];
-}
-
-// Initial server-side preview (JS keeps it live)
-$pct = 0.0;
-foreach ($sellers as $s) {
-    if ((string) $s['id'] === $curSeller) {
-        $pct = (float) $s['pct'];
-    }
-}
-$priceNum   = is_numeric(str_replace(',', '.', (string) $curPrice)) ? (float) str_replace(',', '.', (string) $curPrice) : 0.0;
-$previewBuy = $priceNum > 0 ? \App\Support\Pricing::buyerPrice($priceNum, $pct) : 0.0;
+$curPrice  = Forms::val('seller_price', isset($p['seller_price']) ? (string) $p['seller_price'] : (isset($p['price']) ? (string) $p['price'] : ''));
+$priceNum  = is_numeric(str_replace(',', '.', (string) $curPrice)) ? (float) str_replace(',', '.', (string) $curPrice) : 0.0;
 ?>
 <div class="page-head">
     <div>
@@ -53,10 +40,6 @@ $previewBuy = $priceNum > 0 ? \App\Support\Pricing::buyerPrice($priceNum, $pct) 
     </div>
     <div class="actions"><a class="btn btn-ghost" href="<?= e(url('/admin/products')) ?>">&larr; All products</a></div>
 </div>
-
-<?php if ($isEdit && $p['seller_id'] && (\App\Support\ContactFilter::containsContact((string) $p['title']) || \App\Support\ContactFilter::containsContact((string) ($p['description'] ?? '')))): ?>
-    <div class="alert alert-warn"><strong>Possible contact details in this seller listing.</strong> The title or description looks like it contains a phone number, link, email or social handle. Sellers must not take buyers off-platform: review and edit the text before approving.</div>
-<?php endif; ?>
 
 <?php if ($isEdit && $p['status'] === 'pending'): ?>
     <div class="alert alert-warn"><strong>Waiting for approval.</strong> <a href="<?= e(url('/admin/products/' . $p['id'] . '/review')) ?>">Open the review page</a> to check the condition, included items and photos before you approve it.</div>
@@ -157,31 +140,27 @@ $previewBuy = $priceNum > 0 ? \App\Support\Pricing::buyerPrice($priceNum, $pct) 
         </section>
 
         <div class="stack">
+            <?php $curCost = Forms::val('cost_price', isset($p['cost_price']) && $p['cost_price'] !== null ? (string) $p['cost_price'] : '');
+                  $costNum = is_numeric(str_replace(',', '.', (string) $curCost)) ? (float) str_replace(',', '.', (string) $curCost) : null;
+                  $profitNum = ($priceNum > 0 && $costNum !== null) ? $priceNum - $costNum : null;
+                  $marginNum = ($profitNum !== null && $priceNum > 0) ? $profitNum / $priceNum * 100 : null; ?>
             <section class="card">
-                <div class="card-head"><h2>Seller &amp; price</h2></div>
-                <div class="card-body form-grid one" data-price-preview data-default-pct="<?= e((string) $defaultPct) ?>">
+                <div class="card-head"><h2>Price &amp; cost</h2></div>
+                <div class="card-body form-grid two" data-price-preview>
                     <div class="field">
-                        <label for="seller_id">Seller</label>
-                        <select id="seller_id" name="seller_id" data-pp-seller <?= $isDigital ? 'disabled' : '' ?>>
-                            <option value="" data-pct="0" <?= $curSeller === '' ? 'selected' : '' ?>>House inventory (our own stock)</option>
-                            <?php foreach ($sellers as $s): ?>
-                                <option value="<?= (int) $s['id'] ?>" data-pct="<?= e((string) $s['pct']) ?>" <?= $curSeller === (string) $s['id'] ? 'selected' : '' ?>>
-                                    <?= e($s['code']) ?> &middot; <?= e($s['name']) ?> (<?= e(Forms::pct($s['pct'])) ?>)<?= $s['status'] !== 'active' ? ' [' . e($s['status']) . ']' : '' ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <small class="hint" data-digital-only <?= $isDigital ? '' : 'hidden' ?>>Digital items are house stock only.</small>
-                    <div class="field">
-                        <label for="seller_price"><span data-pp-label><?= $curSeller === '' ? 'Price the buyer pays ($) *' : 'Seller price ($) *' ?></span></label>
+                        <label for="seller_price">Price ($) *</label>
                         <input type="text" inputmode="decimal" id="seller_price" name="seller_price" value="<?= e($curPrice) ?>" required data-pp-price placeholder="10.00">
+                        <small class="hint">What the buyer pays.</small>
+                    </div>
+                    <div class="field">
+                        <label for="cost_price">Cost ($)</label>
+                        <input type="text" inputmode="decimal" id="cost_price" name="cost_price" value="<?= e($curCost) ?>" data-pp-cost placeholder="e.g. 6.00">
+                        <small class="hint">What you paid. Optional, admin-only, never shown on the website.</small>
                     </div>
                     <div class="preview" aria-live="polite">
-                        <div class="preview-row"><span>Buyer pays</span><strong data-pp-buyer><?= $priceNum > 0 ? e(money($previewBuy)) : '-' ?></strong></div>
-                        <div class="preview-row"><span>Seller receives</span><span data-pp-seller-gets><?= $priceNum > 0 ? e(money($curSeller === '' ? $previewBuy : $priceNum)) : '-' ?></span></div>
-                        <div class="preview-row"><span>Our commission <small data-pp-pct>(<?= e(Forms::pct($pct)) ?>)</small></span><span data-pp-commission><?= $priceNum > 0 ? e(money($curSeller === '' ? 0 : $previewBuy - $priceNum)) : '-' ?></span></div>
+                        <div class="preview-row"><span>Profit</span><strong data-pp-profit><?= $profitNum !== null ? e(money($profitNum)) : '-' ?></strong></div>
+                        <div class="preview-row"><span>Margin</span><span data-pp-margin><?= $marginNum !== null ? e(Forms::pct($marginNum)) : '-' ?></span></div>
                     </div>
-                    <small class="hint">Buyer price = seller price + commission, rounded up to the next $0.50. House stock has no commission; the price is rounded up to $0.50.</small>
                 </div>
             </section>
 

@@ -22,9 +22,12 @@ $app = new \App\Core\Application(BASE_PATH);
 
 require BASE_PATH . '/routes/web.php';
 require BASE_PATH . '/routes/admin.php';
-require BASE_PATH . '/routes/seller.php';
-require BASE_PATH . '/routes/account.php';
-require BASE_PATH . '/routes/account_listings.php';
 require BASE_PATH . '/routes/seo.php';
+// Marketplace features (customer accounts, store sellers, buy-back/trade-in/swap) are retired: a simple
+// catalogue now. These route files are left in place, unregistered, so the feature can come back by
+// uncommenting these three lines — nothing was deleted.
+// require BASE_PATH . '/routes/seller.php';
+// require BASE_PATH . '/routes/account.php';
+// require BASE_PATH . '/routes/account_listings.php';
 
 $app->run();

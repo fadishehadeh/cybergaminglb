@@ -171,7 +171,7 @@ final class CheckoutController extends Controller
                     $qty = max(1, (int) $qty);
                     // Catalog::gate(): a digital product is treated as non-existent while the master switch is off.
                     $p = $db->fetch(
-                        'SELECT p.id, p.title, p.price, p.seller_price, p.seller_id, p.is_digital FROM products p WHERE p.id = :id' . Catalog::gate(),
+                        'SELECT p.id, p.title, p.price, p.seller_price, p.cost_price, p.seller_id, p.is_digital FROM products p WHERE p.id = :id' . Catalog::gate(),
                         ['id' => $productId]
                     );
                     $taken = $p ? $db->execute(
@@ -241,11 +241,12 @@ final class CheckoutController extends Controller
                 );
                 foreach ($lines as [$p, $qty]) {
                     $db->execute(
-                        'INSERT INTO order_items (order_id, product_id, seller_id, title, qty, unit_price, seller_price, is_digital)
-                         VALUES (:order, :product, :seller, :title, :qty, :unit, :sp, :dig)',
+                        'INSERT INTO order_items (order_id, product_id, seller_id, title, qty, unit_price, seller_price, cost_price, is_digital)
+                         VALUES (:order, :product, :seller, :title, :qty, :unit, :sp, :cost, :dig)',
                         [
                             'order' => $orderId, 'product' => $p['id'], 'seller' => $p['seller_id'], 'title' => $p['title'],
-                            'qty' => $qty, 'unit' => $p['price'], 'sp' => $p['seller_price'], 'dig' => (int) $p['is_digital'] === 1 ? 1 : 0,
+                            'qty' => $qty, 'unit' => $p['price'], 'sp' => $p['seller_price'], 'cost' => $p['cost_price'],
+                            'dig' => (int) $p['is_digital'] === 1 ? 1 : 0,
                         ]
                     );
                 }

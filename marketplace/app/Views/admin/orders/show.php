@@ -15,7 +15,6 @@ $flow = $kind === 'digital' ? OrderController::FLOW_DIGITAL : OrderController::F
 $flowIdx = array_search($status, $flow, true);
 $next = $allowed && $allowed[0] !== 'cancelled' ? $allowed[0] : null;
 $skip = array_values(array_filter($allowed, static fn ($s) => $s !== 'cancelled' && $s !== $next));
-$hasSeller = $totals['seller'] > 0;
 $payStatus = (string) $order['payment_status'];          // not_required | awaiting | received
 $awaiting = $payStatus === 'awaiting';
 $paymentConfirmed = $unlocked;                            // the digital code may be released
@@ -156,7 +155,7 @@ $nextLabel = static function (string $st): string {
     <div class="card-body">
         <?php if ($cancelled): ?>
             <div class="stepper stepper-cancelled"><div class="step done"><i>&times;</i><span>Cancelled</span></div></div>
-            <p class="muted">This order was cancelled. Stock was returned to the shop and any pending seller payouts were removed.<?= $refunded ? ' ' . e(money($order['credit_used'])) . ' credit was refunded to the customer wallet.' : '' ?></p>
+            <p class="muted">This order was cancelled. Stock was returned to the shop.<?= $refunded ? ' ' . e(money($order['credit_used'])) . ' credit was refunded to the customer wallet.' : '' ?></p>
             <?php if ($payStatus === 'received'): ?>
                 <div class="alert alert-warn alert-inline"><strong>Refund the customer's payment manually via OMT/Whish:</strong> <?= e(money($paidOnline)) ?> was received for this order and nothing is refunded automatically.</div>
             <?php endif; ?>
@@ -176,9 +175,7 @@ $nextLabel = static function (string $st): string {
                     if ($next === 'confirmed' && $awaiting) {
                         $nextConfirm = 'Confirm that you have contacted the customer. The order still cannot be picked up or delivered until the payment is marked as received.';
                     } elseif ($hasDigital && $next === 'delivered') {
-                        $nextConfirm = 'Mark as delivered? Do this after the code has been sent on WhatsApp.' . ($hasSeller ? ' This also queues the seller payouts.' : '');
-                    } elseif ($next === 'delivered' && $hasSeller) {
-                        $nextConfirm = 'Mark as delivered? This queues the seller payouts.';
+                        $nextConfirm = 'Mark as delivered? Do this after the code has been sent on WhatsApp.';
                     }
                     ?>
                     <form method="post" action="<?= e(url('/admin/orders/' . $order['id'] . '/status')) ?>" class="inline-form" <?= $nextConfirm !== '' ? 'data-confirm="' . e($nextConfirm) . '"' : '' ?>>
@@ -192,13 +189,13 @@ $nextLabel = static function (string $st): string {
                         <button class="btn" type="submit">Skip to <?= e(strtolower(Forms::label($st))) ?></button>
                     </form>
                 <?php endforeach; ?>
-                <form method="post" action="<?= e(url('/admin/orders/' . $order['id'] . '/status')) ?>" class="inline-form push-right" data-confirm="Cancel order <?= e($order['code']) ?>?<?= $kind === 'digital' ? ' Digital stock is managed by hand and is not changed.' : ' Items go back into stock and pending seller payouts are removed.' ?><?= (float) $order['credit_used'] > 0 && $order['user_id'] ? ' ' . e(money($order['credit_used'])) . ' credit is refunded to the customer.' : '' ?><?= $hasDigital && $paymentConfirmed ? ' If a code was already sent on WhatsApp, cancelling does not take it back.' : '' ?><?= $payStatus === 'received' ? ' The customer\'s ' . e(money($paidOnline)) . ' payment was received: you must refund it manually via OMT/Whish.' : '' ?>">
+                <form method="post" action="<?= e(url('/admin/orders/' . $order['id'] . '/status')) ?>" class="inline-form push-right" data-confirm="Cancel order <?= e($order['code']) ?>?<?= $kind === 'digital' ? ' Digital stock is managed by hand and is not changed.' : ' Items go back into stock.' ?><?= (float) $order['credit_used'] > 0 && $order['user_id'] ? ' ' . e(money($order['credit_used'])) . ' credit is refunded to the customer.' : '' ?><?= $hasDigital && $paymentConfirmed ? ' If a code was already sent on WhatsApp, cancelling does not take it back.' : '' ?><?= $payStatus === 'received' ? ' The customer\'s ' . e(money($paidOnline)) . ' payment was received: you must refund it manually via OMT/Whish.' : '' ?>">
                     <?= csrf_field() ?><input type="hidden" name="status" value="cancelled">
                     <button class="btn btn-danger" type="submit">Cancel order</button>
                 </form>
             </div>
         <?php elseif (!$cancelled): ?>
-            <p class="muted">Delivered.<?= $hasSeller ? ' Seller payouts have been queued on the <a href="' . e(url('/admin/payouts')) . '">Payouts</a> page.' : '' ?><?= $hasDigital ? ' Digital sales are final once delivered.' : '' ?></p>
+            <p class="muted">Delivered.<?= $hasDigital ? ' Digital sales are final once delivered.' : '' ?></p>
         <?php endif; ?>
     </div>
 </section>
@@ -227,9 +224,6 @@ $nextLabel = static function (string $st): string {
             <dt>Paid with credit</dt><dd><?= (float) $order['credit_used'] > 0 ? '&minus;' . e(money($order['credit_used'])) . ($refunded ? ' <small class="muted">(refunded)</small>' : '') : '<span class="muted">$0</span>' ?></dd>
             <dt>Cash to collect</dt><dd><?php if ($cancelled): ?><strong class="big cash-due">-</strong><?php elseif ($allPrepaid): ?><strong class="big">PREPAID</strong><br><small class="muted">nothing to collect at the door</small><?php else: ?><strong class="big cash-due"><?= e(money($cashDue)) ?></strong><?php endif; ?></dd>
             <?php if ($hasDigital || $allPrepaid): ?><dt>Prepaid (OMT/Whish)</dt><dd><strong><?= $cancelled ? '-' : e(money($split['prepaid'])) ?></strong></dd><?php endif; ?>
-            <dt>Owed to sellers</dt><dd><?= e(money($totals['seller'])) ?></dd>
-            <dt>Our commission</dt><dd class="text-good"><strong><?= e(money($totals['commission'])) ?></strong></dd>
-            <dt>House stock revenue</dt><dd><?= e(money($totals['house'])) ?></dd>
             <?php if (abs($totals['buyer'] - (float) $order['total']) > 0.009): ?>
                 <dt class="text-warn">Lines add up to</dt><dd class="text-warn"><?= e(money($totals['buyer'])) ?> (differs from the items subtotal)</dd>
             <?php endif; ?>
@@ -238,30 +232,16 @@ $nextLabel = static function (string $st): string {
 </div>
 
 <section class="card">
-    <div class="card-head"><h2>Items</h2><small class="muted">Seller details are visible to admins only</small></div>
+    <div class="card-head"><h2>Items</h2></div>
     <div class="table-wrap">
         <table class="data">
-            <thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Buyer price</th><th class="num">Seller price</th><th class="num">Commission</th><th>Seller (arrange pickup)</th><th>Payout</th></tr></thead>
+            <thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Buyer price</th></tr></thead>
             <tbody>
             <?php foreach ($items as $it): ?>
                 <tr>
                     <td><?= $it['product_id'] ? '<a href="' . e(url('/admin/products/' . $it['product_id'] . '/edit')) . '">' . e($it['title']) . '</a>' : e($it['title']) . ' <small class="muted">(deleted)</small>' ?><?= (int) $it['is_digital'] === 1 ? ' <span class="tag tag-digital">Digital</span>' : '' ?></td>
                     <td class="num"><?= (int) $it['qty'] ?></td>
                     <td class="num"><?= e(money($it['unit_price'])) ?><?= (int) $it['qty'] > 1 ? '<br><small class="muted">= ' . e(money($it['unit_price'] * $it['qty'])) . '</small>' : '' ?></td>
-                    <?php if ($it['seller_id']): ?>
-                        <td class="num"><?= e(money($it['seller_price'])) ?><?= (int) $it['qty'] > 1 ? '<br><small class="muted">= ' . e(money($it['seller_price'] * $it['qty'])) . '</small>' : '' ?></td>
-                        <td class="num"><?= e(money(($it['unit_price'] - $it['seller_price']) * $it['qty'])) ?></td>
-                        <td>
-                            <a href="<?= e(url('/admin/sellers/' . $it['seller_id'])) ?>"><strong><?= e($it['seller_code']) ?></strong></a> &middot; <?= e($it['seller_name']) ?><br>
-                            <small class="muted"><?= e($it['seller_area'] ?? '-') ?></small>
-                            <?php $waS = Forms::waLink($it['seller_phone'], 'Hi ' . $it['seller_name'] . ', your item "' . $it['title'] . '" was sold on ' . $siteName . '. When can we pick it up?'); ?>
-                            <?php if ($waS): ?><br><a href="<?= e($waS) ?>" target="_blank" rel="noopener"><?= e($it['seller_phone']) ?></a><?php elseif ($it['seller_phone']): ?><br><?= e($it['seller_phone']) ?><?php endif; ?>
-                        </td>
-                        <td><?= $it['payout_status'] ? Forms::pill($it['payout_status']) : '<span class="muted">not yet</span>' ?></td>
-                    <?php else: ?>
-                        <td class="num muted">-</td><td class="num muted">-</td>
-                        <td><span class="tag">House stock</span><?= (int) $it['is_digital'] === 1 ? ' <small class="muted">prepaid, no pickup</small>' : '' ?></td><td class="muted">-</td>
-                    <?php endif; ?>
                 </tr>
             <?php endforeach; ?>
             </tbody>

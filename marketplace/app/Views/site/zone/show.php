@@ -25,18 +25,18 @@ echo Seo::quickAnswerHtml('zone', ['zone' => $z]);
         <dl class="zone-facts">
             <div><dt>Delivery fee</dt><dd><?= e($fee) ?><?= $free > 0 ? ' (free over ' . e(money($free)) . ')' : '' ?></dd></div>
             <div><dt>Type of delivery</dt><dd><?= $isLocal ? 'Local: our own courier' : 'Remote: third-party courier' ?></dd></div>
-            <div><dt>How you pay</dt><dd><?php if ($isLocal): ?>Cash on delivery, store credit, OMT or Whish<?php else: ?><?= $prepay ? 'Prepay by OMT or Whish, or use store credit' . ($after > 0 ? '; cash on delivery after ' . (int) $after . ' delivered orders' : '') : 'Cash on delivery, store credit, OMT or Whish' ?><?php endif; ?></dd></div>
+            <div><dt>How you pay</dt><dd><?php if ($isLocal): ?>Cash on delivery, OMT or Whish<?php else: ?><?= $prepay ? 'Prepay by OMT or Whish' . ($after > 0 ? '; cash on delivery after ' . (int) $after . ' delivered orders' : '') : 'Cash on delivery, OMT or Whish' ?><?php endif; ?></dd></div>
             <div><dt>Inspection</dt><dd><?= $isLocal ? 'At the door, before you pay' : 'At our hub, with photos, before we seal it' ?></dd></div>
             <div><dt>Timing</dt><dd>Handed to the courier within a day of confirmation, arrives in 1 to 3 days</dd></div>
         </dl>
 
         <h2>How delivery works in <?= e($short) ?></h2>
         <?php if ($isLocal): ?>
-            <p><?= e($short) ?> is one of our local areas, so our own courier delivers your order for a flat <?= e($fee) ?>. Because the courier works for us, you can look the item over at the door and pay cash on delivery once you are happy with it. If you would rather pay in another way, store credit, OMT and Whish all work too.</p>
+            <p><?= e($short) ?> is one of our local areas, so our own courier delivers your order for a flat <?= e($fee) ?>. Because the courier works for us, you can look the item over at the door and pay cash on delivery once you are happy with it. OMT and Whish also work.</p>
             <ol class="steps steps-vertical">
                 <li><span class="step-num">1</span><div><h3>Order on the site</h3><p>Add items to your cart, choose <?= e($z['name']) ?> as your area and see the exact fee before you order.</p></div></li>
                 <li><span class="step-num">2</span><div><h3>We confirm on WhatsApp</h3><p>A person checks availability with you and agrees a delivery time.</p></div></li>
-                <li><span class="step-num">3</span><div><h3>Our courier delivers</h3><p>You inspect the item at the door and pay cash on delivery, or the balance after any store credit.</p></div></li>
+                <li><span class="step-num">3</span><div><h3>Our courier delivers</h3><p>You inspect the item at the door and pay cash on delivery.</p></div></li>
             </ol>
         <?php else: ?>
             <p><?= e($short) ?> is one of our remote areas, so a third-party courier delivers your order for a flat <?= e($fee) ?>. That courier cannot inspect anything for you, so we inspect, photograph and seal your order at our hub before it ships<?= $prepay ? ', and you pay in advance by OMT or Whish' : '' ?>.</p>
@@ -47,13 +47,7 @@ echo Seo::quickAnswerHtml('zone', ['zone' => $z]);
             </ol>
         <?php endif; ?>
 
-        <h2>Selling games from <?= e($short) ?></h2>
-        <?php if ($isLocal): ?>
-            <p>You can sell or trade in games from <?= e($short) ?> in two ways. Bring them to our hub yourself, which is free. Or ask for a pickup: our own courier collects them in <?= e($short) ?> and checks them on the spot, and a <?= e($pickup) ?> pickup fee is deducted from your payout, so you never pay it separately. If the courier declines an item there is no return trip and no fee.</p>
-        <?php else: ?>
-            <p>You can sell or trade in games from <?= e($short) ?> by courier. A third-party courier brings them to our hub, we inspect them on arrival, and a <?= e($pickup) ?> pickup fee is deducted from your payout, so you never pay it separately.<?= $minSell > 0 ? ' A courier shipment from a remote area must be worth at least ' . e(money($minSell)) . '; bringing games to our hub yourself has no minimum.' : '' ?></p>
-        <?php endif; ?>
-        <p><a class="btn btn-primary" href="<?= e(url('/sell')) ?>">Get an instant sell quote</a> <a class="btn btn-ghost" href="<?= e(url('/trade')) ?>">Trade in for credit</a></p>
+        <p><a class="btn btn-primary" href="<?= e(url('/shop')) ?>">Shop games and gear</a></p>
     </article>
 
     <?php if ($products): ?>

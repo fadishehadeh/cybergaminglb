@@ -80,10 +80,10 @@ final class Seo
             'url'         => url('/'),
             'logo'        => ['@type' => 'ImageObject', 'url' => self::logoUrl()],
             'image'       => self::defaultImage(),
-            'description' => 'Online marketplace in Lebanon to buy, sell, trade and swap used and new video games and gaming gear. Every item is inspected before delivery, and buyers and sellers stay anonymous.',
+            'description' => 'Online shop in Lebanon selling used and new video games and gaming gear. Every item is inspected before delivery.',
             'areaServed'  => $area,
             'currenciesAccepted' => 'USD',
-            'paymentAccepted'    => 'Cash on delivery, store credit, OMT, Whish',
+            'paymentAccepted'    => 'Cash on delivery, OMT, Whish',
             'knowsLanguage'      => 'en',
         ];
         $price = trim((string) setting('biz_price_range', ''));
@@ -508,9 +508,6 @@ final class Seo
      */
     public static function quickAnswer(string $kind, array $ctx = []): string
     {
-        $buy = self::pct(setting('buyback_pct', 45));
-        $trade = self::pct(setting('tradein_pct', 50));
-        $pickup = money(Rules::pickupFee());
         $fee = money(SeoCatalog::cheapestFee());
         $local = Rules::nameList(Rules::names('local'));
         switch ($kind) {
@@ -519,42 +516,30 @@ final class Seo
                 $stock = $stats['items'] > 0
                     ? 'We have ' . $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', and we deliver across Lebanon from ' . $fee . '.'
                     : 'We deliver across Lebanon from ' . $fee . '.';
-                return "CyberGaming Lebanon is an online marketplace to buy, sell, trade and swap used and new video games and gaming gear. $stock "
-                    . "You can sell games for $buy of their shop price in cash or $trade as store credit, and every item is inspected before delivery.";
-            case 'sell':
-                return "You can sell used PS4, PS5, Switch and Xbox games to CyberGaming for cash or store credit. Add your games on this page for an instant quote: cash pays $buy of our shop price and credit pays $trade, adjusted for condition. "
-                    . "We inspect every game in person, and you can hand them over at our hub for free or choose a courier pickup for a $pickup fee.";
-            case 'trade':
-                return "You can trade in used games for CyberGaming store credit worth $trade of our shop price, then spend it on any game, steelbook or accessory in stock. List what you have and what you want in the calculator to see your balance instantly. "
-                    . "We inspect your games, you accept our offer, and you pay only the difference. One credit is always worth one US dollar.";
-            case 'swap':
-                return 'The CyberGaming swap board lets you trade a game you own for a game you want with another player in Lebanon, without sharing your name or phone number. '
-                    . 'Both games come to our hub, we inspect them and hand each player the game they wanted. A swap costs a flat ' . money((float) setting('swap_fee', 3)) . ' per side, charged only when the swap completes.';
-            case 'credit':
-                return "CyberGaming store credit is money in your wallet that you can spend in the shop: 1 credit is always worth 1 US dollar and it never expires. You earn it by selling us games, where credit pays $trade of the shop price against $buy in cash. "
-                    . 'Apply it at checkout and pay any remaining amount on delivery, or by OMT or Whish.';
+                return "CyberGaming Lebanon is an online shop selling used and new video games and gaming gear. $stock "
+                    . 'Checkout is guest-only, no account needed, and every item is inspected before delivery.';
             case 'delivery':
                 return "CyberGaming delivers across Lebanon. Local areas ($local) get our own courier for " . Rules::feeRange('local') . ', with cash on delivery and inspection at the door. '
                     . 'Other areas get a third-party courier for ' . (Rules::feeRange('remote') ?: $fee) . ', and you pay in advance by OMT or Whish because that courier cannot inspect the item. You can also collect your order at our pickup point.';
             case 'how':
-                return 'CyberGaming is a marketplace where our store sits between buyers and sellers. To buy, you order online and we confirm on WhatsApp before we deliver. To sell, you get an instant quote, hand over your games and receive cash or store credit. '
-                    . 'We inspect every item, and we never share buyer or seller identities.';
+                return 'Buying from CyberGaming is simple: browse the shop, add items to your cart and check out as a guest with your name, phone and delivery area. '
+                    . 'A person confirms your order on WhatsApp, every item is inspected before it ships, and you pay cash on delivery, OMT or Whish.';
             case 'about':
-                return 'CyberGaming Lebanon is a Lebanese marketplace for used and new games and gaming gear. We buy games from players, inspect every item and resell it in US dollars with delivery across Lebanon. '
-                    . 'You can pay with store credit, cash on delivery, OMT or Whish, and we keep buyer and seller identities private. A person confirms every order on WhatsApp.';
+                return 'CyberGaming Lebanon is a Lebanese shop for used and new games and gaming gear. Every item is inspected before sale and priced in US dollars, with delivery across Lebanon. '
+                    . 'You can pay by cash on delivery, OMT or Whish, and a person confirms every order on WhatsApp.';
             case 'contact':
-                return 'The fastest way to contact CyberGaming Lebanon is WhatsApp, and we usually reply within a few hours. You can ask about an item, an order, selling, trading or swapping games. '
+                return 'The fastest way to contact CyberGaming Lebanon is WhatsApp, and we usually reply within a few hours. You can ask about an item or an order. '
                     . 'We share the pickup point details on WhatsApp when we confirm your order, and we never take card details on the site.';
             case 'guides':
-                return 'CyberGaming guides are short, practical articles on buying, selling, trading and checking used games and gaming gear in Lebanon. Each one follows our own process, so fees, delivery areas and store credit rules always match the shop. '
-                    . 'Start with how to sell used PS4 games, how to check a used console, or how delivery works in your area.';
+                return 'CyberGaming guides are short, practical articles on buying and checking used games and gaming gear in Lebanon. Each one matches our own shop, so prices, delivery areas and payment rules are always current. '
+                    . 'Start with how to check a used console, or how delivery works in your area.';
             case 'listing':
                 $n = (int) ($ctx['n'] ?? 0);
                 $what = (string) ($ctx['what'] ?? 'items');
                 $range = isset($ctx['min'], $ctx['max']) && $ctx['min'] !== null && $ctx['max'] !== null
                     ? ($ctx['min'] === $ctx['max'] ? ', at ' . money($ctx['min']) : ', priced from ' . money($ctx['min']) . ' to ' . money($ctx['max'])) : '';
                 return "CyberGaming Lebanon has $n $what in stock$range. Every item is inspected before sale, and prices are in US dollars. "
-                    . "We deliver across Lebanon from $fee: local areas pay cash on delivery to our own courier, and other areas pay in advance by OMT or Whish. You can also pay with store credit earned by selling us games.";
+                    . "We deliver across Lebanon from $fee: local areas pay cash on delivery to our own courier, and other areas pay in advance by OMT or Whish.";
             case 'zone':
                 $z = $ctx['zone'];
                 $isLocal = $z['mode'] === 'local';

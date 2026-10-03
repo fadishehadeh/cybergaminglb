@@ -29,37 +29,27 @@
         return /^\d+(\.\d{1,2})?$/.test(clean) ? parseFloat(clean) : NaN;
     }
 
-    /* Live "buyer pays X (commission Y)" preview on the product form. */
+    /* Live "profit = price - cost" preview on the product form. */
     var box = document.querySelector('[data-price-preview]');
     if (box) {
-        var seller = box.querySelector('[data-pp-seller]');
         var priceInput = box.querySelector('[data-pp-price]');
-        var outBuyer = box.querySelector('[data-pp-buyer]');
-        var outSeller = box.querySelector('[data-pp-seller-gets]');
-        var outCommission = box.querySelector('[data-pp-commission]');
-        var outPct = box.querySelector('[data-pp-pct]');
-        var label = box.querySelector('[data-pp-label]');
+        var costInput = box.querySelector('[data-pp-cost]');
+        var outProfit = box.querySelector('[data-pp-profit]');
+        var outMargin = box.querySelector('[data-pp-margin]');
 
         var update = function () {
-            var option = seller.options[seller.selectedIndex];
-            var isHouse = seller.value === '';
-            var pct = isHouse ? 0 : parseFloat(option.getAttribute('data-pct')) || 0;
             var price = parseAmount(priceInput.value);
-
-            label.textContent = isHouse ? 'Price the buyer pays ($) *' : 'Seller price ($) *';
-            outPct.textContent = '(' + pctText(pct) + ')';
-
-            if (isNaN(price) || price <= 0) {
-                outBuyer.textContent = outSeller.textContent = outCommission.textContent = '-';
+            var cost = parseAmount(costInput.value);
+            if (isNaN(price) || price <= 0 || isNaN(cost)) {
+                outProfit.textContent = outMargin.textContent = '-';
                 return;
             }
-            var buyer = buyerPrice(price, pct);
-            outBuyer.textContent = money(buyer);
-            outSeller.textContent = money(isHouse ? buyer : price);
-            outCommission.textContent = money(isHouse ? 0 : Math.round((buyer - price) * 100) / 100);
+            var profit = Math.round((price - cost) * 100) / 100;
+            outProfit.textContent = money(profit);
+            outMargin.textContent = pctText(price > 0 ? (profit / price * 100) : 0);
         };
-        seller.addEventListener('change', update);
         priceInput.addEventListener('input', update);
+        costInput.addEventListener('input', update);
         update();
     }
 

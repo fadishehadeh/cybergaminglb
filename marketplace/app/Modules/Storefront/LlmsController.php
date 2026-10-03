@@ -46,11 +46,11 @@ final class LlmsController extends Controller
 
         $L[] = '# ' . $name;
         $L[] = '';
-        $L[] = '> ' . $name . ' (' . url('/') . ') is an online marketplace in Lebanon where people buy, sell, trade and swap used and new video games and gaming gear, mainly PlayStation 4 games, consoles, controllers and PC gaming peripherals. '
-            . 'Prices are in US dollars, every item is inspected before delivery, we deliver across Lebanon from ' . $fee . ', and the identities of buyers and sellers are never shared.';
+        $L[] = '> ' . $name . ' (' . url('/') . ') is an online shop in Lebanon selling used and new video games and gaming gear: mainly PlayStation 4 games, consoles, controllers and PC gaming peripherals (keyboards, mice, mousepads). '
+            . 'Prices are in US dollars, every item is inspected before delivery, and we deliver across Lebanon from ' . $fee . '.';
         $L[] = '';
-        $L[] = 'Key facts: currency USD; language English; country Lebanon; payment by cash on delivery in local areas, OMT or Whish, and store credit (1 credit = 1 USD, never expires); '
-            . ($items > 0 ? $items . ' items in stock at the time of writing; ' : '') . 'buyers and sellers stay anonymous; every order is confirmed by a person on WhatsApp.';
+        $L[] = 'Key facts: currency USD; language English; country Lebanon; payment by cash on delivery in local areas, or by OMT or Whish in remote areas; '
+            . ($items > 0 ? $items . ' items in stock at the time of writing; ' : '') . 'checkout is guest-only, no account or registration needed; every order is confirmed by a person on WhatsApp.';
         $L[] = '';
 
         // ---- Shop
@@ -76,13 +76,8 @@ final class LlmsController extends Controller
 
         // ---- How it works
         $L[] = '## How it works';
-        $L[] = $link('How it works', '/how-it-works', 'buying, selling, store credit and how buyers and sellers stay anonymous');
-        $L[] = $link('Sell your games', '/sell', 'instant quote: cash ' . self::pct('buyback_pct', 45) . ' or store credit ' . self::pct('tradein_pct', 50) . ' of the shop price');
-        $L[] = $link('Trade in for credit', '/trade', 'trade-in calculator: games in, shop items out');
-        $L[] = $link('Swap board', '/swap', 'swap a game with another player, flat ' . money((float) setting('swap_fee', 3)) . ' fee per side');
-        $L[] = $link('Store credit', '/credit', '1 credit = 1 USD, no expiry, earned by selling games');
+        $L[] = $link('How it works', '/how-it-works', 'browse, add to cart, guest checkout, WhatsApp confirmation, delivery');
         $L[] = $link('Delivery and payment', '/delivery-and-payment', 'fees by area, cash on delivery, OMT, Whish');
-        $L[] = $link('Sell on CyberGaming (stores)', '/seller/apply', 'shops and members can list products');
         $L[] = '';
 
         // ---- Delivery areas
@@ -109,8 +104,6 @@ final class LlmsController extends Controller
         // ---- Policies
         $L[] = '## Policies';
         $L[] = $link('Delivery and payment policy', '/delivery-and-payment', 'delivery fees, local and remote rules, payment methods');
-        $L[] = $link('Privacy and anonymity', '/how-it-works#anonymous', 'buyers and sellers are never shown each other\'s names, phone numbers or addresses');
-        $L[] = $link('Store credit rules', '/credit', 'earning, spending, fees');
         $L[] = $link('About', '/about');
         $L[] = '';
 
@@ -206,41 +199,19 @@ final class LlmsController extends Controller
     /** @return array<int,array{0:string,1:string}> long-form answers, numbers from settings */
     private function answers(): array
     {
-        $buy = self::pct('buyback_pct', 45);
-        $trade = self::pct('tradein_pct', 50);
-        $pickup = money(Rules::pickupFee());
-        $ret = money(Rules::returnFee());
-        $min = Rules::minSell();
-        $days = Rules::holdDays();
-        $local = Rules::nameList(Rules::names('local'));
         $policies = FeedController::policies();
-        $commission = self::pct('member_commission_pct', 10);
+        $local = Rules::nameList(Rules::names('local'));
 
         return [
             ['How do I buy from ' . Seo::storeName() . '?',
-                'Browse the shop, add items to your cart and check out with your name, phone number and delivery area. Guests are welcome and a free account is optional. No card details are ever taken on the site. '
+                'Browse the shop, add items to your cart and check out with your name, phone number and delivery area. No account or registration is needed, and no card details are ever taken on the site. '
                 . 'A person then confirms your order on WhatsApp, and we deliver or you collect it at our pickup point. Every item is inspected before delivery.'],
-            ['How do I sell my used games?',
-                'Open the sell page, enter each game with its platform, title and condition, and you get an instant quote in cash (' . $buy . ' of our shop price) and in store credit (' . $trade . ' of our shop price), adjusted for condition. '
-                . 'Create a free account, send your request and we reply with an offer. After you accept, hand the games over (bring them to our hub for free, or use a courier pickup for a ' . $pickup . ' fee that is deducted from your payout). We inspect them and pay you in cash or credit.'],
-            ['How does a trade-in work?',
-                'A trade-in pays ' . $trade . ' of the shop price as store credit. In the trade-in calculator you list the games you have and the shop items you want, and it shows your balance: what you pay, or the credit you keep. Nothing moves until you accept our offer after inspection.'],
-            ['How do swaps work?',
-                'List the game you have and the game you want on the swap board. When there is a match, both players bring their game to our hub, we inspect both, and each player receives the game they wanted. A swap costs a flat ' . money((float) setting('swap_fee', 3))
-                . ' per side. Listings show only the platform, the games, a swapper number and a delivery zone.'],
             ['What are the delivery zones and fees?', $policies['delivery'] . ' Each area has its own page, linked in the Delivery areas section of this file.'],
             ['How can I pay?', $policies['payment']],
             ['How does inspection and condition grading work?',
                 'Every item is inspected by our team before it is listed and again before delivery. Used games are graded: Like New (opened but looks untouched: flawless disc, crisp case and artwork, all inserts), Good (normal signs of play: light disc marks that do not affect play, case may show light wear) and Fair (heavier wear: visible scratches, scuffed or cracked case, a missing insert, but the disc still plays). New items are sealed. '
                 . 'Local couriers can let you check the item at the door. Remote orders are photographed and sealed at our hub.'],
-            ['What is store credit?',
-                'Store credit is money in a customer\'s CyberGaming wallet that can be spent in the shop. 1 credit is always worth 1 US dollar and it never expires. It is earned by selling or trading in games, and applied at checkout. Any amount it does not cover is paid on delivery in local areas, or first by OMT or Whish in remote areas. '
-                . 'There is no fee for earning or spending credit. Members who sell games to other customers pay a ' . $commission . ' commission.'],
-            ['What happens if a game I sell is rejected on inspection?',
-                'You choose: accept a revised (lower) offer if one is possible, have the game sent back and pay the ' . $ret . ' return fee in cash to the courier on delivery, or let us recycle it for free. We hold the game for ' . $days . ' days for your answer. '
-                . ($min > 0 ? 'Courier shipments from remote areas must be worth at least ' . money($min) . '; bringing games to our hub yourself has no minimum. ' : '')
-                . 'In local areas our courier checks the games on the spot, so a declined item has no return trip and no fee.'],
-            ['Are buyers and sellers anonymous?', $policies['privacy'] . ' There are no public profiles and no messaging between members: every trade goes through CyberGaming. Contact details are blocked in public listings.'],
+            ['Does ' . Seo::storeName() . ' buy, trade or swap games?', 'No. ' . Seo::storeName() . ' is a straightforward shop: we sell our own stock of used and new games and gaming gear. We do not buy games from the public, take trade-ins, or run a swap board.'],
             ['Where does ' . Seo::storeName() . ' operate?', 'The store operates online across Lebanon. Local delivery areas are ' . $local . '; the rest of Lebanon is served by a third-party courier. The exact pickup point is shared on WhatsApp when an order is confirmed.'],
         ];
     }

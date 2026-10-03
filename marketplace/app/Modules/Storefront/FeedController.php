@@ -22,7 +22,7 @@ final class FeedController extends Controller
             . '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">' . "\n<channel>\n"
             . '<title>' . self::x(Seo::storeName()) . '</title>' . "\n"
             . '<link>' . self::x(url('/')) . '</link>' . "\n"
-            . '<description>' . self::x((string) setting('tagline', 'Buy, sell & trade games and gaming gear in Lebanon')) . '</description>' . "\n";
+            . '<description>' . self::x((string) setting('tagline', 'Buy games and gaming gear in Lebanon')) . '</description>' . "\n";
 
         foreach ($rows as $p) {
             $cover = (string) ($p['image'] ?? '');
@@ -116,7 +116,7 @@ final class FeedController extends Controller
                 'country'     => 'LB',
                 'currency'    => 'USD',
                 'language'    => 'en',
-                'description' => 'Online marketplace in Lebanon to buy, sell, trade and swap used and new video games and gaming gear. Every item is inspected before delivery.',
+                'description' => 'Online shop in Lebanon selling used and new video games and gaming gear. Every item is inspected before delivery.',
                 'policies'    => self::policies(),
                 'links'       => [
                     'sitemap'  => url('/sitemap.xml'),
@@ -143,12 +143,11 @@ final class FeedController extends Controller
             'delivery'   => 'Delivery across Lebanon with a flat fee per area. Local areas (' . $local . ') are served by our own courier for ' . Rules::feeRange('local')
                 . '. Remote areas (' . ($remote !== '' ? $remote : 'everywhere else') . ') are served by a third-party courier for ' . (Rules::feeRange('remote') ?: money(SeoCatalog::cheapestFee()))
                 . '. Pickup at our hub is also possible.',
-            'payment'    => 'Prices are in US dollars. Local areas: cash on delivery, store credit, OMT or Whish. Remote areas: '
+            'payment'    => 'Prices are in US dollars. Local areas: cash on delivery, OMT or Whish. Remote areas: '
                 . ($prepay ? 'prepayment by OMT or Whish' . ($after > 0 ? ' (cash on delivery unlocks after ' . $after . ' delivered orders)' : '') : 'cash on delivery, OMT or Whish')
-                . '. Store credit (1 credit = 1 USD, no expiry) can be applied at checkout. No card payments are taken on the site.',
+                . '. No card payments are taken on the site.',
             'inspection' => 'Every item is inspected before it is listed and before it is delivered. Used items carry a condition grade (Like New, Good, Fair). Remote orders are photographed and sealed at our hub because the courier cannot inspect.',
             'returns'    => 'If an item is not as described, contact us on WhatsApp straight away and we will make it right. In local areas the courier lets you check the item at the door.',
-            'privacy'    => 'Buyers and sellers never see each other and their names, phone numbers and addresses are never shared. Only an anonymous ID is ever visible.',
         ];
     }
 

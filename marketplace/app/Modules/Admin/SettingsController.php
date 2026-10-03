@@ -47,7 +47,12 @@ final class SettingsController extends AdminController
         $errors = [];
         $in     = [];
 
+        // Commission, buy-back and condition-factor settings belong to the retired marketplace feature (no
+        // longer shown in the form). Keep their stored values untouched unless something still posts them.
         foreach (['commission_pct' => 'Commission', 'member_commission_pct' => 'Member commission', 'buyback_pct' => 'Buy-back', 'tradein_pct' => 'Trade-in credit'] as $key => $label) {
+            if ($request->input($key) === null) {
+                continue;
+            }
             $v = Forms::decimal($request->input($key));
             if ($v === null || $v > 100) {
                 $errors[] = $label . ' % must be a number between 0 and 100.';
@@ -57,6 +62,9 @@ final class SettingsController extends AdminController
         }
 
         foreach (self::FACTORS as $key => [$label]) {
+            if ($request->input($key) === null) {
+                continue;
+            }
             $v = Forms::decimal($request->input($key));
             if ($v === null || $v > 100) {
                 $errors[] = 'Buy-back factor for "' . $label . '" must be a number between 0 and 100.';
@@ -89,7 +97,12 @@ final class SettingsController extends AdminController
         }
         $in['remote_cod_after_orders'] = (string) $codAfter;
 
+        // Pickup fee, return fee, minimum shipment and the decision deadline only apply to the retired
+        // sell-to-us flow. Keep them untouched unless something still posts them.
         foreach (['remote_min_sell_value' => 'Minimum shipment value (outside the local area)', 'pickup_fee' => 'Pickup fee', 'return_fee' => 'Return fee'] as $key => $label) {
+            if ($request->input($key) === null) {
+                continue;
+            }
             $v = Forms::decimal($request->input($key));
             if ($v === null || $v > 9999.99) {
                 $errors[] = $label . ' must be an amount of 0 or more' . ($key === 'remote_min_sell_value' ? ' (0 = no minimum).' : '.');
@@ -98,19 +111,23 @@ final class SettingsController extends AdminController
             $in[$key] = $v;
         }
 
-        $holdDays = Forms::int($request->input('reject_hold_days'));
-        if ($holdDays === null || $holdDays < 1 || $holdDays > 365) {
-            $errors[] = 'Days to wait for a decision on a rejected item must be a whole number from 1 to 365.';
-            $holdDays = 14;
+        if ($request->input('reject_hold_days') !== null) {
+            $holdDays = Forms::int($request->input('reject_hold_days'));
+            if ($holdDays === null || $holdDays < 1 || $holdDays > 365) {
+                $errors[] = 'Days to wait for a decision on a rejected item must be a whole number from 1 to 365.';
+                $holdDays = 14;
+            }
+            $in['reject_hold_days'] = (string) $holdDays;
         }
-        $in['reject_hold_days'] = (string) $holdDays;
 
-        $fee = Forms::decimal($request->input('swap_fee'));
-        if ($fee === null) {
-            $errors[] = 'Swap fee must be an amount of 0 or more.';
-            $fee = 0.0;
+        if ($request->input('swap_fee') !== null) {
+            $fee = Forms::decimal($request->input('swap_fee'));
+            if ($fee === null) {
+                $errors[] = 'Swap fee must be an amount of 0 or more.';
+                $fee = 0.0;
+            }
+            $in['swap_fee'] = $fee;
         }
-        $in['swap_fee'] = $fee;
 
         $wa = preg_replace('/[\s+\-().]/', '', $this->str($request, 'whatsapp_number')) ?? '';
         if ($wa === '961') {
@@ -162,10 +179,10 @@ final class SettingsController extends AdminController
 
         $msg = 'Settings saved.';
         $what = [];
-        if (abs($oldCommission - $in['commission_pct']) > 0.0001) {
+        if (isset($in['commission_pct']) && abs($oldCommission - $in['commission_pct']) > 0.0001) {
             $what[] = 'Commission changed from ' . Forms::pct($oldCommission) . ' to ' . Forms::pct($in['commission_pct']);
         }
-        if (abs($oldMember - $in['member_commission_pct']) > 0.0001) {
+        if (isset($in['member_commission_pct']) && abs($oldMember - $in['member_commission_pct']) > 0.0001) {
             $what[] = 'Member commission changed from ' . Forms::pct($oldMember) . ' to ' . Forms::pct($in['member_commission_pct']);
         }
         if ($what) {

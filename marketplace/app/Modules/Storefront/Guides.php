@@ -183,16 +183,6 @@ final class Guides
             }
         };
         switch ($tag) {
-            case 'selling':
-                $links[] = ['Sell your games for cash or credit', '/sell'];
-                $links[] = ['Trade in for store credit', '/trade'];
-                $links[] = ['How store credit works', '/credit'];
-                break;
-            case 'credit':
-                $links[] = ['Trade in your games', '/trade'];
-                $links[] = ['Sell your games', '/sell'];
-                $links[] = ['Shop with your credit', '/shop'];
-                break;
             case 'buying':
                 if (isset($cats['games'])) {
                     $links[] = ['Shop games', '/shop/games'];
@@ -229,11 +219,6 @@ final class Guides
                 foreach (array_slice(SeoCatalog::zones(), 0, 3) as $z) {
                     $links[] = ['Delivery to ' . $z['short'], '/delivery-to/' . $z['slug']];
                 }
-                break;
-            case 'privacy':
-                $links[] = ['How CyberGaming works', '/how-it-works'];
-                $links[] = ['Swap board', '/swap'];
-                $links[] = ['Store credit', '/credit'];
                 break;
         }
         if (!$links) {

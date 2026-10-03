@@ -92,14 +92,6 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
         </select>
     </div>
     <div class="field">
-        <label for="f-seller">Seller</label>
-        <select id="f-seller" name="seller">
-            <option value="">All</option>
-            <option value="house" <?= $filters['seller'] === 'house' ? 'selected' : '' ?>>House inventory</option>
-            <?php foreach ($sellers as $s): ?><option value="<?= (int) $s['id'] ?>" <?= $filters['seller'] === (string) $s['id'] ? 'selected' : '' ?>><?= e($s['code']) ?> &middot; <?= e($s['name']) ?></option><?php endforeach; ?>
-        </select>
-    </div>
-    <div class="field">
         <label for="f-kind">Kind</label>
         <select id="f-kind" name="kind"><?= Forms::options(['' => 'All', 'game' => 'Game', 'hardware' => 'Hardware', 'digital' => 'Digital', 'physical' => 'Physical (game + hardware)'], $filters['kind']) ?></select>
     </div>
@@ -136,7 +128,7 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
         <div class="table-wrap">
             <table class="data">
                 <thead>
-                <tr><th></th><th>Title</th><th>Brand / model</th><th>Platform</th><th>Seller</th><th class="num">Seller price &rarr; Buyer price</th><th class="num">Stock</th><th>Status</th><th class="num">Actions</th></tr>
+                <tr><th></th><th>Title</th><th>Brand / model</th><th>Platform</th><th class="num">Price</th><th class="num">Stock</th><th>Status</th><th class="num">Actions</th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($products as $p): ?>
@@ -145,15 +137,7 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
                         <td><a href="<?= e(url('/admin/products/' . $p['id'] . '/edit')) ?>"><strong><?= e($p['title']) ?></strong></a><?= $p['is_steelbook'] ? ' <span class="tag tag-steel">Steelbook</span>' : '' ?> <?= ListingRules::conditionTag($p) ?> <?= ListingRules::photoTag($p, (int) $p['photo_count']) ?><?= (int) $p['is_digital'] === 1 ? ' <span class="tag tag-digital" title="Digital item: prepaid, code sent on WhatsApp">Digital' . ($p['digital_kind'] ? ' &middot; ' . e(Digital::kindLabel($p['digital_kind'])) : '') . ($p['digital_region'] ? ' &middot; ' . e($p['digital_region']) : '') . '</span>' : '' ?><?= $p['seller_id'] && (\App\Support\ContactFilter::containsContact((string) $p['title']) || \App\Support\ContactFilter::containsContact((string) ($p['description'] ?? ''))) ? ' <span class="tag" title="Title or description looks like it contains contact details">contact info?</span>' : '' ?><?= $p['category_kind'] === 'hardware' && (int) $p['is_digital'] === 0 ? ' <span class="tag tag-hw" title="Hardware item">Hardware</span>' : '' ?><br><small class="muted"><?= e($p['category'] ?? '') ?></small><?= $p['serial_number'] ? '<br><small class="muted" title="Private: only visible in the admin">S/N ' . e($p['serial_number']) . '</small>' : '' ?><?= (int) $p['is_digital'] === 1 && !$digitalOn ? '<br><small class="text-warn">hidden: digital goods switch is off</small>' : '' ?></td>
                         <td><?= $p['brand'] || $p['model'] ? '<strong>' . e((string) $p['brand']) . '</strong>' . ($p['model'] ? '<br><small class="muted">' . e($p['model']) . '</small>' : '') : '<span class="muted">-</span>' ?></td>
                         <td><?= e($p['platform'] ?? '-') ?></td>
-                        <td><?= $p['seller_code'] ? '<a href="' . e(url('/admin/sellers/' . $p['seller_id'])) . '">' . e($p['seller_code']) . '</a>' : '<span class="tag">House</span>' ?></td>
-                        <td class="num">
-                            <?php if ($p['seller_id']): ?>
-                                <?= e(money($p['seller_price'])) ?> &rarr; <strong><?= e(money($p['price'])) ?></strong>
-                                <br><small class="muted"><?= e(Forms::pct($p['commission_pct'])) ?> commission</small>
-                            <?php else: ?>
-                                <strong><?= e(money($p['price'])) ?></strong>
-                            <?php endif; ?>
-                        </td>
+                        <td class="num"><strong><?= e(money($p['price'])) ?></strong></td>
                         <td class="num"><?= (int) $p['stock'] ?></td>
                         <td><?= Forms::pill($p['status']) ?></td>
                         <td class="num nowrap">

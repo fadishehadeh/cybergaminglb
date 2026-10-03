@@ -9,22 +9,15 @@ use App\Modules\Storefront\Ui;
 /** @var array $stats @var array $platforms @var array $categories @var array $steelbooks @var array $latest @var array $giftCards */
 $giftCards = $giftCards ?? [];
 $hero = array_slice(array_values(array_filter($latest, static fn (array $h): bool => !empty($h['image']))), 0, 3);
-$wa = wa_link('Hi CyberGaming, I want to sell my games: ');
 
-$buyPct = rtrim(rtrim(number_format((float) setting('buyback_pct', 45), 1), '0'), '.');
-$tradePct = rtrim(rtrim(number_format((float) setting('tradein_pct', 50), 1), '0'), '.');
-$rejected = array_values(array_filter(Rules::sellFaqs(), static fn (array $f): bool => str_starts_with($f[0], 'What happens if')));
 $homeFaqs = [
-    ['What is CyberGaming Lebanon?', 'CyberGaming Lebanon is an online marketplace in Lebanon to buy, sell, trade and swap used and new video games and gaming gear. Every item is inspected, prices are in US dollars, and we deliver across Lebanon. See [[/about|about us]] and [[/how-it-works|how it works]].'],
-    ['How much do you pay for used PS4 games?', "We pay $buyPct% of our shop price in cash or $tradePct% as store credit, adjusted for the condition of your copy. The exact amount depends on the title, so add your games to the [[/sell|sell page]] to see an instant quote."],
+    ['What is CyberGaming Lebanon?', 'CyberGaming Lebanon is an online shop in Lebanon selling used and new video games and gaming gear. Every item is inspected, prices are in US dollars, and we deliver across Lebanon. See [[/about|about us]] and [[/how-it-works|how it works]].'],
     ['Do you deliver outside Beirut?', 'Yes, we deliver across Lebanon. Local areas (' . Rules::nameList(Rules::names('local')) . ') are served by our own courier, and other areas by a third-party courier. Fees start at ' . money(SeoCatalog::cheapestFee()) . '. See [[/delivery-and-payment|delivery and payment]].'],
-    ['Can I pay cash on delivery?', 'Yes, in local areas: our own courier lets you check the item and you pay cash on delivery. Remote areas are prepaid by OMT or Whish' . (Rules::prepayOn() && Rules::codAfter() > 0 ? ', and cash on delivery unlocks there after ' . Rules::codAfter() . ' delivered orders' : '') . '. You can also pay with store credit.'],
-    ...$rejected,
-    ['How does store credit work?', 'Store credit is money in your wallet that you spend in the shop: 1 credit is always worth $1 and it never expires. You earn it by selling or trading in games, and apply it at checkout. Read [[/credit|how store credit works]].'],
-    ['Is my identity shared with buyers or sellers?', 'No. Buyers and sellers never see each other. Only an anonymous ID is ever visible, and your name, phone number and address are known only to you and to CyberGaming. See [[/how-it-works#anonymous|how we keep you anonymous]].'],
+    ['Can I pay cash on delivery?', 'Yes, in local areas: our own courier lets you check the item and you pay cash on delivery. Remote areas are prepaid by OMT or Whish' . (Rules::prepayOn() && Rules::codAfter() > 0 ? ', and cash on delivery unlocks there after ' . Rules::codAfter() . ' delivered orders' : '') . '.'],
+    ['Do I need an account to order?', 'No. Checkout is guest-only: just your name, phone number and delivery area. No registration, no card details.'],
 ];
-$meta['description'] = Seo::clip('Buy, sell and trade used PS4, PS5, Switch and Xbox games in Lebanon. ' . ($stats['items'] > 0 ? $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', ' : '') . 'delivery across Lebanon, pay cash, OMT or Whish.');
-$meta['jsonld'][] = Seo::webPage('WebPage', 'CyberGaming Lebanon: buy, sell and trade games and gaming gear', url('/'), (string) $meta['description']);
+$meta['description'] = Seo::clip('Buy used and new PS4 games and gaming gear in Lebanon. ' . ($stats['items'] > 0 ? $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', ' : '') . 'delivery across Lebanon, pay cash, OMT or Whish.');
+$meta['jsonld'][] = Seo::webPage('WebPage', 'CyberGaming Lebanon: used and new games and gaming gear', url('/'), (string) $meta['description']);
 $meta['jsonld'][] = Seo::faqLd($homeFaqs);
 $priceLinks = Collections::activeIn('price');
 $genreLinks = Collections::activeIn('genre');
@@ -34,17 +27,17 @@ $homeZones = SeoCatalog::zones();
 <section class="hero">
     <div class="container hero-grid">
         <div class="hero-copy">
-            <p class="eyebrow">Lebanon's game marketplace</p>
-            <h1>Buy, sell &amp; trade games and gaming gear in Lebanon</h1>
+            <p class="eyebrow">Lebanon's game shop</p>
+            <h1>Used &amp; new games and gaming gear in Lebanon</h1>
             <p class="lead">Inspected used and new games at fair dollar prices. Order online, we confirm on WhatsApp, and we deliver across Lebanon.</p>
             <div class="hero-actions">
                 <a class="btn btn-primary btn-lg" href="<?= e(url('/shop')) ?>">Shop games</a>
-                <a class="btn btn-outline btn-lg" href="<?= e(url('/sell')) ?>">Sell your games</a>
+                <a class="btn btn-outline btn-lg" href="<?= e(url('/shop/consoles')) ?>">Shop gear</a>
             </div>
             <ul class="hero-points">
                 <li><?= Ui::icon('shield', 18) ?> Inspected before sale</li>
                 <li><?= Ui::icon('truck', 18) ?> Delivery across Lebanon</li>
-                <li><?= Ui::icon('wallet', 18) ?> Store credit, cash, OMT or Whish</li>
+                <li><?= Ui::icon('wallet', 18) ?> Cash, OMT or Whish</li>
             </ul>
         </div>
         <?php if ($hero): ?>
@@ -176,7 +169,7 @@ $homeZones = SeoCatalog::zones();
             <li><span class="step-num">1</span><h3>Browse</h3><p>Pick your games and add them to your cart. Every title is inspected.</p></li>
             <li><span class="step-num">2</span><h3>Order on the site</h3><p>Leave your name, phone and delivery area. No account needed, and delivery fees are shown up front.</p></li>
             <li><span class="step-num">3</span><h3>We confirm on WhatsApp</h3><p>We message you to confirm availability, price and delivery.</p></li>
-            <li><span class="step-num">4</span><h3>Delivery or pickup</h3><p>We deliver across Lebanon or you meet us at our pickup point. Pay with store credit and cash on delivery, or OMT / Whish.</p></li>
+            <li><span class="step-num">4</span><h3>Delivery or pickup</h3><p>We deliver across Lebanon or you meet us at our pickup point. Pay by cash on delivery, OMT or Whish.</p></li>
         </ol>
     </div>
 </section>
@@ -186,13 +179,12 @@ $homeZones = SeoCatalog::zones();
 <section class="container section">
     <div class="cta-block">
         <div>
-            <h2>Got games to sell or trade?</h2>
-            <p>We pay <strong><?= (int) setting('buyback_pct', 45) ?>%</strong> of resale value in cash, or <strong><?= (int) setting('tradein_pct', 50) ?>%</strong> as store credit that you spend in the shop (<a class="cta-link" href="<?= e(url('/credit')) ?>">how credit works</a>). Prefer another player's game? We run private swaps too.</p>
+            <h2>Questions about an item?</h2>
+            <p>Message us on WhatsApp and we will help you pick the right game, console or accessory, or confirm an order.</p>
         </div>
         <div class="cta-actions">
-            <a class="btn btn-primary btn-lg" href="<?= e(url('/sell')) ?>">Sell your games</a>
-            <a class="btn btn-outline-light btn-lg" href="<?= e(url('/trade')) ?>">Trade in</a>
-            <a class="btn btn-wa btn-lg" href="<?= e($wa) ?>" rel="noopener" target="_blank"><?= Ui::icon('whatsapp', 20) ?> WhatsApp us</a>
+            <a class="btn btn-primary btn-lg" href="<?= e(url('/shop')) ?>">Browse the shop</a>
+            <a class="btn btn-wa btn-lg" href="<?= e(wa_link('Hi CyberGaming!')) ?>" rel="noopener" target="_blank"><?= Ui::icon('whatsapp', 20) ?> WhatsApp us</a>
         </div>
     </div>
 </section>

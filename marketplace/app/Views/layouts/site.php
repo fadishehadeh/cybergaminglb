@@ -13,7 +13,7 @@ use App\Modules\Storefront\Ui;
 $meta = isset($meta) && is_array($meta) ? $meta : [];
 $siteName = (string) setting('site_name', 'CyberGaming Lebanon');
 $pageTitle = Seo::fitTitle((string) ($meta['title'] ?? $siteName));
-$pageDesc = (string) ($meta['description'] ?? setting('tagline', 'Buy, sell & trade games and gaming gear in Lebanon'));
+$pageDesc = (string) ($meta['description'] ?? setting('tagline', 'Buy games and gaming gear in Lebanon'));
 $canonical = $meta['canonical'] ?? null;
 $ogImage = (string) ($meta['image'] ?? Seo::defaultImage());
 $noindex = !empty($meta['noindex']);
@@ -24,11 +24,7 @@ $navCategories = array_values(array_filter(Catalog::categories(), static fn (arr
 $waUrl = wa_link('Hi CyberGaming!');
 $igUrl = (string) setting('instagram_url', '');
 $email = (string) setting('contact_email', '');
-// account state: customers see their name + credit, guests see sign in / register, staff see nothing account-specific
-$customer = auth()->hasRole('customer') ? auth()->user() : null;
-$isStaff = $customer === null && auth()->check();
-$acctFirst = $customer ? (explode(' ', trim((string) $customer['name']))[0] ?: 'there') : '';
-$acctCredit = $customer ? '$' . number_format((float) $customer['credit_balance'], 2) : '';
+// Customer accounts are retired: this is a simple catalogue, guest checkout only.
 $searchValue = is_string(request()->query('q')) ? (string) request()->query('q') : '';
 
 $metaLd = is_array($meta['jsonld'] ?? null) ? $meta['jsonld'] : [];
@@ -54,12 +50,9 @@ $footerZones = SeoCatalog::zones();
 
 $primaryNav = [
     'how-it-works' => ['How it works', '/how-it-works'],
-    'credit'       => ['Store credit', '/credit'],
     'guides'       => ['Guides', '/guides'],
     'about'        => ['About', '/about'],
 ];
-$sellNav = ['sell' => ['Sell your games', '/sell'], 'trade' => ['Trade in for credit', '/trade'], 'swap' => ['Swap board', '/swap']];
-$sellActive = isset($sellNav[$activeNav]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -121,19 +114,6 @@ $sellActive = isset($sellNav[$activeNav]);
             <button type="submit" aria-label="Search"><?= Ui::icon('search') ?></button>
         </form>
         <a class="wa-top" href="<?= e($waUrl) ?>" rel="noopener" target="_blank"><?= Ui::icon('whatsapp', 18) ?> <span>WhatsApp</span></a>
-        <?php if ($customer): ?>
-            <a class="acct-link is-in<?= $activeNav === 'account' ? ' is-active' : '' ?>" href="<?= e(url('/account')) ?>" aria-label="My account: <?= e($acctFirst) ?>, <?= e($acctCredit) ?> credit">
-                <?= Ui::icon('user', 22) ?><span class="acct-text">Hi <?= e($acctFirst) ?> <span class="acct-sep">&middot;</span> <strong><?= e($acctCredit) ?></strong> credit</span>
-            </a>
-            <form class="logout-form" method="post" action="<?= e(url('/account/logout')) ?>">
-                <?= csrf_field() ?>
-                <button class="btn-link" type="submit">Log out</button>
-            </form>
-        <?php elseif (!$isStaff): ?>
-            <a class="acct-link" href="<?= e(url('/account/login')) ?>" aria-label="Sign in or register">
-                <?= Ui::icon('user', 22) ?><span class="acct-text">Sign in / Register</span>
-            </a>
-        <?php endif; ?>
         <a class="cart-link" href="<?= e(url('/cart')) ?>" aria-label="Cart, <?= $cartCount ?> <?= $cartCount === 1 ? 'item' : 'items' ?>">
             <?= Ui::icon('cart', 24) ?>
             <?php if ($cartCount > 0): ?><span class="cart-badge"><?= $cartCount ?></span><?php endif; ?>
@@ -155,26 +135,9 @@ $sellActive = isset($sellNav[$activeNav]);
                         <?php endforeach; ?>
                     </ul>
                 </li>
-                <li class="has-sub<?= $sellActive ? ' is-active' : '' ?>">
-                    <a href="<?= e(url('/sell')) ?>">Sell &amp; Trade</a>
-                    <ul class="sub" aria-label="Sell, trade or swap">
-                        <?php foreach ($sellNav as $key => [$label, $path]): ?>
-                            <li><a href="<?= e(url($path)) ?>"<?= $activeNav === $key ? ' aria-current="page"' : '' ?>><?= e($label) ?></a></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </li>
                 <?php foreach ($primaryNav as $key => [$label, $path]): ?>
                     <li<?= $activeNav === $key ? ' class="is-active"' : '' ?>><a href="<?= e(url($path)) ?>"<?= $activeNav === $key ? ' aria-current="page"' : '' ?>><?= e($label) ?></a></li>
                 <?php endforeach; ?>
-                <?php if ($customer): ?>
-                    <li class="nav-account"><a href="<?= e(url('/account')) ?>">Hi <?= e($acctFirst) ?> &middot; <?= e($acctCredit) ?> credit</a></li>
-                    <li class="nav-account">
-                        <form method="post" action="<?= e(url('/account/logout')) ?>"><?= csrf_field() ?><button class="nav-logout" type="submit">Log out</button></form>
-                    </li>
-                <?php elseif (!$isStaff): ?>
-                    <li class="nav-account"><a href="<?= e(url('/account/login')) ?>">Sign in</a></li>
-                    <li class="nav-account"><a href="<?= e(url('/account/register')) ?>">Register</a></li>
-                <?php endif; ?>
             </ul>
         </div>
     </nav>
@@ -194,7 +157,7 @@ $sellActive = isset($sellNav[$activeNav]);
     <div class="container footer-grid">
         <div class="footer-brand">
             <a href="<?= e(url('/')) ?>" class="footer-logo"><img src="<?= e(asset('img/logo-wide.png')) ?>" alt="<?= e($siteName) ?>" width="134" height="58" loading="lazy"></a>
-            <p>Lebanon's marketplace to buy, sell, trade and swap games and gaming gear. Every item inspected, every order confirmed on WhatsApp.</p>
+            <p>Lebanon's shop for used and new PS4 games and gaming gear. Every item inspected, every order confirmed on WhatsApp.</p>
             <p class="footer-social">
                 <a class="btn btn-wa btn-sm" href="<?= e($waUrl) ?>" rel="noopener" target="_blank"><?= Ui::icon('whatsapp', 18) ?> WhatsApp us</a>
                 <?php if ($igUrl !== ''): ?><a class="btn btn-ghost btn-sm" href="<?= e($igUrl) ?>" rel="noopener" target="_blank"><?= Ui::icon('instagram', 18) ?> Instagram</a><?php endif; ?>
@@ -208,22 +171,10 @@ $sellActive = isset($sellNav[$activeNav]);
                 <?php foreach ($navPlatforms as $pl): ?><li><a href="<?= e(url('/platform/' . $pl['slug'])) ?>"><?= e($pl['name']) ?></a></li><?php endforeach; ?>
             </ul>
         </nav>
-        <nav aria-label="Sell and trade links">
-            <h2>Sell &amp; trade</h2>
-            <ul>
-                <li><a href="<?= e(url('/sell')) ?>">Sell your games</a></li>
-                <li><a href="<?= e(url('/trade')) ?>">Trade in for credit</a></li>
-                <li><a href="<?= e(url('/credit')) ?>">How store credit works</a></li>
-                <li><a href="<?= e(url('/swap')) ?>">Swap with players</a></li>
-                <li><a href="<?= e(url('/seller/apply')) ?>">Sell on CyberGaming (stores)</a></li>
-            </ul>
-        </nav>
         <nav aria-label="Information">
             <h2>Information</h2>
             <ul>
                 <li><a href="<?= e(url('/how-it-works')) ?>">How it works</a></li>
-                <li><a href="<?= e(url('/account')) ?>">My account</a></li>
-                <li><a href="<?= e(url('/credit')) ?>">Store credit</a></li>
                 <li><a href="<?= e(url('/delivery-and-payment')) ?>">Delivery &amp; payment</a></li>
                 <li><a href="<?= e(url('/about')) ?>">About us</a></li>
                 <li><a href="<?= e(url('/contact')) ?>">Contact</a></li>
@@ -264,7 +215,7 @@ $sellActive = isset($sellNav[$activeNav]);
     </div>
     <div class="container footer-bottom">
         <p>&copy; <?= date('Y') ?> <?= e($siteName) ?>. Prices in US dollars.</p>
-        <p>Store credit &middot; Cash on delivery &middot; OMT &middot; Whish</p>
+        <p>Cash on delivery &middot; OMT &middot; Whish</p>
     </div>
 </footer>
 

@@ -43,5 +43,5 @@ echo Seo::render('quick-answer', ['text' => $intro]);
     </section>
     <?php endif; ?>
 
-    <p class="see-also">Want to sell instead? Get an <a href="<?= e(url('/sell')) ?>">instant quote</a> or <a href="<?= e(url('/trade')) ?>">trade in for store credit</a>. See <a href="<?= e(url('/delivery-and-payment')) ?>">delivery and payment</a> for fees by area.</p>
+    <p class="see-also">See <a href="<?= e(url('/delivery-and-payment')) ?>">delivery and payment</a> for fees by area.</p>
 </div>

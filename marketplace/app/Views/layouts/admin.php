@@ -8,9 +8,6 @@ $siteName  = (string) setting('site_name', 'CyberGaming Lebanon');
 $badge = [
     'orders'   => (int) db()->fetchValue("SELECT COUNT(*) FROM orders WHERE status = 'new'"),
     'products' => (int) db()->fetchValue("SELECT COUNT(*) FROM products WHERE status = 'pending'"),
-    'requests' => (int) db()->fetchValue('SELECT COUNT(*) FROM buyback_requests r WHERE ' . \App\Modules\Admin\RequestController::actionSql('r'))
-                + (int) db()->fetchValue("SELECT COUNT(*) FROM swap_requests WHERE status = 'new'"),
-    'payouts'  => (int) db()->fetchValue("SELECT COUNT(DISTINCT seller_id) FROM payouts WHERE status = 'pending'"),
 ];
 $digitalOn = digital_enabled();
 $waMissing = preg_replace('/\D+/', '', (string) setting('whatsapp_number', '961')) === '961';
@@ -19,11 +16,6 @@ $icons = [
     'dashboard' => '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
     'orders'    => '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
     'products'  => '<path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
-    'sellers'   => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-    'payouts'   => '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-    'requests'  => '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
-    'customers' => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
-    'wallet'    => '<path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
     'catalog'   => '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
     'guides'    => '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/>',
     'seo'       => '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M8 11l2 2 4-4"/>',
@@ -34,11 +26,6 @@ $items = [
     ['dashboard', 'Dashboard', '/admin', null],
     ['orders', 'Orders', '/admin/orders', $badge['orders']],
     ['products', 'Products', '/admin/products', $badge['products']],
-    ['sellers', 'Sellers', '/admin/sellers', null],
-    ['payouts', 'Payouts', '/admin/payouts', $badge['payouts']],
-    ['customers', 'Customers', '/admin/customers', null],
-    ['wallet', 'Wallet', '/admin/wallet', null],
-    ['requests', 'Requests', '/admin/requests', $badge['requests']],
     ['catalog', 'Categories & platforms', '/admin/catalog', null],
     ['guides', 'Guides', '/admin/guides', null],
     ['seo', 'SEO & AI search', '/admin/seo', null],

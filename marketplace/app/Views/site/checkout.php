@@ -56,7 +56,7 @@ $hintKey = !$needsDelivery || $mode === '' ? 'none' : ($mode === 'local' ? 'loca
         </div>
         <div class="zone-hint" data-zone-hint aria-live="polite">
             <div class="pay-note zone-note" data-hint="none"<?= $hintKey === 'none' ? '' : ' hidden' ?>><?= Ui::icon('truck', 20) ?> <span><strong>Two ways we deliver.</strong> <strong>Local</strong> (<?= e(Rules::nameList(Rules::names('local'))) ?>): our own courier, <?= e(Rules::feeRange('local')) ?>, you inspect the game at the door and pay cash on delivery. <strong>Everywhere else</strong>: a third-party courier that cannot inspect, so we inspect, photograph and seal your game at our hub and you <?= Rules::prepayOn() ? 'pay first by OMT or Whish' . ($codAfter > 0 ? ' (cash on delivery after ' . $codAfter . ' delivered orders)' : '') : 'can still pay cash on delivery' ?>.</span></div>
-            <div class="pay-note zone-note" data-hint="local"<?= $hintKey === 'local' ? '' : ' hidden' ?>><?= Ui::icon('truck', 20) ?> <span><strong>Local delivery by our own courier.</strong> Inspect your game when it arrives, then pay cash on delivery (or use your credit, OMT or Whish). Flat <?= e(Rules::feeRange('local')) ?> delivery.</span></div>
+            <div class="pay-note zone-note" data-hint="local"<?= $hintKey === 'local' ? '' : ' hidden' ?>><?= Ui::icon('truck', 20) ?> <span><strong>Local delivery by our own courier.</strong> Inspect your game when it arrives, then pay cash on delivery, OMT or Whish. Flat <?= e(Rules::feeRange('local')) ?> delivery.</span></div>
             <div class="pay-note zone-note zone-note-prepay" data-hint="prepay"<?= $hintKey === 'prepay' ? '' : ' hidden' ?>><?= Ui::icon('wallet', 20) ?> <span><strong>Remote delivery: pay first by OMT or Whish.</strong> A third-party courier delivers to your area and cannot inspect the game for you. So we inspect, photograph and seal it at our hub, and we ship as soon as your payment is confirmed. <?= $codAfter > 0 ? 'Cash on delivery becomes available after ' . $codAfter . ' delivered orders' . ($delivered > 0 ? ' (you have ' . (int) $delivered . ' so far)' : '') . '.' : '' ?></span></div>
             <div class="pay-note zone-note" data-hint="cod"<?= $hintKey === 'cod' ? '' : ' hidden' ?>><?= Ui::icon('truck', 20) ?> <span><strong>Remote delivery, cash on delivery available.</strong> A third-party courier delivers to your area and cannot inspect the game for you, so we inspect, photograph and seal it at our hub first. <?= Rules::prepayOn() && $codAfter > 0 ? 'You have ' . (int) $delivered . ' delivered orders, so you can pay cash on delivery.' : 'You can pay cash on delivery.' ?></span></div>
         </div>
@@ -124,16 +124,5 @@ $hintKey = !$needsDelivery || $mode === '' ? 'none' : ($mode === 'local' ? 'loca
         <p class="fine"><a href="<?= e(url('/cart')) ?>">Edit cart</a></p>
     </aside>
 
-    <?php if (!$isCustomer): ?>
-        <aside class="card-box account-promo" aria-labelledby="promo-h">
-            <h2 id="promo-h"><?= Ui::icon('wallet', 22) ?> Have games to sell?</h2>
-            <p>Create an account to earn credit. Sell us games you no longer play and get store credit worth more than cash, then spend it right here at checkout.</p>
-            <p class="promo-actions">
-                <a class="btn btn-outline btn-sm" href="<?= e(url('/account/login?next=/checkout')) ?>">Sign in</a>
-                <a class="btn btn-primary btn-sm" href="<?= e(url('/account/register?next=/checkout')) ?>">Create an account</a>
-                <a class="btn-link" href="<?= e(url('/credit')) ?>">How store credit works</a>
-            </p>
-        </aside>
-    <?php endif; ?>
     </div>
 </div>

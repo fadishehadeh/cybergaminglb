@@ -152,7 +152,6 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
             </div>
         <?php endif; ?>
         <p><a class="link-wa" href="<?= e($waAsk) ?>" rel="noopener" target="_blank"><?= Ui::icon('whatsapp', 18) ?> Questions? Ask us on WhatsApp</a></p>
-        <?php if ($available && !$isDigital): ?><p><a class="link-wa" href="<?= e(url('/trade?want=' . rawurlencode($p['slug']))) ?>"><?= Ui::icon('swap', 18) ?> Trade in games for this</a></p><?php endif; ?>
 
         <?php if ($isDigital): ?>
             <dl class="specs">
@@ -225,7 +224,6 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
                 </ol>
                 <p class="fine">Gifts follow Steam's own regional rules, so we confirm eligibility for your account before you pay.</p>
             <?php endif; ?>
-            <p class="fine">Store credit can't be used on gift cards and digital items.</p>
         </section>
         <?php else: ?>
         <aside class="trust" aria-label="Buying with CyberGaming">
@@ -233,7 +231,7 @@ $waAsk = wa_link('Hi CyberGaming, I have a question about ' . $p['title'] . ($sh
             <ul>
                 <li><?= Ui::icon('shield', 22) ?><div><strong><?= $isHardware ? 'Tested &amp; protected' : 'Inspected &amp; protected' ?></strong><span>We check every item and confirm your order on WhatsApp before anything ships.</span></div></li>
                 <li><?= Ui::icon('truck', 22) ?><div><strong>Delivery across Lebanon</strong><span>Fee by area, shown at checkout. Or meet us at our pickup point.</span></div></li>
-                <li><?= Ui::icon('wallet', 22) ?><div><strong>Credit, cash, OMT or Whish</strong><span>Use store credit, pay the rest on delivery. No card details needed.</span></div></li>
+                <li><?= Ui::icon('wallet', 22) ?><div><strong>Cash, OMT or Whish</strong><span>Pay on delivery, or by OMT / Whish. No card details needed.</span></div></li>
             </ul>
         </aside>
         <?php endif; ?>

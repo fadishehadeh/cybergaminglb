@@ -8,10 +8,10 @@ $number = Ui::waNumber();
 $faqs = [
     ['What is the fastest way to contact CyberGaming?', 'WhatsApp. Message us from the button on this page and a person replies, usually within a few hours.'],
     ['Can I ask about an item before I order?', 'Yes. Send us the product name or link on WhatsApp and we will confirm it is in stock, its condition and the delivery fee to your area. Every order is confirmed on WhatsApp before we deliver anyway.'],
-    ['Where is your pickup point?', 'We share the exact location on WhatsApp when we confirm your order. You can also bring games to our hub for free when you sell or trade them in. See [[/delivery-and-payment|delivery and payment]].'],
-    ['I want to sell or trade my games. Where do I start?', 'Start with the [[/sell|instant quote]] or the [[/trade|trade-in calculator]]. You get a price in cash and store credit straight away, and you only need an account when you send the request.'],
-    ['Do you take card payments?', 'No. We never ask for card details on the site. You pay with store credit, cash on delivery in local areas, or OMT and Whish.'],
-    ['Is my phone number shared with other customers?', 'No. Buyers and sellers never see each other, and your name, phone number and address are known only to you and to CyberGaming. See [[/how-it-works#anonymous|how we keep you anonymous]].'],
+    ['Where is your pickup point?', 'We share the exact location on WhatsApp when we confirm your order. See [[/delivery-and-payment|delivery and payment]].'],
+    ['Do you buy, trade or swap games?', 'No. We sell our own stock of used and new games and gaming gear. We do not buy games from the public, take trade-ins, or run a swap board.'],
+    ['Do you take card payments?', 'No. We never ask for card details on the site. You pay by cash on delivery in local areas, or OMT and Whish.'],
+    ['Do I need an account to order?', 'No. Checkout is guest-only: just your name, phone number and delivery area. No registration, no card details.'],
 ];
 $meta['jsonld'][] = Seo::webPage('ContactPage', 'Contact CyberGaming Lebanon', (string) ($meta['canonical'] ?? url('/contact')), (string) ($meta['description'] ?? ''));
 $meta['jsonld'][] = Seo::faqLd($faqs);
@@ -22,7 +22,7 @@ echo Seo::quickAnswerHtml('contact');
     <div class="contact-grid">
         <div class="card-box">
             <h2><?= Ui::icon('whatsapp', 22) ?> WhatsApp</h2>
-            <p>Questions about an item, an order, selling, trading or swapping? Message us.<?= $number !== '' ? ' Our number is <strong>' . e($number) . '</strong>.' : '' ?></p>
+            <p>Questions about an item or an order? Message us.<?= $number !== '' ? ' Our number is <strong>' . e($number) . '</strong>.' : '' ?></p>
             <a class="btn btn-wa btn-lg" href="<?= e(wa_link('Hi CyberGaming!')) ?>" rel="noopener" target="_blank">Chat on WhatsApp</a>
         </div>
         <?php if ($ig !== ''): ?>

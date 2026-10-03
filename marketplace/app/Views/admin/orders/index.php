@@ -76,7 +76,7 @@ $link = static function (array $over = []) use ($status, $q, $kind, $open, $paym
                         <td class="nowrap"><?= e(date('j M Y, H:i', strtotime($o['created_at']))) ?></td>
                         <td><?= $o['user_id'] ? '<a href="' . e(url('/admin/customers/' . $o['user_id'])) . '">' . e($o['buyer_name']) . '</a>' : e($o['buyer_name']) ?><br><small class="muted"><?= e($o['zone'] ?: $o['buyer_area']) ?></small> <?= Forms::modeBadge($o['zone_mode']) ?></td>
                         <td class="nowrap"><?php $wa = Forms::waLink($o['buyer_phone']); ?><?= $wa ? '<a href="' . e($wa) . '" target="_blank" rel="noopener">' . e($o['buyer_phone']) . '</a>' : e($o['buyer_phone']) ?></td>
-                        <td class="num"><?= (int) $o['units'] ?><?= (int) $o['seller_lines'] > 0 ? ' <small class="muted" title="Lines from sellers">(' . (int) $o['seller_lines'] . ' seller)</small>' : '' ?></td>
+                        <td class="num"><?= (int) $o['units'] ?></td>
                         <td class="num"><strong><?= e(money($o['grand'])) ?></strong><?= (float) $o['delivery_fee'] > 0 ? '<br><small class="muted">incl. ' . e(money($o['delivery_fee'])) . ' delivery</small>' : '' ?></td>
                         <td class="num"><?= (float) $o['credit_used'] > 0 ? e(money($o['credit_used'])) : '<span class="muted">-</span>' ?></td>
                         <td class="num">

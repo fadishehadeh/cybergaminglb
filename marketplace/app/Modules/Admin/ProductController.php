@@ -422,21 +422,23 @@ final class ProductController extends AdminController
             $errors[] = 'Description is too long (max 5000 characters).';
         }
 
-        $seller   = null;
-        $sellerIn = $this->str($request, 'seller_id');
-        if ($sellerIn !== '' && $isDigital) {
-            $errors[] = 'Digital items are house inventory only: set Seller to "House inventory".';
-        } elseif ($sellerIn !== '') {
-            $seller = ctype_digit($sellerIn) ? db()->fetch('SELECT id, commission_pct FROM sellers WHERE id = ?', [(int) $sellerIn]) : null;
-            if (!$seller) {
-                $errors[] = 'Choose a valid seller or "House inventory".';
-            }
-        }
+        // Sellers (the marketplace feature) are retired: every product is house stock, never commissioned.
+        $seller = null;
 
         $priceIn = Forms::decimal($request->input('seller_price'));
         if ($priceIn === null || $priceIn <= 0 || $priceIn > 99999) {
-            $errors[] = ($seller ? 'Seller price' : 'Price') . ' must be a positive amount (e.g. 12 or 12.50).';
+            $errors[] = 'Price must be a positive amount (e.g. 12 or 12.50).';
             $priceIn = 0.0;
+        }
+
+        $costIn = null;
+        $costRaw = trim((string) $request->input('cost_price', ''));
+        if ($costRaw !== '') {
+            $costIn = Forms::decimal($costRaw);
+            if ($costIn === null || $costIn < 0 || $costIn > 99999) {
+                $errors[] = 'Cost must be zero or a positive amount (e.g. 8 or 8.50), or left blank.';
+                $costIn = null;
+            }
         }
 
         $stock = Forms::int($request->input('stock'));
@@ -491,10 +493,10 @@ final class ProductController extends AdminController
             $this->invalid($back, $errors, $request);
         }
 
-        // Money: house stock has no commission (the typed price is what the buyer pays, in $0.50 steps).
-        $commission = $seller ? Pricing::commissionPct($seller) : 0.0;
-        $price      = round(Pricing::buyerPrice($priceIn, $commission), 2);
-        $sellerPrice = $seller ? $priceIn : $price;
+        // House stock only: no commission, the typed price is exactly what the buyer pays.
+        $commission = 0.0;
+        $price      = round($priceIn, 2);
+        $sellerPrice = $price;
 
         if ($status === 'active' && $stock < 1) {
             $status = 'sold';
@@ -524,7 +526,7 @@ final class ProductController extends AdminController
             $condition, $includes['includes_box'], $includes['includes_cover_art'], $includes['includes_manual'],
             $edition, $gameFields && $request->input('is_steelbook') ? 1 : 0, $isDigital ? 1 : 0, $digitalKind, $digitalRegion,
             $year, $genres !== '' ? $genres : null,
-            $sellerPrice, $commission, $price, $stock, $image, $status,
+            $sellerPrice, $costIn, $commission, $price, $stock, $image, $status,
             $brand, $model, $specs, $included, $warranty, $serial,
         ];
 
@@ -534,7 +536,7 @@ final class ProductController extends AdminController
                     db()->execute(
                         'UPDATE products SET seller_id = ?, category_id = ?, platform_id = ?, title = ?, description = ?, item_condition = ?,
                                 includes_box = ?, includes_cover_art = ?, includes_manual = ?,
-                                edition = ?, is_steelbook = ?, is_digital = ?, digital_kind = ?, digital_region = ?, year = ?, genres = ?, seller_price = ?, commission_pct = ?, price = ?,
+                                edition = ?, is_steelbook = ?, is_digital = ?, digital_kind = ?, digital_region = ?, year = ?, genres = ?, seller_price = ?, cost_price = ?, commission_pct = ?, price = ?,
                                 stock = ?, image = ?, status = ?,
                                 brand = ?, model = ?, specs = ?, included_items = ?, warranty_months = ?, serial_number = ? WHERE id = ?',
                         [...$fields, $product['id']]
@@ -544,9 +546,9 @@ final class ProductController extends AdminController
                     $slug = $this->uniqueSlug(slugify($title . ' ' . ($platform['slug'] ?? '')), 0);
                     $id = db()->insert(
                         'INSERT INTO products (seller_id, category_id, platform_id, title, description, item_condition, includes_box, includes_cover_art, includes_manual,
-                                edition, is_steelbook, is_digital, digital_kind, digital_region, year, genres, seller_price, commission_pct, price, stock, image, status,
+                                edition, is_steelbook, is_digital, digital_kind, digital_region, year, genres, seller_price, cost_price, commission_pct, price, stock, image, status,
                                 brand, model, specs, included_items, warranty_months, serial_number, slug)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                         [...$fields, $slug]
                     );
                 }
@@ -566,9 +568,11 @@ final class ProductController extends AdminController
             ListingCondition::dropMainImage($oldImage); // keeps the file when a listing photo still uses it
         }
 
-        $msg = '"' . $title . '" saved. Buyer pays ' . money($price);
-        if ($seller) {
-            $msg .= ' (seller gets ' . money($sellerPrice) . ', commission ' . money($price - $sellerPrice) . ' at ' . Forms::pct($commission) . ')';
+        $msg = '"' . $title . '" saved. Price ' . money($price);
+        if ($costIn !== null) {
+            $profit = $price - $costIn;
+            $margin = $price > 0 ? $profit / $price * 100 : 0.0;
+            $msg .= ' (cost ' . money($costIn) . ', profit ' . money($profit) . ' at ' . Forms::pct($margin) . ' margin)';
         }
         if ($status === 'sold' && $request->input('status') === 'active') {
             $msg .= '. Stock is 0, so it was marked sold';

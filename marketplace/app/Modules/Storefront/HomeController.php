@@ -11,7 +11,7 @@ final class HomeController extends Controller
     public function index(Request $request): void
     {
         $stats = Catalog::stats();
-        $tagline = (string) setting('tagline', 'Buy, sell & trade games and gaming gear in Lebanon');
+        $tagline = (string) setting('tagline', 'Buy games and gaming gear in Lebanon');
 
         $this->render('site/home', [
             'stats'      => $stats,
@@ -23,8 +23,8 @@ final class HomeController extends Controller
             'giftCards'  => Catalog::giftCards(4),
             'nav'        => 'home',
             'meta'       => [
-                'title'       => 'CyberGaming Lebanon | Buy, Sell & Trade Used Games & Gaming Gear',
-                'description' => 'Buy, sell and trade used PS4, PS5, Switch and Xbox games in Lebanon. ' . $stats['items'] . ' inspected titles in stock, fair USD prices, delivery across Lebanon, pay cash, OMT or Whish.',
+                'title'       => 'CyberGaming Lebanon | Used & New PS4 Games and Gaming Gear',
+                'description' => 'Buy used and new PS4 games and gaming gear in Lebanon. ' . $stats['items'] . ' inspected items in stock, fair USD prices, delivery across Lebanon, pay cash, OMT or Whish.',
                 'canonical'   => url('/'),
                 'og_type'     => 'website',
                 'tagline'     => $tagline,

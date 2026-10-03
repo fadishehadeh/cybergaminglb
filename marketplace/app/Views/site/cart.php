@@ -84,15 +84,8 @@ $physical = (float) ($cart['physical'] ?? $cart['total']);
             <?php if ($hasDigital): ?>
                 <p class="fine digital-note"><?= Ui::icon('gift', 16) ?> <span><strong>Gift cards &amp; digital codes are paid up front.</strong> Pay by OMT or Whish before we send your code on WhatsApp &mdash; no cash on delivery, and all digital sales are final once the code is delivered.<?= $hasPhysical ? ' Physical items in the same order are still paid on delivery.' : '' ?></span></p>
             <?php endif; ?>
-            <?php if ($balance !== null && $balance > 0): ?>
-                <?php if ($hasPhysical): ?>
-                    <p class="fine credit-note"><?= Ui::icon('wallet', 16) ?> You have <strong><?= e(money($balance)) ?></strong> store credit to use at checkout<?= $hasDigital ? ' (credit can\'t be used on gift cards, only on your physical items and delivery)' : '' ?>.</p>
-                <?php else: ?>
-                    <p class="fine credit-note"><?= Ui::icon('wallet', 16) ?> Store credit can't be used on gift cards.</p>
-                <?php endif; ?>
-            <?php endif; ?>
             <a class="btn btn-primary btn-lg btn-block" href="<?= e(url('/checkout')) ?>">Checkout</a>
-            <p class="fine"><?= $hasDigital && !$hasPhysical ? 'Nothing is charged on the site: we send you the OMT / Whish payment details on WhatsApp.' : 'Pay with store credit and cash on delivery, or prepay by OMT / Whish for remote areas. No card details, nothing is charged on the site.' ?></p>
+            <p class="fine"><?= $hasDigital && !$hasPhysical ? 'Nothing is charged on the site: we send you the OMT / Whish payment details on WhatsApp.' : 'Pay by cash on delivery, or prepay by OMT / Whish for remote areas. No card details, nothing is charged on the site.' ?></p>
             <form method="post" action="<?= e(url('/cart/clear')) ?>">
                 <?= csrf_field() ?>
                 <button class="btn-link" type="submit">Empty cart</button>
