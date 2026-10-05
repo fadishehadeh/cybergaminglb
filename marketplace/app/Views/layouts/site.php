@@ -13,13 +13,13 @@ use App\Modules\Storefront\Ui;
 $meta = isset($meta) && is_array($meta) ? $meta : [];
 $siteName = (string) setting('site_name', 'CyberGaming Lebanon');
 $pageTitle = Seo::fitTitle((string) ($meta['title'] ?? $siteName));
-$pageDesc = (string) ($meta['description'] ?? setting('tagline', 'Buy games and gaming gear in Lebanon'));
+$pageDesc = (string) ($meta['description'] ?? setting('tagline', games_enabled() ? 'Buy games and gaming gear in Lebanon' : 'Gaming gear in Lebanon: keyboards, mice and more'));
 $canonical = $meta['canonical'] ?? null;
 $ogImage = (string) ($meta['image'] ?? Seo::defaultImage());
 $noindex = !empty($meta['noindex']);
 $activeNav = isset($nav) && is_string($nav) ? $nav : '';
 $cartCount = Cart::count();
-$navPlatforms = Catalog::platforms();
+$navPlatforms = array_values(array_filter(Catalog::platforms(), static fn (array $p): bool => (int) $p['product_count'] > 0));
 $navCategories = array_values(array_filter(Catalog::categories(), static fn (array $c): bool => (int) $c['product_count'] > 0));
 $waUrl = wa_link('Hi CyberGaming!');
 $igUrl = (string) setting('instagram_url', '');
@@ -157,7 +157,7 @@ $primaryNav = [
     <div class="container footer-grid">
         <div class="footer-brand">
             <a href="<?= e(url('/')) ?>" class="footer-logo"><img src="<?= e(asset('img/logo-wide.png')) ?>" alt="<?= e($siteName) ?>" width="134" height="58" loading="lazy"></a>
-            <p>Lebanon's shop for used and new PS4 games and gaming gear. Every item inspected, every order confirmed on WhatsApp.</p>
+            <p><?= games_enabled() ? "Lebanon's shop for used and new PS4 games and gaming gear." : "Lebanon's shop for gaming gear: keyboards, mice and more." ?> Every item inspected, every order confirmed on WhatsApp.</p>
             <p class="footer-social">
                 <a class="btn btn-wa btn-sm" href="<?= e($waUrl) ?>" rel="noopener" target="_blank"><?= Ui::icon('whatsapp', 18) ?> WhatsApp us</a>
                 <?php if ($igUrl !== ''): ?><a class="btn btn-ghost btn-sm" href="<?= e($igUrl) ?>" rel="noopener" target="_blank"><?= Ui::icon('instagram', 18) ?> Instagram</a><?php endif; ?>

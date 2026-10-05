@@ -10,6 +10,7 @@ $badge = [
     'products' => (int) db()->fetchValue("SELECT COUNT(*) FROM products WHERE status = 'pending'"),
 ];
 $digitalOn = digital_enabled();
+$gamesOn = games_enabled();
 $waMissing = preg_replace('/\D+/', '', (string) setting('whatsapp_number', '961')) === '961';
 
 $icons = [
@@ -59,6 +60,9 @@ $successFlash = flash('success');
                 </a>
             <?php endforeach; ?>
         </nav>
+        <a class="digital-pill <?= $gamesOn ? 'on' : 'off' ?>" href="<?= e(url('/admin/settings#games')) ?>" title="Master switch for video games on the website. Click to change it.">
+            <span class="dot" aria-hidden="true"></span> Games: <?= $gamesOn ? 'ON' : 'OFF' ?>
+        </a>
         <a class="digital-pill <?= $digitalOn ? 'on' : 'off' ?>" href="<?= e(url('/admin/settings#digital')) ?>" title="Master switch for gift cards and Steam gifts on the website. Click to change it.">
             <span class="dot" aria-hidden="true"></span> Digital: <?= $digitalOn ? 'ON' : 'OFF' ?>
         </a>
@@ -75,6 +79,7 @@ $successFlash = flash('success');
         <header class="topbar">
             <label for="nav-toggle" class="menu-btn" aria-label="Menu"><span></span><span></span><span></span></label>
             <a class="topbar-brand" href="<?= e(url('/admin')) ?>"><?= e($siteName) ?> admin</a>
+            <a class="digital-pill digital-pill-top <?= $gamesOn ? 'on' : 'off' ?>" href="<?= e(url('/admin/settings#games')) ?>"><span class="dot" aria-hidden="true"></span> Games: <?= $gamesOn ? 'ON' : 'OFF' ?></a>
             <a class="digital-pill digital-pill-top <?= $digitalOn ? 'on' : 'off' ?>" href="<?= e(url('/admin/settings#digital')) ?>"><span class="dot" aria-hidden="true"></span> Digital: <?= $digitalOn ? 'ON' : 'OFF' ?></a>
             <a class="topbar-link" href="<?= e(url('/')) ?>" target="_blank" rel="noopener">View shop &nearr;</a>
         </header>

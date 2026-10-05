@@ -44,8 +44,9 @@ final class Catalog
 
     /**
      * THE storefront gate. Every storefront query that reads `products` (alias `p`) must append this fragment.
-     * It hides products of disabled categories and platforms, and, with the digital master switch off (default),
-     * digital products and everything in the gift-cards category: for the public site they do not exist.
+     * It hides products of disabled categories and platforms; with the digital master switch off (default),
+     * digital products and everything in the gift-cards category; and with the games master switch off (default),
+     * every product in a "game" kind category: for the public site they do not exist.
      */
     public static function gate(): string
     {
@@ -54,10 +55,13 @@ final class Catalog
         // A product without a platform (PC peripherals) is only subject to its category.
         $sql = ' AND EXISTS (SELECT 1 FROM categories gate_c WHERE gate_c.id = p.category_id AND gate_c.is_active = 1)'
             . ' AND (p.platform_id IS NULL OR EXISTS (SELECT 1 FROM platforms gate_pl WHERE gate_pl.id = p.platform_id AND gate_pl.is_active = 1))';
-        if (digital_enabled()) {
-            return $sql;
+        if (!digital_enabled()) {
+            $sql .= " AND p.is_digital = 0 AND p.category_id NOT IN (SELECT gc.id FROM categories gc WHERE gc.slug = '" . self::GIFT_SLUG . "')";
         }
-        return $sql . " AND p.is_digital = 0 AND p.category_id NOT IN (SELECT gc.id FROM categories gc WHERE gc.slug = '" . self::GIFT_SLUG . "')";
+        if (!games_enabled()) {
+            $sql .= " AND NOT EXISTS (SELECT 1 FROM categories gg WHERE gg.id = p.category_id AND gg.kind = 'game')";
+        }
+        return $sql;
     }
 
     /** Products a customer can buy right now (active, in stock, digital gate applied). Alias `p`. */
@@ -72,9 +76,12 @@ final class Catalog
         return self::visible() . ' AND p.is_digital = 0';
     }
 
-    /** Active platforms with the number of purchasable products. */
+    /** Active platforms with the number of purchasable products. Empty while the games master switch is off (platforms are game consoles only). */
     public static function platforms(): array
     {
+        if (!games_enabled()) {
+            return [];
+        }
         return self::$platforms ??= db()->fetchAll(
             "SELECT pl.id, pl.slug, pl.name,
                     (SELECT COUNT(*) FROM products p WHERE p.platform_id = pl.id AND " . self::visible() . ") AS product_count
@@ -87,7 +94,8 @@ final class Catalog
         return self::$categories ??= db()->fetchAll(
             "SELECT c.id, c.slug, c.kind, c.name, c.seo_title, c.seo_description, c.intro_text,
                     (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id AND " . self::visible() . ") AS product_count
-               FROM categories c WHERE c.is_active = 1" . (digital_enabled() ? '' : " AND c.slug <> '" . self::GIFT_SLUG . "'") . " ORDER BY c.sort_order, c.name"
+               FROM categories c WHERE c.is_active = 1" . (digital_enabled() ? '' : " AND c.slug <> '" . self::GIFT_SLUG . "'")
+                . (games_enabled() ? '' : " AND c.kind <> 'game'") . ' ORDER BY c.sort_order, c.name'
         );
     }
 

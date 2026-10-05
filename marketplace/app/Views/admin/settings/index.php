@@ -13,6 +13,41 @@ $waIsPlaceholder = preg_replace('/\D+/', '', $values['whatsapp_number']) === '96
     </div>
 </div>
 
+<?php $gamesOn = games_enabled(); ?>
+<section class="card digital-card <?= $gamesOn ? 'is-on' : 'is-off' ?>" id="games">
+    <div class="card-head">
+        <h2>Video games &mdash; PS4 games and consoles</h2>
+        <span class="digital-state <?= $gamesOn ? 'on' : 'off' ?>" role="status">Games: <?= $gamesOn ? 'ON' : 'OFF' ?></span>
+    </div>
+    <div class="card-body">
+        <p><strong>OFF:</strong> every video game is hidden everywhere on the website (shop, search, home, platform pages, sitemap, direct links); the shop shows hardware only.
+            <strong>ON:</strong> games appear again, exactly as before.</p>
+        <p class="muted">Turning this off never deletes or unpublishes anything. You always see your game products here in the admin, whatever the switch says.</p>
+
+        <div class="digital-stats">
+            <div><strong><?= (int) $games['total'] ?></strong><span>game products</span></div>
+            <div><strong><?= (int) $games['active'] ?></strong><span>active</span></div>
+            <div><strong><?= (int) $games['live'] ?></strong><span>in stock</span></div>
+        </div>
+
+        <div class="actions">
+            <?php if ($gamesOn): ?>
+                <form method="post" action="<?= e(url('/admin/settings/games')) ?>" class="inline-form"
+                      data-confirm="<?= e('Turn games OFF? ' . $games['live'] . ' game product' . ($games['live'] === 1 ? '' : 's') . ' will disappear from the website (shop, search, home, platform pages and sitemap). Nothing is deleted, and you can turn it back on any time.') ?>">
+                    <?= csrf_field() ?><input type="hidden" name="games_enabled" value="0">
+                    <button class="btn btn-danger btn-lg" type="submit">Turn games OFF</button>
+                </form>
+            <?php else: ?>
+                <form method="post" action="<?= e(url('/admin/settings/games')) ?>" class="inline-form">
+                    <?= csrf_field() ?><input type="hidden" name="games_enabled" value="1">
+                    <button class="btn btn-primary btn-lg" type="submit">Turn games ON</button>
+                </form>
+            <?php endif; ?>
+            <a class="btn" href="<?= e(url('/admin/products?kind=game')) ?>">View game products</a>
+        </div>
+    </div>
+</section>
+
 <?php $digitalOn = digital_enabled(); ?>
 <section class="card digital-card <?= $digitalOn ? 'is-on' : 'is-off' ?>" id="digital">
     <div class="card-head">

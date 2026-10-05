@@ -8,6 +8,7 @@ $nav = 'products';
 $here = Forms::here();
 $hasFilter = (bool) array_filter($filters, static fn ($v) => $v !== '' && $v !== 0);
 $digitalOn = digital_enabled();
+$gamesOn = games_enabled();
 $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active', 'sold' => 'Sold', 'hidden' => 'Hidden'];
 ?>
 <div class="page-head">
@@ -37,6 +38,20 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
         <div class="actions">
             <a class="btn btn-sm" href="<?= e(url('/admin/products?kind=digital')) ?>">View digital</a>
             <a class="btn btn-sm" href="<?= e(url('/admin/settings#digital')) ?>"><?= $digitalOn ? 'Digital settings' : 'Turn on / starter catalogue' ?></a>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if ($games['total'] > 0 || !$gamesOn): ?>
+    <div class="card bulk-bar digital-bar <?= $gamesOn ? 'is-on' : 'is-off' ?>">
+        <div class="bulk-text">
+            <strong>Games: <span class="digital-state <?= $gamesOn ? 'on' : 'off' ?>"><?= $gamesOn ? 'ON' : 'OFF' ?></span></strong>
+            <span class="muted"><?= (int) $games['total'] ?> game product<?= $games['total'] === 1 ? '' : 's' ?> &middot; <?= (int) $games['active'] ?> active &middot; <?= (int) $games['live'] ?> in stock.
+                <?= $gamesOn ? 'Active games are visible on the website.' : 'The games switch is OFF: all video games are hidden on the website. You still see them here.' ?></span>
+        </div>
+        <div class="actions">
+            <a class="btn btn-sm" href="<?= e(url('/admin/products?kind=game')) ?>">View games</a>
+            <a class="btn btn-sm" href="<?= e(url('/admin/settings#games')) ?>"><?= $gamesOn ? 'Games settings' : 'Turn games on' ?></a>
         </div>
     </div>
 <?php endif; ?>
@@ -134,7 +149,7 @@ $statusOpts = ['' => 'Any status', 'pending' => 'Pending', 'active' => 'Active',
                 <?php foreach ($products as $p): ?>
                     <tr>
                         <td class="thumb-cell"><?php if ($p['image']): ?><img class="thumb" src="<?= e(media($p['image'])) ?>" alt="" loading="lazy"><?php else: ?><span class="thumb thumb-empty"></span><?php endif; ?></td>
-                        <td><a href="<?= e(url('/admin/products/' . $p['id'] . '/edit')) ?>"><strong><?= e($p['title']) ?></strong></a><?= $p['is_steelbook'] ? ' <span class="tag tag-steel">Steelbook</span>' : '' ?> <?= ListingRules::conditionTag($p) ?> <?= ListingRules::photoTag($p, (int) $p['photo_count']) ?><?= (int) $p['is_digital'] === 1 ? ' <span class="tag tag-digital" title="Digital item: prepaid, code sent on WhatsApp">Digital' . ($p['digital_kind'] ? ' &middot; ' . e(Digital::kindLabel($p['digital_kind'])) : '') . ($p['digital_region'] ? ' &middot; ' . e($p['digital_region']) : '') . '</span>' : '' ?><?= $p['seller_id'] && (\App\Support\ContactFilter::containsContact((string) $p['title']) || \App\Support\ContactFilter::containsContact((string) ($p['description'] ?? ''))) ? ' <span class="tag" title="Title or description looks like it contains contact details">contact info?</span>' : '' ?><?= $p['category_kind'] === 'hardware' && (int) $p['is_digital'] === 0 ? ' <span class="tag tag-hw" title="Hardware item">Hardware</span>' : '' ?><br><small class="muted"><?= e($p['category'] ?? '') ?></small><?= $p['serial_number'] ? '<br><small class="muted" title="Private: only visible in the admin">S/N ' . e($p['serial_number']) . '</small>' : '' ?><?= (int) $p['is_digital'] === 1 && !$digitalOn ? '<br><small class="text-warn">hidden: digital goods switch is off</small>' : '' ?></td>
+                        <td><a href="<?= e(url('/admin/products/' . $p['id'] . '/edit')) ?>"><strong><?= e($p['title']) ?></strong></a><?= $p['is_steelbook'] ? ' <span class="tag tag-steel">Steelbook</span>' : '' ?> <?= ListingRules::conditionTag($p) ?> <?= ListingRules::photoTag($p, (int) $p['photo_count']) ?><?= (int) $p['is_digital'] === 1 ? ' <span class="tag tag-digital" title="Digital item: prepaid, code sent on WhatsApp">Digital' . ($p['digital_kind'] ? ' &middot; ' . e(Digital::kindLabel($p['digital_kind'])) : '') . ($p['digital_region'] ? ' &middot; ' . e($p['digital_region']) : '') . '</span>' : '' ?><?= $p['seller_id'] && (\App\Support\ContactFilter::containsContact((string) $p['title']) || \App\Support\ContactFilter::containsContact((string) ($p['description'] ?? ''))) ? ' <span class="tag" title="Title or description looks like it contains contact details">contact info?</span>' : '' ?><?= $p['category_kind'] === 'hardware' && (int) $p['is_digital'] === 0 ? ' <span class="tag tag-hw" title="Hardware item">Hardware</span>' : '' ?><br><small class="muted"><?= e($p['category'] ?? '') ?></small><?= $p['serial_number'] ? '<br><small class="muted" title="Private: only visible in the admin">S/N ' . e($p['serial_number']) . '</small>' : '' ?><?= (int) $p['is_digital'] === 1 && !$digitalOn ? '<br><small class="text-warn">hidden: digital goods switch is off</small>' : '' ?><?= $p['category_kind'] === 'game' && !$gamesOn ? '<br><small class="text-warn">hidden: games switch is off</small>' : '' ?></td>
                         <td><?= $p['brand'] || $p['model'] ? '<strong>' . e((string) $p['brand']) . '</strong>' . ($p['model'] ? '<br><small class="muted">' . e($p['model']) . '</small>' : '') : '<span class="muted">-</span>' ?></td>
                         <td><?= e($p['platform'] ?? '-') ?></td>
                         <td class="num"><strong><?= e(money($p['price'])) ?></strong></td>

@@ -263,6 +263,15 @@ final class CatalogController extends Controller
                 'block'       => $isHw ? self::hardwareBlock($category['name']) : [],
             ];
         }
+        if (!games_enabled()) {
+            return [
+                'h1'          => 'Shop gaming gear',
+                'title'       => 'Shop Gaming Gear in Lebanon',
+                'description' => "Browse $n inspected gaming gear items in Lebanon$from: keyboards, mice and more for gamers, with delivery across Lebanon.",
+                'intro'       => 'Every item here has been inspected by our team. Filter or search for a product.',
+                'block'       => [],
+            ];
+        }
         return [
             'h1'          => 'Shop used games & gaming gear',
             'title'       => 'Shop Used Games & Gaming Gear in Lebanon',

@@ -80,7 +80,9 @@ final class Seo
             'url'         => url('/'),
             'logo'        => ['@type' => 'ImageObject', 'url' => self::logoUrl()],
             'image'       => self::defaultImage(),
-            'description' => 'Online shop in Lebanon selling used and new video games and gaming gear. Every item is inspected before delivery.',
+            'description' => games_enabled()
+                ? 'Online shop in Lebanon selling used and new video games and gaming gear. Every item is inspected before delivery.'
+                : 'Online shop in Lebanon selling gaming gear: keyboards, mice and more for gamers. Every item is inspected before delivery.',
             'areaServed'  => $area,
             'currenciesAccepted' => 'USD',
             'paymentAccepted'    => 'Cash on delivery, OMT, Whish',
@@ -516,7 +518,8 @@ final class Seo
                 $stock = $stats['items'] > 0
                     ? 'We have ' . $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', and we deliver across Lebanon from ' . $fee . '.'
                     : 'We deliver across Lebanon from ' . $fee . '.';
-                return "CyberGaming Lebanon is an online shop selling used and new video games and gaming gear. $stock "
+                $what = games_enabled() ? 'used and new video games and gaming gear' : 'gaming gear: keyboards, mice and more for gamers';
+                return "CyberGaming Lebanon is an online shop selling $what. $stock "
                     . 'Checkout is guest-only, no account needed, and every item is inspected before delivery.';
             case 'delivery':
                 return "CyberGaming delivers across Lebanon. Local areas ($local) get our own courier for " . Rules::feeRange('local') . ', with cash on delivery and inspection at the door. '

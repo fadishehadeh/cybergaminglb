@@ -8,16 +8,21 @@ use App\Modules\Storefront\Ui;
 
 /** @var array $stats @var array $platforms @var array $categories @var array $steelbooks @var array $latest @var array $giftCards */
 $giftCards = $giftCards ?? [];
+$gamesOn = games_enabled();
 $hero = array_slice(array_values(array_filter($latest, static fn (array $h): bool => !empty($h['image']))), 0, 3);
 
 $homeFaqs = [
-    ['What is CyberGaming Lebanon?', 'CyberGaming Lebanon is an online shop in Lebanon selling used and new video games and gaming gear. Every item is inspected, prices are in US dollars, and we deliver across Lebanon. See [[/about|about us]] and [[/how-it-works|how it works]].'],
+    ['What is CyberGaming Lebanon?', $gamesOn
+        ? 'CyberGaming Lebanon is an online shop in Lebanon selling used and new video games and gaming gear. Every item is inspected, prices are in US dollars, and we deliver across Lebanon. See [[/about|about us]] and [[/how-it-works|how it works]].'
+        : 'CyberGaming Lebanon is an online shop in Lebanon selling gaming gear: keyboards, mice and more for gamers. Every item is inspected, prices are in US dollars, and we deliver across Lebanon. See [[/about|about us]] and [[/how-it-works|how it works]].'],
     ['Do you deliver outside Beirut?', 'Yes, we deliver across Lebanon. Local areas (' . Rules::nameList(Rules::names('local')) . ') are served by our own courier, and other areas by a third-party courier. Fees start at ' . money(SeoCatalog::cheapestFee()) . '. See [[/delivery-and-payment|delivery and payment]].'],
     ['Can I pay cash on delivery?', 'Yes, in local areas: our own courier lets you check the item and you pay cash on delivery. Remote areas are prepaid by OMT or Whish' . (Rules::prepayOn() && Rules::codAfter() > 0 ? ', and cash on delivery unlocks there after ' . Rules::codAfter() . ' delivered orders' : '') . '.'],
     ['Do I need an account to order?', 'No. Checkout is guest-only: just your name, phone number and delivery area. No registration, no card details.'],
 ];
-$meta['description'] = Seo::clip('Buy used and new PS4 games and gaming gear in Lebanon. ' . ($stats['items'] > 0 ? $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', ' : '') . 'delivery across Lebanon, pay cash, OMT or Whish.');
-$meta['jsonld'][] = Seo::webPage('WebPage', 'CyberGaming Lebanon: used and new games and gaming gear', url('/'), (string) $meta['description']);
+$meta['description'] = $gamesOn
+    ? Seo::clip('Buy used and new PS4 games and gaming gear in Lebanon. ' . ($stats['items'] > 0 ? $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', ' : '') . 'delivery across Lebanon, pay cash, OMT or Whish.')
+    : Seo::clip('Gaming gear in Lebanon: keyboards, mice and more for gamers. ' . ($stats['items'] > 0 ? $stats['items'] . ' inspected items in stock' . ($stats['min_price'] !== null ? ' from ' . money($stats['min_price']) : '') . ', ' : '') . 'delivery across Lebanon, pay cash, OMT or Whish.');
+$meta['jsonld'][] = Seo::webPage('WebPage', $gamesOn ? 'CyberGaming Lebanon: used and new games and gaming gear' : 'CyberGaming Lebanon: gaming gear', url('/'), (string) $meta['description']);
 $meta['jsonld'][] = Seo::faqLd($homeFaqs);
 $priceLinks = Collections::activeIn('price');
 $genreLinks = Collections::activeIn('genre');
@@ -27,6 +32,7 @@ $homeZones = SeoCatalog::zones();
 <section class="hero">
     <div class="container hero-grid">
         <div class="hero-copy">
+            <?php if ($gamesOn): ?>
             <p class="eyebrow">Lebanon's game shop</p>
             <h1>Used &amp; new games and gaming gear in Lebanon</h1>
             <p class="lead">Inspected used and new games at fair dollar prices. Order online, we confirm on WhatsApp, and we deliver across Lebanon.</p>
@@ -34,6 +40,14 @@ $homeZones = SeoCatalog::zones();
                 <a class="btn btn-primary btn-lg" href="<?= e(url('/shop')) ?>">Shop games</a>
                 <a class="btn btn-outline btn-lg" href="<?= e(url('/shop/consoles')) ?>">Shop gear</a>
             </div>
+            <?php else: ?>
+            <p class="eyebrow">Lebanon's gaming gear shop</p>
+            <h1>Gaming gear in Lebanon</h1>
+            <p class="lead">Keyboards, mice and more for gamers, at fair dollar prices. Order online, we confirm on WhatsApp, and we deliver across Lebanon.</p>
+            <div class="hero-actions">
+                <a class="btn btn-primary btn-lg" href="<?= e(url('/shop')) ?>">Shop gear</a>
+            </div>
+            <?php endif; ?>
             <ul class="hero-points">
                 <li><?= Ui::icon('shield', 18) ?> Inspected before sale</li>
                 <li><?= Ui::icon('truck', 18) ?> Delivery across Lebanon</li>
@@ -52,6 +66,7 @@ $homeZones = SeoCatalog::zones();
 
 <?= Seo::quickAnswerHtml('home') ?>
 
+<?php if ($gamesOn): ?>
 <section class="container stats" aria-label="Store at a glance">
     <div class="stat"><strong><?= number_format($stats['items']) ?></strong><span>items in stock</span></div>
     <div class="stat"><strong><?= number_format($stats['steelbooks']) ?></strong><span>collectable steelbooks</span></div>
@@ -76,6 +91,7 @@ $homeZones = SeoCatalog::zones();
         <?php endforeach; ?>
     </ul>
 </section>
+<?php endif; ?>
 
 <?php if ($steelbooks): ?>
 <section class="section container">
@@ -166,7 +182,7 @@ $homeZones = SeoCatalog::zones();
     <div class="container">
         <div class="section-head"><h2>How it works</h2><a class="link-more" href="<?= e(url('/how-it-works')) ?>">The full story &rarr;</a></div>
         <ol class="steps">
-            <li><span class="step-num">1</span><h3>Browse</h3><p>Pick your games and add them to your cart. Every title is inspected.</p></li>
+            <li><span class="step-num">1</span><h3>Browse</h3><p>Pick what you need and add it to your cart. Every item is inspected.</p></li>
             <li><span class="step-num">2</span><h3>Order on the site</h3><p>Leave your name, phone and delivery area. No account needed, and delivery fees are shown up front.</p></li>
             <li><span class="step-num">3</span><h3>We confirm on WhatsApp</h3><p>We message you to confirm availability, price and delivery.</p></li>
             <li><span class="step-num">4</span><h3>Delivery or pickup</h3><p>We deliver across Lebanon or you meet us at our pickup point. Pay by cash on delivery, OMT or Whish.</p></li>
@@ -180,7 +196,7 @@ $homeZones = SeoCatalog::zones();
     <div class="cta-block">
         <div>
             <h2>Questions about an item?</h2>
-            <p>Message us on WhatsApp and we will help you pick the right game, console or accessory, or confirm an order.</p>
+            <p>Message us on WhatsApp and we will help you pick the right item, or confirm an order.</p>
         </div>
         <div class="cta-actions">
             <a class="btn btn-primary btn-lg" href="<?= e(url('/shop')) ?>">Browse the shop</a>

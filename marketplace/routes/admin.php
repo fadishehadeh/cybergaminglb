@@ -64,6 +64,8 @@ $router->post('/admin/settings/recalculate', [SettingsController::class, 'recalc
 // Digital goods: master switch (hides/shows gift cards and Steam gifts on the whole storefront) and the starter catalogue.
 $router->post('/admin/settings/digital', [SettingsController::class, 'digital'], $admin);
 $router->post('/admin/settings/digital/starter', [SettingsController::class, 'starter'], $admin);
+// Games: master switch (hides/shows all video games on the whole storefront; shop sells hardware only while off).
+$router->post('/admin/settings/games', [SettingsController::class, 'games'], $admin);
 
 // Delivery zones (edited from the Settings page)
 $router->get('/admin/delivery', [DeliveryController::class, 'index'], $admin);

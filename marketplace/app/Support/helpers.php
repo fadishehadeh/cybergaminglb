@@ -139,3 +139,9 @@ function digital_enabled(): bool
 {
     return (string) setting('digital_enabled', '0') === '1';
 }
+
+/** Master switch (admin > Settings): video games (category kind "game") are hidden everywhere while this is off; the shop sells hardware only. */
+function games_enabled(): bool
+{
+    return (string) setting('games_enabled', '0') === '1';
+}

@@ -116,6 +116,7 @@ final class ProductController extends AdminController
             'filters'    => compact('q', 'status', 'category', 'platform', 'seller', 'steelbook', 'kind', 'cond', 'missing', 'seo'),
             'missingCount' => (int) db()->fetchValue('SELECT COUNT(*) FROM products p WHERE ' . ListingRules::missingSql('p')),
             'digital'    => Digital::counts(),
+            'games'      => Games::counts(),
             'categories' => db()->fetchAll('SELECT id, name, kind, is_active FROM categories ORDER BY sort_order, name'),
             'platforms'  => db()->fetchAll('SELECT id, name FROM platforms ORDER BY sort_order, name'),
             'sellers'    => db()->fetchAll('SELECT id, code, name FROM sellers ORDER BY code'),

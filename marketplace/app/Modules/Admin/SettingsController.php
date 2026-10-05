@@ -39,7 +39,7 @@ final class SettingsController extends AdminController
             ];
         }
         $zones = db()->fetchAll('SELECT id, name, fee, mode, sort_order, is_active FROM delivery_zones ORDER BY sort_order, name');
-        $this->view('settings/index', ['values' => $values, 'example' => $example, 'zones' => $zones, 'digital' => Digital::counts()]);
+        $this->view('settings/index', ['values' => $values, 'example' => $example, 'zones' => $zones, 'digital' => Digital::counts(), 'games' => Games::counts()]);
     }
 
     public function update(Request $request): void
@@ -203,6 +203,18 @@ final class SettingsController extends AdminController
             ? 'Digital goods are now ON: ' . $counts['live'] . ' active digital product' . ($counts['live'] === 1 ? ' is' : 's are') . ' visible on the website.'
             : 'Digital goods are now OFF: gift cards and Steam gifts are hidden everywhere on the website.');
         $this->redirect('/admin/settings#digital');
+    }
+
+    /** Master switch for video games (category kind "game": PS4/PS5/etc). OFF = invisible everywhere on the storefront, shop sells hardware only. */
+    public function games(Request $request): void
+    {
+        $to = $this->str($request, 'games_enabled') === '1' ? '1' : '0';
+        Settings::set('games_enabled', $to);
+        $counts = Games::counts();
+        $this->ok($to === '1'
+            ? 'Games are now ON: ' . $counts['live'] . ' active game product' . ($counts['live'] === 1 ? ' is' : 's are') . ' visible on the website.'
+            : 'Games are now OFF: all video games are hidden everywhere on the website. The shop shows hardware only.');
+        $this->redirect('/admin/settings#games');
     }
 
     /** One click: add the starter gift-card catalogue as hidden drafts (idempotent). */
